@@ -1,24 +1,31 @@
 const colors = require("colors/safe");
+const config = require("../config");
 
 class Logger {
   constructor(origin) {
     this.origin = origin;
   }
 
+  log(level, color, message) {
+    const datePrefix = config.logDate ? `${colors.gray(new Date().toLocaleString())} ` : "";
+    const levelPrefix = `${colors[color](`[${this.origin}] [${level.toUpperCase()}]`)} `;
+    console.log(`${datePrefix}${levelPrefix}${message}`);
+  }
+
   info(message) {
-    console.log(`${colors.gray(new Date().toLocaleString())} ${colors.cyan(`[${this.origin}] [INFO]`)} ${message}`);
+    this.log("info", "cyan", message);
   }
 
   success(message) {
-    console.log(`${colors.gray(new Date().toLocaleString())} ${colors.green(`[${this.origin}] [SUCCESS]`)} ${message}`);
+    this.log("success", "green", message);
   }
 
   warn(message) {
-    console.warn(`${colors.gray(new Date().toLocaleString())} ${colors.yellow(`[${this.origin}] [WARN]`)} ${message}`);
+    this.log("warn", "yellow", message);
   }
 
   error(message) {
-    console.error(`${colors.gray(new Date().toLocaleString())} ${colors.red(`[${this.origin}] [ERROR]`)} ${message}`);
+    this.log("error", "red", message);
   }
 }
 

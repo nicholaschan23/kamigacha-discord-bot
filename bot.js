@@ -5,6 +5,7 @@ const findEvents = require("./src/utils/initialization/findEvents");
 const registerInteractions = require("./src/utils/initialization/registerInteractions");
 const findCommands = require("./src/utils/initialization/findCommands");
 const registerCommands = require("./src/utils/initialization/registerCommands");
+const mongooseConnect = require("./src/database/mongodb/mongooseConnect");
 
 const envFile = ".env";
 require("dotenv").config({ path: path.join(__dirname, envFile) });
@@ -37,6 +38,8 @@ client.selectMenuInteractions = new Collection();
 registerInteractions(client);
 
 const commands = findCommands(client);
+
+mongooseConnect(client);
 
 client.login(process.env.TOKEN);
 
