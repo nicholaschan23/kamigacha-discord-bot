@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 // Define a schema for storing pity timers
-const schema = new mongoose.Schema({
+const cardSchema = new mongoose.Schema({
   code: String, // Unique card code identifier
 
   // Use to grab card image
@@ -21,4 +21,4 @@ const schema = new mongoose.Schema({
   frame: String,
 });
 
-module.exports = schema;
+module.exports = cardSchema;

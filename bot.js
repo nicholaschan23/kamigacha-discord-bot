@@ -12,37 +12,38 @@ require("dotenv").config({ path: path.join(__dirname, envFile) });
 assert(process.env.TOKEN, "A Discord bot token for is required.");
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds, 
-    GatewayIntentBits.GuildMembers, 
-    GatewayIntentBits.GuildMessages, 
-    GatewayIntentBits.MessageContent],
-  partials: [
-    Partials.Channel, 
-    Partials.GuildMember, 
-    Partials.Message, 
-    Partials.Reaction, 
-    Partials.User],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  partials: [Partials.Channel, Partials.GuildMember, Partials.Message, Partials.Reaction, Partials.User],
 });
 
-findEvents(client);
+(async () => {
+  try {
+    await mongooseConnect(client);
 
-// Collections
-client.cooldowns = new Collection();
-client.commands = new Collection();
-client.autocompleteInteractions = new Collection();
-client.buttonInteractions = new Collection();
-client.modalInteractions = new Collection();
-client.selectMenuInteractions = new Collection();
+    // Initialize an empty Set to store cached whitelisted player IDs
+    client.whitelist = new Set();
+    
 
-registerInteractions(client);
+    findEvents(client);
 
-const commands = findCommands(client);
+    // Collections
+    client.cooldowns = new Collection();
+    client.commands = new Collection();
+    client.autocompleteInteractions = new Collection();
+    client.buttonInteractions = new Collection();
+    client.modalInteractions = new Collection();
+    client.selectMenuInteractions = new Collection();
 
-mongooseConnect(client);
+    registerInteractions(client);
 
-client.login(process.env.TOKEN);
+    const commands = findCommands(client);
 
-client.once(Events.ClientReady, (client) => {
-  registerCommands(client, commands);
-});
+    await client.login(process.env.TOKEN);
+
+    client.once(Events.ClientReady, (client) => {
+      registerCommands(client, commands);
+    });
+  } catch (error) {
+    console.error("Failed to initialize the bot:", error);
+  }
+})();
