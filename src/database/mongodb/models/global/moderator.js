@@ -11,5 +11,5 @@ const moderatorSchema = new mongoose.Schema({
 
 module.exports = (client) => {
   const database = client.globalDB;
-  return database.model("invite", moderatorSchema);
+  return database.model("moderator", moderatorSchema);
 };

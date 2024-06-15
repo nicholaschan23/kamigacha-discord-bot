@@ -12,6 +12,7 @@ const inviteSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true,
+    index: true, // Indexing for faster queries
   },
 
   // When invite was accepted

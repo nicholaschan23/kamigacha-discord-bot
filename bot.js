@@ -11,6 +11,7 @@ const registerCommands = require("./src/utils/initialization/registerCommands");
 const mongooseConnect = require("./src/database/mongodb/mongooseConnect");
 
 const BlacklistCache = require("./src/utils/cache/BlacklistCache");
+const InviteCache = require("./src/utils/cache/InviteCache");
 
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 assert(process.env.TOKEN, "A Discord bot token is required");
@@ -32,6 +33,7 @@ client.cluster.on("ready", async () => {
 
     // Initialize caches
     client.blacklistCache = new BlacklistCache(client);
+    client.inviteCache = new InviteCache(client);
 
     // Load event listeners
     findEvents(client);

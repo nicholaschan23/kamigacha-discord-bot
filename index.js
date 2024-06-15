@@ -18,14 +18,12 @@ const manager = new ClusterManager("./bot.js", {
 process.on("SIGINT", async () => {
   isShuttingDown = true;
   logger.info("Received SIGINT. Initiating shutdown...");
-  // await manager.shutdown();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
   isShuttingDown = true;
   logger.info("Received SIGTERM. Initiating shutdown...");
-  // await manager.shutdown();
   process.exit(0);
 });
 
@@ -33,9 +31,9 @@ manager.on("clusterCreate", (cluster) => logger.info(`Launched cluster ${cluster
 
 manager.on("clusterDeath", (cluster) => {
   if (isShuttingDown) {
-    console.log(`Cluster ${cluster.id} has exited during shutdown.`);
+    logger.info(`Cluster ${cluster.id} has exited during shutdown`);
   } else {
-    console.log(`Cluster ${cluster.id} died unexpectedly. Respawning...`);
+    logger.info(`Cluster ${cluster.id} died unexpectedly. Respawning...`);
     // manager.respawn({ cluster });
   }
 });

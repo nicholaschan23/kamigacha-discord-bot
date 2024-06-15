@@ -30,7 +30,7 @@ module.exports = {
     try {
       const newModerator = new (ModeratorModel(client))({ userID: user.id });
       await newModerator.save();
-      return interaction.reply({ content: `${user} has been promoted to moderator.` });
+      return interaction.reply({ content: `${user} has been promoted to moderator.`, allowedMentions: { parse: [] } });
     } catch (error) {
       logger.error(error);
       return interaction.reply({ content: `An error occurred while promoting the user to moderator.`, ephemeral: true });

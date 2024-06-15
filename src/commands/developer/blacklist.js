@@ -9,8 +9,7 @@ module.exports = {
     .setName("blacklist")
     .setDescription("Blacklist a user.")
     .addUserOption((option) => option.setName("user").setDescription("Who to blacklist.").setRequired(true))
-    .addStringOption((option) => option.setName("reason").setDescription("Reason for blacklist.").setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    .addStringOption((option) => option.setName("reason").setDescription("Reason for blacklist.").setRequired(true)),
 
   async execute(client, interaction) {
     const blacklistUser = interaction.options.getUser("user");
@@ -24,10 +23,11 @@ module.exports = {
       return await interaction.reply({ content: `You do not have access to this command.`, ephemeral: true });
     }
 
-    // You can't backlist bots
-    if (blacklistUser.bot) {
-      return await interaction.reply({ content: `Please input a valid user, not a bot.`, ephemeral: true });
+    // You can't blacklist yourself or bots
+    if (receiver.id == interaction.user.id || receiver.bot) {
+      return await interaction.reply({ content: `Please input a valid user.`, ephemeral: true });
     }
+
 
     // You can't blacklist moderators
     const blacklistUserIsMod = await ModeratorModel(client).findOne({ userID: blacklistUser.id });
