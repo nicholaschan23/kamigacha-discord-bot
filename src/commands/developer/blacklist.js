@@ -48,7 +48,7 @@ module.exports = {
     // Blacklist the user
     try {
       await client.blacklistCache.addToBlacklist(blacklistUserID, moderatorUserID, reason);
-      return interaction.reply({ content: `${blacklistUserID} has been blacklisted. Reason: ${reason}` });
+      return interaction.reply({ content: `${blacklistUser} has been blacklisted. Reason: ${reason}`, allowedMentions: { parse: [] } });
     } catch (error) {
       logger.error(error);
       return interaction.reply({ content: `Error occurred when blacklisting the user.` });

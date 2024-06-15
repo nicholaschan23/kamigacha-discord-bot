@@ -71,8 +71,9 @@ class BlacklistCache {
 
   // Broadcast an update to all shards
   async broadcastUpdate(action, userID, data = null) {
-    await this.client.shard.broadcastEval(
-      (client, { action, userID, data }) => {
+    await this.client.cluster.broadcastEval(
+      async (client, context) => {
+        const { action, userID, data } = context;
         const blacklistCache = client.blacklistCache;
         if (action === "addToBlacklist") {
           blacklistCache.blacklist.set(userID, data);

@@ -29,32 +29,41 @@ module.exports = async (client) => {
 
   try {
     // Create and wait for database connections with a timeout
-    const userConnection = await withTimeout(createConnection(mongoURI, "user"), connectionTimeout);
-    const guildConnection = await withTimeout(createConnection(mongoURI, "guild"), connectionTimeout);
-    const globalConnection = await withTimeout(createConnection(mongoURI, "global"), connectionTimeout);
+    const userConnection = await createConnection(mongoURI, "user");
+    const guildConnection = await createConnection(mongoURI, "guild");
+    const globalConnection = await createConnection(mongoURI, "global");
 
-    // Handle process exit and termination signals
-    const gracefulShutdown = async () => {
-      try {
-        await userConnection.close();
-        await guildConnection.close();
-        await globalConnection.close();
-        logger.info(`Connections closed`);
-        process.exit(0);
-      } catch (err) {
-        logger.error(`Error during connection close:`, err);
-        process.exit(1);
-      }
-    };
+    // // Handle process exit and termination signals
+    // const gracefulShutdown = async () => {
+    //   try {
+    //     await userConnection.close();
+    //     await guildConnection.close();
+    //     await globalConnection.close();
+    //     logger.info(`Connections closed`);
+    //     process.exit(0);
+    //   } catch (err) {
+    //     logger.error(`Error during connection close:`, err);
+    //     process.exit(1);
+    //   }
+    // };
 
-    process.on("SIGINT", gracefulShutdown).on("SIGTERM", gracefulShutdown);
+    // // Attach gracefulShutdown to SIGINT and SIGTERM events
+    // process.on("SIGINT", async () => {
+    //   logger.info("Received SIGINT. Initiating shutdown...");
+    //   await gracefulShutdown();
+    // });
+
+    // process.on("SIGTERM", async () => {
+    //   logger.info("Received SIGTERM. Initiating shutdown...");
+    //   await gracefulShutdown();
+    // });
 
     // Assign connections to the client object
     client.userDB = userConnection;
     client.guildDB = guildConnection;
     client.globalDB = globalConnection;
   } catch (error) {
-    logger.error(`Connection failed:`, error);
+    logger.error(`Connection failed:`, error.stack);
     throw error;
   }
 };

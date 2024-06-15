@@ -1,13 +1,14 @@
 const { Events } = require("discord.js");
 const utils = require("../utils");
-const logger = new utils.Logger("Client Ready");
+const logger = new utils.Logger("Client ready");
 
 module.exports = {
   event: Events.ClientReady,
   type: "once",
 
   async call(client) {
-    const guildSize = client.guilds.cache.size;
+    const list = await client.cluster.broadcastEval((c) => c.guilds.cache.size);
+    const guildSize = list.reduce((prev, val) => prev + val, 0);
     logger.success(`Connected! ${client.user.username} is currently on ${guildSize} server${guildSize > 1 ? "s" : ""}`);
   },
 };

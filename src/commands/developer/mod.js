@@ -28,9 +28,7 @@ module.exports = {
 
     // Promote the user to moderator
     try {
-      const newModerator = new (ModeratorModel(client))({
-        userID: user.id,
-      });
+      const newModerator = new (ModeratorModel(client))({ userID: user.id });
       await newModerator.save();
       return interaction.reply({ content: `${user} has been promoted to moderator.` });
     } catch (error) {
