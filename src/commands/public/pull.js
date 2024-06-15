@@ -6,8 +6,12 @@ module.exports = {
   data: new SlashCommandBuilder().setName("pull").setDescription("Perform a gacha pull to receive a random character."),
 
   async execute(client, interaction) {
-    const rarity = gacha.getCardPull();
+    // Get card pull
+    const card = gacha.getCardPull();
 
-    interaction.reply(rarity);
+    // Fetch image
+
+    // Display result
+    interaction.reply(card);
   },
 };

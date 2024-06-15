@@ -19,7 +19,7 @@ class InviteCache {
     allInvites.forEach((invite) => {
       this.invites.set(invite.receiverUserID, {
         senderUserID: invite.senderUserID,
-        unixTimeMin: invite.unixTimeMin,
+        unixTimeSeconds: invite.unixTimeSeconds,
       });
     });
     logger.success(`Invite cache initialized with ${this.invites.size} invites`);
@@ -46,7 +46,7 @@ class InviteCache {
 
     const data = {
       senderUserID,
-      unixTimeMin: newInvite.unixTimeMin,
+      unixTimeSeconds: newInvite.unixTimeSeconds,
     };
     this.invites.set(receiverUserID, data);
     await this.broadcastUpdate("addInvite", receiverUserID, data);

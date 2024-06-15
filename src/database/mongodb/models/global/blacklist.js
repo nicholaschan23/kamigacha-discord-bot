@@ -21,9 +21,9 @@ const blacklistSchema = new mongoose.Schema({
   },
 
   // When user was blacklisted
-  unixTimeMin: { 
+  unixTimeSeconds: { 
     type: Number,
-    default: () => Math.floor(Date.now() / 60000),
+    default: () => Math.floor(Date.now() / 1000),
   },
 });
 

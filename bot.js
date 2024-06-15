@@ -59,25 +59,28 @@ client.cluster.on("ready", async () => {
     });
 
     // Handle shutdown
-    const gracefulShutdown = async () => {
+    const shutdown = async () => {
       try {
-        logger.info("Shutting down gracefully...");
-
         // Closing MongoDB connections
         await client.userDB.close();
         await client.guildDB.close();
         await client.globalDB.close();
-        
+
         await client.destroy();
         process.exit(0);
       } catch (err) {
-        logger.error("Error during graceful shutdown:", err);
+        logger.error("Error during shutdown:", err);
         process.exit(1);
       }
     };
-
-    process.on("SIGINT", gracefulShutdown);
-    process.on("SIGTERM", gracefulShutdown);
+    process.on("SIGINT", async () => {
+      logger.info("Received SIGINT. Initiating shutdown...");
+      shutdown();
+    });
+    process.on("SIGTERM", async () => {
+      logger.info("Received SIGTERM. Initiating shutdown...");
+      shutdown();
+    });
   } catch (error) {
     logger.error("Failed to initialize the bot:", error);
   }

@@ -12,13 +12,12 @@ const inviteSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true,
-    index: true, // Indexing for faster queries
   },
 
   // When invite was accepted
-  unixTimeMin: {
+  unixTimeSeconds: {
     type: Number,
-    default: () => Math.floor(Date.now() / 60_000),
+    default: () => Math.floor(Date.now() / 1000),
   },
 });
 

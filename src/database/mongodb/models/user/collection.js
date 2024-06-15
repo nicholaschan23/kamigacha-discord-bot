@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 const cardSchema = require("../../schemas/card");
 
-// Define a schema for storing a user's card collection
 const cardCollectionSchema = new mongoose.Schema({
   userID: {
     type: String,
+    unique: true,
     required: true,
   },
 

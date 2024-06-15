@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
-// Define a schema for storing user pity timers
 const userPitySchema = new mongoose.Schema({
   userID: {
     type: String,
+    unique: true,
     required: true,
   },
 

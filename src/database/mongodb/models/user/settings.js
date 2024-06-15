@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
-// Define a schema for storing user settings
 const userSettingsSchema = new mongoose.Schema({
   userID: {
     type: String,
+    unique: true,
     required: true,
   },
   

@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRow
 const config = require("../../config");
 const utils = require("../../utils");
 const logger = new utils.Logger("Invite command");
+const createNewPlayer = require("../../database/mongodb/createNewPlayer");
 
 module.exports = {
   category: "public",
@@ -35,21 +36,27 @@ module.exports = {
 
     // Handle the button interactions
     collector.on("collect", async (i) => {
-      if (i.customId === "acceptInvite") {
-        if (i.user.id !== receiver.id) return await i.deferUpdate();
-        client.inviteCache.addInvite();
-        embed.setColor(config.embedColor.green).setDescription(`${i.user} accepted the invitation!`);
-      } else if (i.customId === "rejectInvite") {
-        if (i.user.id == receiver.id) {
-          embed.setColor(config.embedColor.red).setDescription(`${i.user} rejected the invitation.`);
-        } else if (i.user.id == interaction.user.id) {
-          embed.setColor(config.embedColor.red).setDescription(`${i.user} withdrew the invitation.`);
-        } else {
-          return await i.deferUpdate();
+      try {
+        if (i.customId === "acceptInvite") {
+          if (i.user.id !== receiver.id) return await i.deferUpdate();
+
+          await client.inviteCache.addInvite(interaction.user.id, receiver.id);
+          await createNewPlayer(client, interaction.user.id);
+          embed.setColor(config.embedColor.green).setDescription(`${i.user} accepted the invitation!`);
+        } else if (i.customId === "rejectInvite") {
+          if (i.user.id == receiver.id) {
+            embed.setColor(config.embedColor.red).setDescription(`${i.user} rejected the invitation.`);
+          } else if (i.user.id == interaction.user.id) {
+            embed.setColor(config.embedColor.red).setDescription(`${i.user} withdrew the invitation.`);
+          } else {
+            return await i.deferUpdate();
+          }
         }
+        await i.update({ embeds: [embed], components: [] });
+        collector.stop();
+      } catch (error) {
+        if (config.debug) return logger.error(error.stack);
       }
-      await i.update({ embeds: [embed], components: [] });
-      collector.stop();
     });
 
     collector.on("end", async (collected, reason) => {

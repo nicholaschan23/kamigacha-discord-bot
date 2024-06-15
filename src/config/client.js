@@ -4,6 +4,11 @@ module.exports = {
     guildID: "1036473558144127039",
   },
 
+  // Debug mode for console log
+  debug: true,
+  // Date prefix in each console log message
+  logDate: false,
+
   // Commands
   cooldown: {
     default: 5,
@@ -16,10 +21,4 @@ module.exports = {
     green: "#43b581",
     blue: "#7289da",
   },
-
-  // Logger
-  logDate: false,
-
-  // Database
-  databaseConnectionTimeout: 5000, // Timeout in milliseconds (5 seconds)
 };

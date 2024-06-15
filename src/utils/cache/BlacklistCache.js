@@ -20,7 +20,7 @@ class BlacklistCache {
       this.blacklist.set(user.blacklistUserID, {
         moderatorUserID: user.moderatorUserID,
         reason: user.reason,
-        unixTimeMin: user.unixTimeMin,
+        unixTimeSeconds: user.unixTimeSeconds,
       });
     });
     logger.success(`Blacklist cache initialized with ${this.blacklist.size} users`);
@@ -49,7 +49,7 @@ class BlacklistCache {
     const data = {
       moderatorUserID: moderatorUserID,
       reason: reason,
-      unixTimeMin: newUser.unixTimeMin,
+      unixTimeSeconds: newUser.unixTimeSeconds,
     };
     this.blacklist.set(userID, data);
     await this.broadcastUpdate("addToBlacklist", userID, data);
