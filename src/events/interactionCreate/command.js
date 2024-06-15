@@ -1,12 +1,9 @@
-const { Collection, Events } = require("discord.js");
-const config = require("../config")
-const utils = require("../utils");
+const { Collection } = require("discord.js");
+const config = require("../../config");
+const utils = require("../../utils");
 const logger = new utils.Logger("Command");
 
 module.exports = {
-  event: Events.InteractionCreate,
-  type: "on",
-
   async call(client, interaction) {
     if (!interaction.isChatInputCommand()) return;
 

@@ -7,6 +7,8 @@ const findCommands = require("./src/utils/initialization/findCommands");
 const registerCommands = require("./src/utils/initialization/registerCommands");
 const mongooseConnect = require("./src/database/mongodb/mongooseConnect");
 
+const BlacklistCache = require("./src/utils/cache/BlacklistCache");
+
 const envFile = ".env";
 require("dotenv").config({ path: path.join(__dirname, envFile) });
 assert(process.env.TOKEN, "A Discord bot token for is required.");
@@ -18,12 +20,13 @@ const client = new Client({
 
 (async () => {
   try {
+    // Connect to MongoDB
     await mongooseConnect(client);
 
-    // Initialize an empty Set to store cached whitelisted player IDs
-    client.whitelist = new Set();
-    
+    // Initialize caches
+    client.blacklistCache = new BlacklistCache(client);
 
+    // Load event listeners
     findEvents(client);
 
     // Collections
@@ -34,6 +37,7 @@ const client = new Client({
     client.modalInteractions = new Collection();
     client.selectMenuInteractions = new Collection();
 
+    // Load interaction handlers
     registerInteractions(client);
 
     const commands = findCommands(client);

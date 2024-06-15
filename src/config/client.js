@@ -9,6 +9,14 @@ module.exports = {
     default: 5,
   },
 
+  // Preset embed colors
+  embedColor: {
+    red: "#f04747",
+    yellow: "#faa61a",
+    green: "#43b581",
+    blue: "#7289da",
+  },
+
   // Logger
   logDate: false,
 

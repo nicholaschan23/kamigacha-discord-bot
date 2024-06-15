@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const utils = require("../../utils")
-const logger = new utils.Logger("Interactions loader");
+const logger = new utils.Logger("Interaction loader");
 
 module.exports = (client) => {
   registerAutocompleteInteractions();
