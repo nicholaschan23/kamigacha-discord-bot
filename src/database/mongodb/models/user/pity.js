@@ -24,5 +24,5 @@ const userPitySchema = new mongoose.Schema({
 
 module.exports = (client) => {
   const database = client.userDB;
-  return database.model("user pity", userPitySchema);
+  return database.model("pity", userPitySchema);
 };

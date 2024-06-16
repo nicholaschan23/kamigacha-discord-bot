@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const cardSchema = require("../../schemas/card");
 
 const cardCollectionSchema = new mongoose.Schema({
   userID: {
@@ -15,14 +14,13 @@ const cardCollectionSchema = new mongoose.Schema({
   },
 
   // Collection
-  cards: {
-    type: Map,
-    of: cardSchema,
-    default: new Map(),
-  },
+  cardCodes: [{
+    type: String,
+    unique: true,
+  }],
 });
 
 module.exports = (client) => {
   const database = client.userDB;
-  return database.model("user collection", cardCollectionSchema);
+  return database.model("collection", cardCollectionSchema);
 };

@@ -24,5 +24,5 @@ const inventorySchema = new mongoose.Schema({
 
 module.exports = (client) => {
   const database = client.userDB;
-  return database.model("user inventory", inventorySchema);
+  return database.model("inventory", inventorySchema);
 };

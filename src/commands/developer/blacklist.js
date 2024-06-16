@@ -28,7 +28,6 @@ module.exports = {
       return await interaction.reply({ content: `Please input a valid user.`, ephemeral: true });
     }
 
-
     // You can't blacklist moderators
     const blacklistUserIsMod = await ModeratorModel(client).findOne({ userID: blacklistUser.id });
     if (blacklistUserIsMod) {

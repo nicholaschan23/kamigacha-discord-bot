@@ -8,9 +8,6 @@ class InviteCache {
     this.client = client;
     this.invites = new Collection();
     this.initialize();
-
-    // Add a reference to this instance on the client for easy access
-    this.client.inviteCache = this;
   }
 
   // Initialize the invite cache from the database

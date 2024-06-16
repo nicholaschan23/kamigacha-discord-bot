@@ -7,6 +7,12 @@ const userStatsSchema = new mongoose.Schema({
     required: true,
   },
 
+  // Privacy settings
+  isPrivate: {
+    type: Boolean,
+    default: false
+  },
+
   // Card stats
   totalCardsPulled: {
     type: Number,
@@ -29,5 +35,5 @@ const userStatsSchema = new mongoose.Schema({
 
 module.exports = (client) => {
   const database = client.userDB;
-  return database.model("user pity", userStatsSchema);
+  return database.model("stats", userStatsSchema);
 };

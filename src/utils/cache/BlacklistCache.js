@@ -8,9 +8,6 @@ class BlacklistCache {
     this.client = client;
     this.blacklist = new Collection();
     this.initialize();
-
-    // Add a reference to this instance on the client for easy access
-    this.client.blacklistCache = this;
   }
 
   // Initialize the blacklist cache from the database
