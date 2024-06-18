@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require("discord.js");
-const gacha = require("../../utils/gacha")
 
 module.exports = {
   category: "public",
@@ -19,10 +18,6 @@ module.exports = {
     const amount = interaction.options.getInteger("amount") || 1;
     const results = [];
 
-    for (let i = 0; i < amount; i++) {
-      results.push(gacha.getRandomRarity());
-    }
-
-    interaction.reply(`${results.join(", ")}`);
+    interaction.reply(`test`);
   },
 };

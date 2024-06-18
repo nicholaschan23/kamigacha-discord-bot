@@ -4,10 +4,10 @@ const { ClusterClient } = require("discord-hybrid-sharding");
 const BlacklistCache = require("../../utils/cache/BlacklistCache");
 const InviteCache = require("../../utils/cache/InviteCache");
 const mongooseConnect = require("../../database/mongodb/mongooseConnect");
-const findEvents = require("../../utils/initialization/findEvents");
-const registerInteractions = require("../../utils/initialization/registerInteractions");
-const findCommands = require("../../utils/initialization/findCommands");
-const registerCommands = require("../../utils/initialization/registerCommands");
+const findEvents = require("./findEvents");
+const registerInteractions = require("./registerInteractions");
+const findCommands = require("./findCommands");
+const registerCommands = require("./registerCommands");
 const utils = require("../../utils");
 const logger = new utils.Logger("Client");
 
@@ -28,58 +28,54 @@ class ExtendedClient extends Client {
   }
 
   async init() {
-    try {
-      // Connect to MongoDB
-      await mongooseConnect(this);
-      
-      // Initialize caches
-      this.blacklistCache = new BlacklistCache(this);
-      this.inviteCache = new InviteCache(this);
+    // Connect to MongoDB
+    await mongooseConnect(this);
 
-      // Load event listeners
-      findEvents(this);
+    // Initialize caches
+    this.blacklistCache = new BlacklistCache(this);
+    this.inviteCache = new InviteCache(this);
 
-      // Load interaction handlers
-      registerInteractions(this);
+    // Load event listeners
+    findEvents(this);
 
-      const commands = findCommands(this);
+    // Load interaction handlers
+    registerInteractions(this);
 
-      await this.login(process.env.TOKEN);
+    const commands = findCommands(this);
 
-      this.once(Events.ClientReady, (client) => {
-        registerCommands(client, commands);
-        logger.info(`Bot is ready on cluster ${client.cluster.id}`);
-      });
+    await this.login(process.env.TOKEN);
 
-      // Handle shutdown
-      const shutdown = async () => {
-        try {
-          // Closing MongoDB connections
-          await this.userDB.close();
-          await this.guildDB.close();
-          await this.globalDB.close();
-          await this.cardDB.close();
+    this.once(Events.ClientReady, (client) => {
+      registerCommands(client, commands);
+      logger.info(`Bot is ready on cluster ${client.cluster.id}`);
+    });
 
-          await this.destroy();
-          process.exit(0);
-        } catch (err) {
-          logger.error("Error during shutdown:", err);
-          process.exit(1);
-        }
-      };
+    // Handle shutdown
+    const shutdown = async () => {
+      try {
+        // Closing MongoDB connections
+        await this.userDB.close();
+        await this.guildDB.close();
+        await this.globalDB.close();
+        await this.cardDB.close();
 
-      process.on("SIGINT", async () => {
-        logger.info("Received SIGINT. Initiating shutdown...");
-        await shutdown();
-      });
+        await this.destroy();
+        process.exit(0);
+      } catch (err) {
+        logger.error("Error during shutdown:", err);
+        process.exit(1);
+      }
+    };
 
-      process.on("SIGTERM", async () => {
-        logger.info("Received SIGTERM. Initiating shutdown...");
-        await shutdown();
-      });
-    } catch (error) {
-      logger.error("Failed to initialize the bot:", error);
-    }
+    process.on("SIGINT", async () => {
+      logger.info("Received SIGINT. Initiating shutdown...");
+      await shutdown();
+    });
+
+    process.on("SIGTERM", async () => {
+      logger.info("Received SIGTERM. Initiating shutdown...");
+      await shutdown();
+    });
   }
 }
 

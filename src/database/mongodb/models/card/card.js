@@ -7,11 +7,12 @@ const cardSchema = new mongoose.Schema({
     unique: true,
   },
 
-  // Use to grab card image
   character: String, // Name of the character
   series: String, // Series the card is from
   set: Number, // Set number the card is from
   rarity: String, // C, R, UR, SR, SSR
+  
+  image: String, // CDN link
 
   owner: String, // Current owner of the card
   pulled: String, // Who pulled the card
