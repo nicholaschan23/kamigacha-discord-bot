@@ -1,23 +1,17 @@
 const { SlashCommandBuilder } = require("discord.js");
+const CardGenerator = require("../../utils/gacha/CardGenerator");
+const viewMultiPullEmbed = require("../../assets/embeds/card/viewMultiPull");
 
 module.exports = {
   category: "public",
-  data: new SlashCommandBuilder()
-    .setName("multi-pull")
-    .setDescription("Perform a gacha pull to receive a random character.")
-    .addIntegerOption(option => 
-      option
-        .setName("amount")
-        .setDescription("Number of pulls to perform")
-        .setMinValue(1)
-        .setMaxValue(10)
-        .setRequired(false)
-    ),
+  data: new SlashCommandBuilder().setName("multi-pull").setDescription("Perform a gacha multi-pull to receive 10 random characters."),
 
   async execute(client, interaction) {
-    const amount = interaction.options.getInteger("amount") || 1;
-    const results = [];
+    await interaction.deferReply();
 
-    interaction.reply(`test`);
+    const cg = new CardGenerator(client, interaction.user.id, interaction.guild.id);
+    await cg.cardPull(10);
+
+    interaction.editReply({ embeds: [viewMultiPullEmbed(cg.cardData)] });
   },
 };

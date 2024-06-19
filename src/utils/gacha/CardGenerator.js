@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const config = require("../../config");
 const CodeGenerator = require("./CodeGenerator");
 const CardModel = require("../../database/mongodb/models/card/card");
-const CollectionModel = require("../../database/mongodb/models/user/collection");
+const CollectionModel = require("../../database/mongodb/models/card/collection");
 const PityModel = require("../../database/mongodb/models/user/pity");
 const StatsModel = require("../../database/mongodb/models/user/stats");
 
@@ -188,8 +188,7 @@ class CardGenerator {
     // Save pity timers
     await PityModel(this.client).findOneAndUpdate(
       { userID: this.userID }, // Filter
-      { pity: this.pity }, // Update
-      { upsert: true }
+      { pity: this.pity } // Update
     );
 
     // Update stats
@@ -203,8 +202,7 @@ class CardGenerator {
           "totalCardsPulled.SR": this.pullRarities["SR"],
           "totalCardsPulled.SSR": this.pullRarities["SSR"],
         },
-      },
-      { upsert: true }
+      }
     );
 
     // Add card models to database
@@ -212,8 +210,12 @@ class CardGenerator {
     const savedCards = await CardModel(this.client).insertMany(cards);
 
     // Add cards to user's collection
-    const cardIDs = savedCards.map((card) => card._id);
-    await CollectionModel(this.client).findOneAndUpdate({ userID: this.userID }, { $addToSet: { cardsOwned: { $each: cardIDs } } }, { upsert: true });
+    const cardObjectIDs = savedCards.map((card) => card._id);
+    await CollectionModel(this.client).findOneAndUpdate(
+      { userID: this.userID }, 
+      { $addToSet: { cardsOwned: { $each: cardObjectIDs } } }, 
+      { upsert: true }
+    );
   }
 }
 

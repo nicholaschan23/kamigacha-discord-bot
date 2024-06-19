@@ -1,36 +1,36 @@
 module.exports = {
   noragami: {
     1: {
-      C: ["noragami-1-C-char1", "noragami-1-C-char2", "noragami-1-C-char3", "noragami-1-C-char4", "noragami-1-C-char5"],
-      R: ["noragami-1-R-char1", "noragami-1-R-char2", "noragami-1-R-char3", "noragami-1-R-char4", "noragami-1-R-char5"],
-      UR: ["noragami-1-UR-char1", "noragami-1-UR-char2", "noragami-1-UR-char3", "noragami-1-UR-char4", "noragami-1-UR-char5"],
-      SR: ["noragami-1-SR-char1", "noragami-1-SR-char2", "noragami-1-SR-char3", "noragami-1-SR-char4", "noragami-1-SR-char5"],
-      SSR: ["noragami-1-SSR-char1", "noragami-1-SSR-char2", "noragami-1-SSR-char3", "noragami-1-SSR-char4", "noragami-1-SSR-char5"],
+      C: ["noragami_1_C_char1", "noragami_1_C_char2", "noragami_1_C_char3", "noragami_1_C_char4", "noragami_1_C_char5"],
+      R: ["noragami_1_R_char1", "noragami_1_R_char2", "noragami_1_R_char3", "noragami_1_R_char4", "noragami_1_R_char5"],
+      UR: ["noragami_1_UR_char1", "noragami_1_UR_char2", "noragami_1_UR_char3", "noragami_1_UR_char4", "noragami_1_UR_char5"],
+      SR: ["noragami_1_SR_char1", "noragami_1_SR_char2", "noragami_1_SR_char3", "noragami_1_SR_char4", "noragami_1_SR_char5"],
+      SSR: ["noragami_1_SSR_char1", "noragami_1_SSR_char2", "noragami_1_SSR_char3", "noragami_1_SSR_char4", "noragami_1_SSR_char5"],
     },
     2: {
-      C: ["noragami-2-C-char1", "noragami-2-C-char2", "noragami-2-C-char3", "noragami-2-C-char4", "noragami-2-C-char5"],
-      R: ["noragami-2-R-char1", "noragami-2-R-char2", "noragami-2-R-char3", "noragami-2-R-char4", "noragami-2-R-char5"],
-      UR: ["noragami-2-UR-char1", "noragami-2-UR-char2", "noragami-2-UR-char3", "noragami-2-UR-char4", "noragami-2-UR-char5"],
-      SR: ["noragami-2-SR-char1", "noragami-2-SR-char2", "noragami-2-SR-char3", "noragami-2-SR-char4", "noragami-2-SR-char5"],
-      SSR: ["noragami-2-SSR-char1", "noragami-2-SSR-char2", "noragami-2-SSR-char3", "noragami-2-SSR-char4", "noragami-2-SSR-char5"],
+      C: ["noragami_2_C_char1", "noragami_2_C_char2", "noragami_2_C_char3", "noragami_2_C_char4", "noragami_2_C_char5"],
+      R: ["noragami_2_R_char1", "noragami_2_R_char2", "noragami_2_R_char3", "noragami_2_R_char4", "noragami_2_R_char5"],
+      UR: ["noragami_2_UR_char1", "noragami_2_UR_char2", "noragami_2_UR_char3", "noragami_2_UR_char4", "noragami_2_UR_char5"],
+      SR: ["noragami_2_SR_char1", "noragami_2_SR_char2", "noragami_2_SR_char3", "noragami_2_SR_char4", "noragami_2_SR_char5"],
+      SSR: ["noragami_2_SSR_char1", "noragami_2_SSR_char2", "noragami_2_SSR_char3", "noragami_2_SSR_char4", "noragami_2_SSR_char5"],
     },
   },
-  "attack-on-titan": {
+  "attack_on_titan": {
     1: {
-      C: ["aot-1-C-char1", "aot-1-C-char2", "aot-1-C-char3", "aot-1-C-char4", "aot-1-C-char5"],
-      R: ["aot-1-R-char1", "aot-1-R-char2", "aot-1-R-char3", "aot-1-R-char4", "aot-1-R-char5"],
-      UR: ["aot-1-UR-char1", "aot-1-UR-char2", "aot-1-UR-char3", "aot-1-UR-char4", "aot-1-UR-char5"],
-      SR: ["aot-1-SR-char1", "aot-1-SR-char2", "aot-1-SR-char3", "aot-1-SR-char4", "aot-1-SR-char5"],
-      SSR: ["aot-1-SSR-char1", "aot-1-SSR-char2", "aot-1-SSR-char3", "aot-1-SSR-char4", "aot-1-SSR-char5"],
+      C: ["aot_1_C_char1", "aot_1_C_char2", "aot_1_C_char3", "aot_1_C_char4", "aot_1_C_char5"],
+      R: ["aot_1_R_char1", "aot_1_R_char2", "aot_1_R_char3", "aot_1_R_char4", "aot_1_R_char5"],
+      UR: ["aot_1_UR_char1", "aot_1_UR_char2", "aot_1_UR_char3", "aot_1_UR_char4", "aot_1_UR_char5"],
+      SR: ["aot_1_SR_char1", "aot_1_SR_char2", "aot_1_SR_char3", "aot_1_SR_char4", "aot_1_SR_char5"],
+      SSR: ["aot_1_SSR_char1", "aot_1_SSR_char2", "aot_1_SSR_char3", "aot_1_SSR_char4", "aot_1_SSR_char5"],
     },
   },
-  "fullmetal-alchemist": {
+  "fullmetal_alchemist": {
     1: {
-      C: ["fma-1-C-char1", "fma-1-C-char2", "fma-1-C-char3", "fma-1-C-char4", "fma-1-C-char5"],
-      R: ["fma-1-R-char1", "fma-1-R-char2", "fma-1-R-char3", "fma-1-R-char4", "fma-1-R-char5"],
-      UR: ["fma-1-UR-char1", "fma-1-UR-char2", "fma-1-UR-char3", "fma-1-UR-char4", "fma-1-UR-char5"],
-      SR: ["fma-1-SR-char1", "fma-1-SR-char2", "fma-1-SR-char3", "fma-1-SR-char4", "fma-1-SR-char5"],
-      SSR: ["fma-1-SSR-char1", "fma-1-SSR-char2", "fma-1-SSR-char3", "fma-1-SSR-char4", "fma-1-SSR-char5"],
+      C: ["fma_1_C_char1", "fma_1_C_char2", "fma_1_C_char3", "fma_1_C_char4", "fma_1_C_char5"],
+      R: ["fma_1_R_char1", "fma_1_R_char2", "fma_1_R_char3", "fma_1_R_char4", "fma_1_R_char5"],
+      UR: ["fma_1_UR_char1", "fma_1_UR_char2", "fma_1_UR_char3", "fma_1_UR_char4", "fma_1_UR_char5"],
+      SR: ["fma_1_SR_char1", "fma_1_SR_char2", "fma_1_SR_char3", "fma_1_SR_char4", "fma_1_SR_char5"],
+      SSR: ["fma_1_SSR_char1", "fma_1_SSR_char2", "fma_1_SSR_char3", "fma_1_SSR_char4", "fma_1_SSR_char5"],
     },
   },
 };

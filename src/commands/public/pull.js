@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const CardGenerator = require("../../utils/gacha/CardGenerator");
+const viewPullEmbed = require("../../assets/embeds/card/viewPull");
 
 module.exports = {
   category: "public",
@@ -8,13 +9,9 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
 
-    const cardGen = new CardGenerator(client, interaction.user.id, interaction.guild.id)
-    // Get card pull
-    const results = await cardGen.cardPull(1);
-    
+    const cg = new CardGenerator(client, interaction.user.id, interaction.guild.id);
+    await cg.cardPull(1);
 
-    // Display result
-    interaction.editReply("hi");
-    // interaction.reply(cardGen.cardModels);
+    interaction.editReply({ embeds: [viewPullEmbed(cg.cardData[0])] });
   },
 };

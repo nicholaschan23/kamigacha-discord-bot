@@ -14,22 +14,18 @@ const cardCollectionSchema = new mongoose.Schema({
   },
 
   // Collection
-  cardCodes: [
-    {
-      type: String,
-      unique: true,
-    },
-  ],
-
-  cardsOwned: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "card",
-    },
-  ],
+  cardsOwned: {
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "card",
+      },
+    ],
+    default: [],
+  },
 });
 
 module.exports = (client) => {
-  const database = client.userDB;
+  const database = client.cardDB;
   return database.model("collection", cardCollectionSchema);
 };

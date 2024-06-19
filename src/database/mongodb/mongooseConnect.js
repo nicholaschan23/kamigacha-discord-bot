@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const utils = require("../../utils");
 const logger = new utils.Logger("MongoDB");
+const CardModel = require("./models/card/card");
 
 module.exports = async (client) => {
   const mongoURI = process.env.MONGODB_URI;
@@ -35,6 +36,13 @@ module.exports = async (client) => {
     client.cardDB = cardConnection;
   } catch (error) {
     logger.error(`Connection failed:`, error.stack);
+    throw error;
+  }
+
+  try {
+    client.cardDB.model("card", CardModel(client).schema);
+  } catch (error) {
+    logger.error("Failed to register models", error.stack);
     throw error;
   }
 };

@@ -45,8 +45,8 @@ class ExtendedClient extends Client {
 
     await this.login(process.env.DISCORD_BOT_TOKEN);
 
-    this.once(Events.ClientReady, (client) => {
-      registerCommands(client, commands);
+    this.once(Events.ClientReady, async (client) => {
+      await registerCommands(client, commands);
       logger.info(`Bot is ready on cluster ${client.cluster.id}`);
     });
 
