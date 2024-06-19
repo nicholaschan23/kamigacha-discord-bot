@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const totalCardsPulledSchema = require("../../schemas/totalCardsPulled");
 
 const userStatsSchema = new mongoose.Schema({
   userID: {
@@ -10,14 +11,15 @@ const userStatsSchema = new mongoose.Schema({
   // Privacy settings
   isPrivate: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   // Card stats
   totalCardsPulled: {
-    type: Number,
-    default: 0,
+    type: totalCardsPulledSchema,
+    default: () => ({}),
   },
+
   cardUpgradesComplete: {
     type: Number,
     default: 0,
@@ -30,7 +32,7 @@ const userStatsSchema = new mongoose.Schema({
   totalSetsComplete: {
     type: Number,
     default: 0,
-  }
+  },
 });
 
 module.exports = (client) => {

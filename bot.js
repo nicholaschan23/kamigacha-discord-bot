@@ -1,11 +1,6 @@
 const { GatewayIntentBits, Partials } = require("discord.js");
 const { getInfo } = require("discord-hybrid-sharding");
-const assert = require("assert");
-const path = require("path");
 const ExtendedClient = require("./src/utils/initialization/ExtendedClient");
-
-require("dotenv").config({ path: path.join(__dirname, ".env") });
-assert(process.env.TOKEN, "A Discord bot token is required");
 
 const client = new ExtendedClient({
   intents: [

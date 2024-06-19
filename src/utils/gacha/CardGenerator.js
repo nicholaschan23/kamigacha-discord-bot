@@ -1,38 +1,39 @@
 const crypto = require("crypto");
 const config = require("../../config");
 const CodeGenerator = require("./CodeGenerator");
-const PityModel = require("../../database/mongodb/models/user/pity");
 const CardModel = require("../../database/mongodb/models/card/card");
+const CollectionModel = require("../../database/mongodb/models/user/collection");
+const PityModel = require("../../database/mongodb/models/user/pity");
+const StatsModel = require("../../database/mongodb/models/user/stats");
 
 class CardGenerator {
   constructor(client, userID, guildID) {
     this.client = client;
     this.userID = userID;
-    this.userID = guildID;
-    this.codeGenerator = new CodeGenerator(client);
+    this.guildID = guildID;
+    this.cg = new CodeGenerator(client);
 
     // Information to save to database
     this.pity = { UR: 0, SR: 0, SSR: 0 };
     this.pullRarities = { C: 0, R: 0, UR: 0, SR: 0, SSR: 0 };
-    this.cardModels = [];
+    this.cardData = [];
 
     this.init();
   }
 
   async init() {
     const userDocument = await PityModel(this.client).findOne({ userID: this.userID });
-    if (!userDocument) return null;
-    this.pity.UR = userDocument.pity.UR;
-    this.pity.SR = userDocument.pity.SR;
-    this.pity.SSR = userDocument.pity.SSR;
+    if (userDocument) {
+      this.pity.UR = userDocument.UR;
+      this.pity.SR = userDocument.SR;
+      this.pity.SSR = userDocument.SSR;
+    }
   }
 
   async cardPull(numPulls) {
-    for (let i = 0; i < numPulls; i++) {
-      // Determine rarity of the pull
-      const rarity = this.getRarity();
+    const cardList = require("../../test/cardListSample");
 
-      // TESTING
+    for (let i = 0; i < numPulls; i++) {
       // Function to select a random key from an object
       const getRandomKey = (obj) => {
         const keys = Object.keys(obj);
@@ -41,36 +42,71 @@ class CardGenerator {
       };
 
       // Select a random series
-      const cardList = require("../../test/cardListSample");
-      const randomSeries = getRandomKey(cardList);
+      const series = getRandomKey(cardList);
+      // console.log(`Selected series: ${series}`);
 
       // Select a random edition from the random series
-      const randomEdition = getRandomKey(cardList[randomSeries]);
+      const set = this.getSet(Object.keys(cardList[series]).length);
+      // console.log(`Selected set: ${set}`);
 
-      // Select a random rarity from the random edition
-      // const randomRarity = getRandomKey(cardList[randomSeries][randomEdition]);
+      // Determine rarity of the pull
+      const rarity = this.getRarity();
+      // console.log(`Selected rarity: ${rarity}`);
+
+      // Ensure that the selected series, set, and rarity exist in cardList
+      // if (!cardList[series]) {
+      //   console.error(`Series '${series}' not found in cardList`);
+      //   continue;
+      // }
+
+      // if (!cardList[series][set]) {
+      //   console.error(`Set '${set}' not found in series '${series}'`);
+      //   continue;
+      // }
+
+      // if (!cardList[series][set][rarity]) {
+      //   console.error(`Rarity '${rarity}' not found in set '${set}' of series '${series}'`);
+      //   continue;
+      // }
 
       // Select a random character from the random rarity
-      const randomCharacterIndex = crypto.randomInt(0, cardList[randomSeries][randomEdition][rarity].length);
-      const randomCharacter = cardList[randomSeries][randomEdition][rarity][randomCharacterIndex];
+      const characterIndex = crypto.randomInt(0, cardList[series][set][rarity].length);
+      // console.log(`Selected character index: ${characterIndex}`);
 
-      this.cardModels.push(`Random series: ${randomSeries}\n` + `Random edition: ${randomEdition}\n` + `Random rarity: ${rarity}\n` + `Random character: ${randomCharacter}\n\n`);
+      // Ensure characterIndex is within the bounds
+      const characterArray = cardList[series][set][rarity];
+      // if (characterIndex < 0 || characterIndex >= characterArray.length) {
+      //   console.error("Character index out of bounds");
+      //   continue;
+      // }
+
+      const character = characterArray[characterIndex];
+      // console.log(`Selected character: ${character}`);
 
       // Generate card code
-      // const code = await this.codeGenerator.generateCode();
+      const code = await this.cg.getNewCode();
 
-      // Create card model
-      // const card = new (CardModel(this.client))({
-      //   code: code,
-      // });
+      // Create card data
+      const card = {
+        code: code,
+        series: series,
+        set: set,
+        rarity: rarity,
+        character: character,
+        ownerID: this.userID,
+        pulledID: this.userID,
+        guildID: this.guildID,
+        image: "test",
+      };
+      this.cardData.push(card);
 
       // Update pull rarities
       this.pullRarities[rarity]++;
 
       // Update pity
-      // this.updatePity(rarity);
+      this.updatePity(rarity);
     }
-    // await this.saveChanges();
+    await this.saveChanges();
   }
 
   getRarity() {
@@ -102,44 +138,22 @@ class CardGenerator {
     return "C"; // Default to "Common" if no other rarity is selected
   }
 
-  getSeries() {
-    // Pick random series
-    const seriesList = require("../../test/cardListSample");
-    // Get the keys of the object
-    const keys = Object.keys(seriesList);
-    // Get the number of keys
-    const numSeries = keys.length;
-    // Generate a random index
-    const randomIndex = crypto.randomInt(0, numSeries);
-    // Get the random key
-    const randomKey = keys[randomIndex];
-    // Get the value of the random key
-    return seriesList[randomKey];
-  }
+  // Function to get a random index with increasing probability (1-indexed)
+  getSet(length) {
+    // Calculate the total weight sum (1 + 2 + ... + length)
+    const totalWeight = (length * (length + 1)) / 2;
 
-  getSet(series) {
-    // Get the keys of the object
-    const keys = Object.keys(series);
-    // Get the number of keys
-    const numSets = keys.length;
-    // Generate a random index
-    const randomIndex = crypto.randomInt(0, numSets);
-    // Get the random key
-    const randomKey = keys[randomIndex];
-    // Get the value of the random key
-    return series[randomKey];
-  }
+    // Generate a random number between 0 and total weight
+    const randomValue = crypto.randomInt(0, totalWeight);
 
-  getCharacter(set, rarity) {
-    // Get the keys of the object
-    const options = set[rarity];
-    // Get the number of keys
-    const numChars = options.length;
-    // Generate a random index
-    const randomIndex = crypto.randomInt(0, numChars);
-    // Get the random key
-    // Get the value of the random key
-    return set[randomIndex];
+    // Find the index corresponding to the random value (1-indexed)
+    let cumulativeWeight = 0;
+    for (let i = 0; i < length; i++) {
+      cumulativeWeight += i + 1;
+      if (randomValue < cumulativeWeight) {
+        return i + 1; // Return 1-indexed value
+      }
+    }
   }
 
   updatePity(rarity) {
@@ -172,14 +186,34 @@ class CardGenerator {
 
   async saveChanges() {
     // Save pity timers
-    PityModel.findOneAndUpdate(
+    await PityModel(this.client).findOneAndUpdate(
       { userID: this.userID }, // Filter
-      { pity: this.pity } // Update
+      { pity: this.pity }, // Update
+      { upsert: true }
     );
 
-    // Add cards to user's collection
+    // Update stats
+    await StatsModel(this.client).findOneAndUpdate(
+      { userID: this.userID },
+      {
+        $inc: {
+          "totalCardsPulled.C": this.pullRarities["C"],
+          "totalCardsPulled.R": this.pullRarities["R"],
+          "totalCardsPulled.UR": this.pullRarities["UR"],
+          "totalCardsPulled.SR": this.pullRarities["SR"],
+          "totalCardsPulled.SSR": this.pullRarities["SSR"],
+        },
+      },
+      { upsert: true }
+    );
 
     // Add card models to database
+    const cards = this.cardData.map((data) => new (CardModel(this.client))(data));
+    const savedCards = await CardModel(this.client).insertMany(cards);
+
+    // Add cards to user's collection
+    const cardIDs = savedCards.map((card) => card._id);
+    await CollectionModel(this.client).findOneAndUpdate({ userID: this.userID }, { $addToSet: { cardsOwned: { $each: cardIDs } } }, { upsert: true });
   }
 }
 

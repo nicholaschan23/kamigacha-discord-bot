@@ -43,7 +43,7 @@ class ExtendedClient extends Client {
 
     const commands = findCommands(this);
 
-    await this.login(process.env.TOKEN);
+    await this.login(process.env.DISCORD_BOT_TOKEN);
 
     this.once(Events.ClientReady, (client) => {
       registerCommands(client, commands);

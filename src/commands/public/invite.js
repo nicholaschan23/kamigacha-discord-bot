@@ -2,7 +2,6 @@ const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRow
 const config = require("../../config");
 const utils = require("../../utils");
 const logger = new utils.Logger("Invite command");
-const createNewPlayer = require("../../database/mongodb/createNewPlayer");
 
 module.exports = {
   category: "public",
@@ -41,7 +40,6 @@ module.exports = {
           if (i.user.id !== receiver.id) return await i.deferUpdate();
 
           await client.inviteCache.addInvite(interaction.user.id, receiver.id);
-          await createNewPlayer(client, interaction.user.id);
           embed.setColor(config.embedColor.green).setDescription(`${i.user} accepted the invitation!`);
         } else if (i.customId === "rejectInvite") {
           if (i.user.id == receiver.id) {

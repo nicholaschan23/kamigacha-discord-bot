@@ -3,7 +3,7 @@ const utils = require("../../utils");
 const logger = new utils.Logger("MongoDB");
 
 module.exports = async (client) => {
-  const mongoURI = process.env.DATABASE_URI;
+  const mongoURI = process.env.MONGODB_URI;
 
   const createConnection = (uri, dbName) => {
     return new Promise((resolve, reject) => {

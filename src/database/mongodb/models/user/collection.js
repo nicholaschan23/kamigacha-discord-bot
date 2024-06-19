@@ -10,14 +10,23 @@ const cardCollectionSchema = new mongoose.Schema({
   // Privacy settings
   isPrivate: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   // Collection
-  cardCodes: [{
-    type: String,
-    unique: true,
-  }],
+  cardCodes: [
+    {
+      type: String,
+      unique: true,
+    },
+  ],
+
+  cardsOwned: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "card",
+    },
+  ],
 });
 
 module.exports = (client) => {

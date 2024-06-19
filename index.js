@@ -5,7 +5,7 @@ const utils = require("./src/utils");
 const logger = new utils.Logger("Cluster manager");
 
 require("dotenv").config({ path: path.join(__dirname, ".env") });
-assert(process.env.TOKEN, "A Discord bot token is required");
+assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
 
 let isShuttingDown = false;
 process.on("SIGINT", async () => {
@@ -23,7 +23,7 @@ const manager = new ClusterManager("./bot.js", {
   totalShards: "auto",
   shardsPerClusters: 2,
   mode: "process",
-  token: process.env.TOKEN,
+  token: process.env.DISCORD_BOT_TOKEN,
 });
 manager.on("clusterCreate", (cluster) => logger.info(`Launched cluster ${cluster.id}`));
 manager.on("clusterDeath", (cluster) => {

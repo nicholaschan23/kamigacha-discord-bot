@@ -7,7 +7,7 @@ module.exports = async (client, commands) => {
   // Check if there are any commands to register
   if (!commands || commands.length == 0) return logger.warn("No commands to register");
 
-  const rest = new REST().setToken(process.env.TOKEN);
+  const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN);
 
   // Filter commands into developer and public categories
   const developerCommandData = filterCommands("developer");

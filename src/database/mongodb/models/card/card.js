@@ -1,24 +1,65 @@
 const mongoose = require("mongoose");
 
-// Define a schema for storing pity timers
 const cardSchema = new mongoose.Schema({
+  // Unique card code identifier
   code: {
-    type: String, // Unique card code identifier
+    type: String,
     unique: true,
+    required: true,
   },
 
-  character: String, // Name of the character
-  series: String, // Series the card is from
-  set: Number, // Set number the card is from
-  rarity: String, // C, R, UR, SR, SSR
-  
-  image: String, // CDN link
+  // Series the card is from
+  series: {
+    type: String,
+    required: true,
+  },
 
-  owner: String, // Current owner of the card
-  pulled: String, // Who pulled the card
+  // Set number the card is from
+  set: {
+    type: Number,
+    required: true,
+  },
 
-  timestamp: String, // When the card was pulled in Unix time in minutes
-  guild: String, // Which guild this card was pulled in
+  // C, R, UR, SR, SSR
+  rarity: {
+    type: String,
+    required: true,
+  },
+
+  // Name of the character
+  character: {
+    type: String,
+    required: true,
+  },
+
+  // Current owner of the card
+  ownerID: {
+    type: String,
+    required: true,
+  },
+
+  // Who pulled the card
+  pulledID: {
+    type: String,
+  },
+
+  // When the card was pulled in Unix time in seconds
+  unixTimeSeconds: {
+    type: Number,
+    default: () => Math.floor(Date.now() / 1000),
+  },
+
+  // Which guild this card was pulled in
+  guildID: {
+    type: String,
+    required: true,
+  },
+
+  // CDN link to image database
+  image: {
+    type: String,
+    required: true,
+  },
 
   // Cosmetics
   sleeve: String,
