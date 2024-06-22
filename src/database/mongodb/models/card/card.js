@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const CollectionModel = require("./collection");
 
 const cardSchema = new mongoose.Schema({
   // Unique card code identifier
@@ -71,8 +72,6 @@ const cardSchema = new mongoose.Schema({
   sleeve: String,
   frame: String,
 });
-
-// module.exports = cardSchema;
 
 module.exports = (client) => {
   const database = client.cardDB;

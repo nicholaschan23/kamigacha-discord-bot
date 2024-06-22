@@ -127,13 +127,11 @@ class CardGenerator {
     }
 
     // Random pull
-    const randomBuffer = crypto.randomBytes(4);
-    const randomNum = (randomBuffer.readUInt32LE() / 0xffffffff) * 100;
+    const randNum = crypto.randomInt(0, 100);
     let cumulativeChance = 0;
-
     for (const rate of this.rates) {
       cumulativeChance += rate.chance;
-      if (randomNum <= cumulativeChance) {
+      if (randNum <= cumulativeChance) {
         return rate.rarity;
       }
     }

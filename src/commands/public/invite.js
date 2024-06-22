@@ -25,9 +25,10 @@ module.exports = {
 
     // Create message to send
     const embed = new EmbedBuilder().setTitle("Invitation").setDescription(`${receiver}, you've received an invite from ${interaction.user} to play Kami Gacha! Would you like to accept?`);
-    const acceptButton = new ButtonBuilder().setCustomId("acceptInvite").setEmoji("✅").setStyle(ButtonStyle.Secondary);
+    embed.setColor(config.embedColor.yellow);
     const rejectButton = new ButtonBuilder().setCustomId("rejectInvite").setEmoji("❌").setStyle(ButtonStyle.Secondary);
-    const row = new ActionRowBuilder().addComponents(acceptButton, rejectButton);
+    const acceptButton = new ButtonBuilder().setCustomId("acceptInvite").setEmoji("✅").setStyle(ButtonStyle.Secondary);
+    const row = new ActionRowBuilder().addComponents(rejectButton, acceptButton);
 
     // Send message and wait for a response
     const invitationMessage = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
@@ -36,12 +37,7 @@ module.exports = {
     // Handle the button interactions
     collector.on("collect", async (i) => {
       try {
-        if (i.customId === "acceptInvite") {
-          if (i.user.id !== receiver.id) return await i.deferUpdate();
-
-          await client.inviteCache.addInvite(interaction.user.id, receiver.id);
-          embed.setColor(config.embedColor.green).setDescription(`${i.user} accepted the invitation!`);
-        } else if (i.customId === "rejectInvite") {
+        if (i.customId === "rejectInvite") {
           if (i.user.id == receiver.id) {
             embed.setColor(config.embedColor.red).setDescription(`${i.user} rejected the invitation.`);
           } else if (i.user.id == interaction.user.id) {
@@ -49,6 +45,11 @@ module.exports = {
           } else {
             return await i.deferUpdate();
           }
+        } else if (i.customId === "acceptInvite") {
+          if (i.user.id !== receiver.id) return await i.deferUpdate();
+
+          await client.inviteCache.addInvite(interaction.user.id, receiver.id);
+          embed.setColor(config.embedColor.green).setDescription(`${i.user} accepted the invitation!`);
         }
         await i.update({ embeds: [embed], components: [] });
         collector.stop();

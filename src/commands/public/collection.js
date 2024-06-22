@@ -36,7 +36,7 @@ module.exports = {
       };
 
       // Split the list of cards into chunks of 10
-      const cardChunks = chunkArray(collectionDocument.cardsOwned, 10);
+      const cardChunks = chunkArray(collectionDocument.cardsOwned.reverse(), 10);
 
       // Create page embeds
       let pages = [];
