@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 const CardGenerator = require("../../utils/gacha/CardGenerator");
 const viewMultiPullEmbed = require("../../assets/embeds/card/viewMultiPull");
+const config = require("../../config")
 
 module.exports = {
   category: "public",
@@ -9,7 +10,7 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
 
-    const cg = new CardGenerator(client, interaction.user.id, interaction.guild.id);
+    const cg = new CardGenerator(client, interaction.user.id, interaction.guild.id, config.multiPullRate);
     await cg.cardPull(10);
 
     interaction.editReply({ embeds: [viewMultiPullEmbed(cg.cardData)] });

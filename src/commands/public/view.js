@@ -11,7 +11,7 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
-    const code = interaction.options.getString("code");
+    const code = interaction.options.getString("code").toLowercase();
     const data = await CardModel(client).findOne({ code: code });
     if (data) {
       return interaction.editReply({ embeds: [viewCardEmbed(data)] });

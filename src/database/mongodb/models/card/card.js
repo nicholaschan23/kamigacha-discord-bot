@@ -55,6 +55,12 @@ const cardSchema = new mongoose.Schema({
     required: true,
   },
 
+  // How the card was generated
+  generationType: {
+    type: String,
+    required: true,
+  },
+
   // CDN link to image database
   image: {
     type: String,

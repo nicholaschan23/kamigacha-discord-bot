@@ -7,10 +7,11 @@ const PityModel = require("../../database/mongodb/models/user/pity");
 const StatsModel = require("../../database/mongodb/models/user/stats");
 
 class CardGenerator {
-  constructor(client, userID, guildID) {
+  constructor(client, userID, guildID, rates) {
     this.client = client;
     this.userID = userID;
     this.guildID = guildID;
+    this.rates = rates;
     this.cg = new CodeGenerator(client);
 
     // Information to save to database
@@ -96,6 +97,7 @@ class CardGenerator {
         ownerID: this.userID,
         pulledID: this.userID,
         guildID: this.guildID,
+        generationType: numPulls > 1 ? "Multi-Pull" : "Pull",
         image: "test",
       };
       this.cardData.push(card);
@@ -129,10 +131,10 @@ class CardGenerator {
     const randomNum = (randomBuffer.readUInt32LE() / 0xffffffff) * 100;
     let cumulativeChance = 0;
 
-    for (const rarity of config.pullRate) {
-      cumulativeChance += rarity.chance;
+    for (const rate of this.rates) {
+      cumulativeChance += rate.chance;
       if (randomNum <= cumulativeChance) {
-        return rarity.rarity;
+        return rate.rarity;
       }
     }
     return "C"; // Default to "Common" if no other rarity is selected
@@ -211,11 +213,7 @@ class CardGenerator {
 
     // Add cards to user's collection
     const cardObjectIDs = savedCards.map((card) => card._id);
-    await CollectionModel(this.client).findOneAndUpdate(
-      { userID: this.userID }, 
-      { $addToSet: { cardsOwned: { $each: cardObjectIDs } } }, 
-      { upsert: true }
-    );
+    await CollectionModel(this.client).findOneAndUpdate({ userID: this.userID }, { $addToSet: { cardsOwned: { $each: cardObjectIDs } } }, { upsert: true });
   }
 }
 
