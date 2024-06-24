@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
 const config = require("../../config");
-const utils = require("../../utils");
-const logger = new utils.Logger("Invite command");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Invite command");
 
 module.exports = {
   category: "public",
@@ -66,5 +66,3 @@ module.exports = {
     });
   },
 };
-
-function validateReceiver() {}

@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const config = require("../../config");
-const utils = require("../../utils");
-const logger = new utils.Logger("Mod command");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Mod command");
 const ModeratorModel = require("../../database/mongodb/models/global/moderator");
 
 module.exports = {

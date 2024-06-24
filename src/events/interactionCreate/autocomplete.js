@@ -1,10 +1,10 @@
-const utils = require("../../utils");
-const logger = new utils.Logger("Autocomplete Interaction");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Autocomplete Interaction");
 
 module.exports = {
   async call(client, interaction) {
     if (!interaction.isAutocomplete()) return;
-    
+
     const request = client.autocompleteInteractions.get(interaction.commandName);
     if (!request) return;
 

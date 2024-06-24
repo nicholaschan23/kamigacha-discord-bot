@@ -1,5 +1,5 @@
-const utils = require("../../utils");
-const logger = new utils.Logger("Select menu");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Select menu");
 const messages = require("../../assets/messages");
 
 module.exports = {

@@ -16,6 +16,6 @@ module.exports = {
     if (data) {
       return interaction.editReply({ embeds: [viewCardEmbed(data)] });
     }
-    return interaction.editReply({ content: "That card code does not exist.", ephemeral: true });
+    interaction.editReply({ content: "That card code does not exist.", ephemeral: true });
   },
 };

@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const CollectionModel = require("./collection");
 
 const cardSchema = new mongoose.Schema({
   // Unique card code identifier
@@ -60,6 +59,11 @@ const cardSchema = new mongoose.Schema({
   generationType: {
     type: String,
     required: true,
+  },
+
+  tag: {
+    type: String,
+    default: ":black_small_square:",
   },
 
   // CDN link to image database

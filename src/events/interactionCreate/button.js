@@ -1,5 +1,5 @@
-const utils = require("../../utils");
-const logger = new utils.Logger("Button interaction");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Button interaction");
 const messages = require("../../assets/messages");
 
 module.exports = {

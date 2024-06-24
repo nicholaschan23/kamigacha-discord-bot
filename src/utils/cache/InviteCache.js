@@ -1,7 +1,7 @@
 const { Collection } = require("discord.js");
 const InviteModel = require("../../database/mongodb/models/global/invite");
-const utils = require("../../utils");
-const logger = new utils.Logger("Invite cache");
+const Logger = require("../Logger");
+const logger = new Logger("Invite cache");
 
 class InviteCache {
   constructor(client) {

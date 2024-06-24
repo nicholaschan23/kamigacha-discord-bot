@@ -6,7 +6,17 @@ const userSettingsSchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
-  
+
+  // Cooldowns in Unix time seconds
+  cooldownPull: {
+    type: Number,
+    default: 0,
+  },
+  cooldownMultiPull: {
+    type: Number,
+    default: 0,
+  },
+
   // DM reminders
   reminderPull: {
     type: Boolean,

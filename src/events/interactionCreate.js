@@ -1,6 +1,6 @@
 const { Events } = require("discord.js");
-const utils = require("../utils");
-const logger = new utils.Logger("Interaction Create");
+const Logger = require("../utils/Logger");
+const logger = new Logger("Interaction Create");
 const autocomplete = require("./interactionCreate/autocomplete");
 const button = require("./interactionCreate/button");
 const command = require("./interactionCreate/command");

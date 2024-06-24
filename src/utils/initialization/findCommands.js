@@ -1,8 +1,9 @@
 const { SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const utils = require("../../utils");
-const logger = new utils.Logger("Command loader");
+const { getJsFiles, abbrevCmdPath } = require("../fileSystem")
+const Logger = require("../Logger");
+const logger = new Logger("Command loader");
 const commandsPath = path.join(__dirname, "../../commands/");
 
 module.exports = (client) => {
@@ -15,13 +16,13 @@ module.exports = (client) => {
   // Loop through each category to load commands
   commandCategories.forEach((category) => {
     const commandPath = path.join(commandsPath, category);
-    const commandFiles = utils.getJsFiles(commandPath);
+    const commandFiles = getJsFiles(commandPath);
 
     // Loop through each command file in the category
     commandFiles.forEach((file) => {
       const filePath = path.join(commandPath, file);
       const command = require(filePath);
-      const filePathAbbrev = utils.abbrevCmdPath(filePath);
+      const filePathAbbrev = abbrevCmdPath(filePath);
 
       // Validate and register the command
       if (validateCommand(SlashCommandBuilder, command, filePathAbbrev)) {
@@ -60,7 +61,7 @@ module.exports = (client) => {
       return false;
     }
     if (client.commands.has(command.data.name)) {
-      logger.warning(`Two or more commands share the name ${command.data.name}`);
+      logger.warn(`Two or more commands share the name ${command.data.name}`);
       return false;
     }
     return true;
@@ -73,14 +74,14 @@ module.exports = (client) => {
    */
   function loadSubcommandsAndGroups(subcommandPath) {
     if (fs.existsSync(subcommandPath) && fs.statSync(subcommandPath).isDirectory()) {
-      const subcommandFiles = utils.getJsFiles(subcommandPath);
+      const subcommandFiles = getJsFiles(subcommandPath);
 
       // Loop through each subcommand and subcommand group file
       subcommandFiles.forEach((file) => {
         const filePath = path.join(subcommandPath, file);
         const subcommand = require(filePath);
         if (subcommand.data instanceof SlashCommandSubcommandBuilder) {
-          const filePathAbbrev = utils.abbrevCmdPath(filePath);
+          const filePathAbbrev = abbrevCmdPath(filePath);
 
           // Validate and log the subcommand
           if (validateCommand(SlashCommandSubcommandBuilder, subcommand, filePathAbbrev)) {
@@ -100,13 +101,13 @@ module.exports = (client) => {
    */
   function loadGroupSubcommands(subcommandGroupPath) {
     if (fs.existsSync(subcommandGroupPath) && fs.statSync(subcommandGroupPath).isDirectory()) {
-      const subcommandGroupFiles = utils.getJsFiles(subcommandGroupPath);
+      const subcommandGroupFiles = getJsFiles(subcommandGroupPath);
 
       // Loop through each subcommand file of the subgroup
       subcommandGroupFiles.forEach((file) => {
         const filePath = path.join(subcommandGroupPath, file);
         const subcommandGroup = require(filePath);
-        const filePathAbbrev = utils.abbrevCmdPath(filePath);
+        const filePathAbbrev = abbrevCmdPath(filePath);
 
         // Validate and log the subcommand
         if (validateCommand(SlashCommandSubcommandBuilder, subcommandGroup, filePathAbbrev)) {

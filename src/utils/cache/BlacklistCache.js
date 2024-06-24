@@ -1,6 +1,6 @@
 const { Collection } = require("discord.js");
-const utils = require("../../utils");
-const logger = new utils.Logger("Blacklist cache");
+const Logger = require("../Logger");
+const logger = new Logger("Blacklist cache");
 const BlacklistModel = require("../../database/mongodb/models/global/blacklist");
 
 class BlacklistCache {

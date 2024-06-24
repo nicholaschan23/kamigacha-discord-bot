@@ -4,8 +4,8 @@ const CardUpgrader = require("../../utils/gacha/CardUpgrader");
 const upgradePreviewEmbed = require("../../assets/embeds/upgrade/upgradePreview");
 const viewUpgradeEmbed = require("../../assets/embeds/upgrade/viewUpgrade");
 const config = require("../../config");
-const utils = require("../../utils");
-const logger = new utils.Logger("Upgrade command");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Upgrade command");
 
 module.exports = {
   category: "public",
@@ -23,7 +23,7 @@ module.exports = {
 
     // Verify 10 card codes were entered
     if (inputCardCodes.length != 10) {
-      return interaction.editReply({ content: `Please enter exactly 10 card codes separated with spaces or commas. Found ${inputCardCodes.length}.` });
+      return interaction.editReply({ content: `Please enter exactly 10 card codes separated with spaces or commas (found ${inputCardCodes.length}).` });
     }
 
     // Fetch the cards from the database based on the provided card codes
@@ -77,7 +77,7 @@ module.exports = {
     const row = new ActionRowBuilder().addComponents(cancelButton, acceptButton);
 
     // Display upgrade preview and wait for a response
-    const previewMessage = await interaction.editReply({ embeds: [upgradePreviewEmbed(queriedCards, seriesSetFreq, rarityFreq)], components: [row] });
+    const previewMessage = await interaction.editReply({ embeds: [embed], components: [row] });
     const collector = previewMessage.createMessageComponentCollector({ time: 60_000 });
 
     // Handle the button interactions

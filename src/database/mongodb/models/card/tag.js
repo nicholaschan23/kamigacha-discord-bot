@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const collectionTagsSchema = new mongoose.Schema({
+const collectionTagSchema = new mongoose.Schema({
   userID: {
     type: String,
     unique: true,
@@ -13,8 +13,15 @@ const collectionTagsSchema = new mongoose.Schema({
     default: false,
   },
 
-  // Tags for card sets
-  tags: {
+  // Tags for card sets: key = tag name, value = emoji
+  tagList: {
+    type: Map,
+    of: String,
+    default: {},
+  },
+
+  // Cards associate with a tag: key = tag name, value = array of cards with that tag
+  taggedCards: {
     type: Map,
     of: [
       {
@@ -22,11 +29,11 @@ const collectionTagsSchema = new mongoose.Schema({
         ref: "card",
       },
     ],
-    default: {},
+    default: new Map()
   },
 });
 
 module.exports = (client) => {
   const database = client.cardDB;
-  return database.model("collection", collectionTagsSchema);
+  return database.model("collection tag", collectionTagSchema);
 };

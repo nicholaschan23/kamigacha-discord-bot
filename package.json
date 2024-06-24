@@ -26,6 +26,7 @@
     "discord-hybrid-sharding": "^2.2.0",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
+    "emoji-regex": "^10.3.0",
     "mongoose": "^8.4.1"
   }
 }

@@ -1,5 +1,5 @@
-const utils = require("../../utils");
-const logger = new utils.Logger("Modal submit");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Modal submit");
 const messages = require("../../assets/messages");
 
 module.exports = {

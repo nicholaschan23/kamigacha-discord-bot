@@ -8,8 +8,8 @@ const findEvents = require("./findEvents");
 const registerInteractions = require("./registerInteractions");
 const findCommands = require("./findCommands");
 const registerCommands = require("./registerCommands");
-const utils = require("../../utils");
-const logger = new utils.Logger("Client");
+const Logger = require("../Logger");
+const logger = new Logger("Client");
 
 class ExtendedClient extends Client {
   constructor(options) {

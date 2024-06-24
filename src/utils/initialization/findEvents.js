@@ -1,10 +1,11 @@
 const path = require("path");
-const utils = require("../../utils");
-const logger = new utils.Logger("Event loader");
+const Logger = require("../Logger");
+const logger = new Logger("Event loader");
+const { getJsFiles } = require("../fileSystem");
 const eventsPath = path.join(__dirname, "../../events/");
 
 module.exports = (client) => {
-  const events = utils.getJsFiles(eventsPath);
+  const events = getJsFiles(eventsPath);
 
   for (const element of events) {
     const elementLoaded = require(eventsPath + element);

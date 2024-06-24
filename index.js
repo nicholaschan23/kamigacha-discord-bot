@@ -1,8 +1,8 @@
 const { ClusterManager } = require("discord-hybrid-sharding");
 const assert = require("assert");
 const path = require("path");
-const utils = require("./src/utils");
-const logger = new utils.Logger("Cluster manager");
+const Logger = require("./src/utils/Logger");
+const logger = new Logger("Cluster manager");
 
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");

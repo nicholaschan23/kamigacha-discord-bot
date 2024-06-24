@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-const utils = require("../../utils");
-const logger = new utils.Logger("Blacklist command");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Blacklist command");
 const ModeratorModel = require("../../database/mongodb/models/global/moderator");
 
 module.exports = {

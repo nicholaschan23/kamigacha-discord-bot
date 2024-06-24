@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const utils = require("../../utils");
-const logger = new utils.Logger("MongoDB");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("MongoDB");
 const CardModel = require("./models/card/card");
 
 module.exports = async (client) => {

@@ -1,7 +1,8 @@
 const fs = require("fs");
 const path = require("path");
-const utils = require("../../utils")
-const logger = new utils.Logger("Interaction loader");
+const Logger = require("../Logger");
+const logger = new Logger("Interaction loader");
+const { getJsFiles } = require("../fileSystem");
 
 module.exports = (client) => {
   registerAutocompleteInteractions();
@@ -18,7 +19,7 @@ module.exports = (client) => {
     const autocompleteInteractions = fs.readdirSync(autocompletePath);
 
     for (const module of autocompleteInteractions) {
-      const files = utils.getJsFiles(path.join(autocompletePath, module));
+      const files = getJsFiles(path.join(autocompletePath, module));
 
       for (const interactionFile of files) {
         const interaction = require(path.join(autocompletePath, module, interactionFile));
@@ -38,7 +39,7 @@ module.exports = (client) => {
     const buttonInteractions = fs.readdirSync(buttonPath);
 
     for (const module of buttonInteractions) {
-      const files = utils.getJsFiles(path.join(buttonPath, module));
+      const files = getJsFiles(path.join(buttonPath, module));
 
       for (const buttonFile of files) {
         const button = require(path.join(buttonPath, module, buttonFile));
@@ -56,7 +57,7 @@ module.exports = (client) => {
     const modalInteractions = fs.readdirSync(modalPath);
 
     for (const module of modalInteractions) {
-      const files = utils.getJsFiles(path.join(modalPath, module));
+      const files = getJsFiles(path.join(modalPath, module));
 
       for (const modalFile of files) {
         const modal = require(path.join(modalPath, module, modalFile));
@@ -74,7 +75,7 @@ module.exports = (client) => {
     const selectMenus = fs.readdirSync(selectMenusPath);
 
     for (const module of selectMenus) {
-      const files = utils.getJsFiles(path.join(selectMenusPath, module));
+      const files = getJsFiles(path.join(selectMenusPath, module));
 
       for (const selectMenuFile of files) {
         const selectMenu = require(path.join(selectMenusPath, module, selectMenuFile));

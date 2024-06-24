@@ -3,7 +3,6 @@ const CollectionModel = require("../../database/mongodb/models/card/collection")
 const CodeGenerator = require("./CodeGenerator");
 const crypto = require("crypto");
 const config = require("../../config");
-// const mongoose = require("mongoose")
 
 class CardUpgrader {
   constructor(client, guildID, queriedCards, seriesSetFreq, rarityFreq) {
@@ -73,8 +72,8 @@ class CardUpgrader {
       guildID: this.guildID,
       generationType: "Upgrade",
       image: "test",
+      tag: ":black_small_square:",
     };
-
     return card;
   }
 

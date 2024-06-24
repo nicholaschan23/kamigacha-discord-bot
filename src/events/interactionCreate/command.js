@@ -1,7 +1,7 @@
 const { Collection } = require("discord.js");
 const config = require("../../config");
-const utils = require("../../utils");
-const logger = new utils.Logger("Command");
+const Logger = require("../../utils/Logger");
+const logger = new Logger("Command");
 
 module.exports = {
   async call(client, interaction) {
