@@ -61,7 +61,12 @@ const cardSchema = new mongoose.Schema({
     required: true,
   },
 
+  // Collection tags
   tag: {
+    type: String,
+    default: "untagged",
+  },
+  emoji: {
     type: String,
     default: ":black_small_square:",
   },

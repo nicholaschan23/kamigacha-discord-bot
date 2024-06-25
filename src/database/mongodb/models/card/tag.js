@@ -19,18 +19,6 @@ const collectionTagSchema = new mongoose.Schema({
     of: String,
     default: {},
   },
-
-  // Cards associate with a tag: key = tag name, value = array of cards with that tag
-  taggedCards: {
-    type: Map,
-    of: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "card",
-      },
-    ],
-    default: new Map()
-  },
 });
 
 module.exports = (client) => {

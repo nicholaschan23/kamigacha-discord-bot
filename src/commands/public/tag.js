@@ -10,5 +10,7 @@ module.exports = {
     .addStringOption((option) => option.setName("tag").setDescription("Tag name.").setRequired(true))
     .addStringOption((option) => option.setName("codes").setDescription("Cards you want to associate with this tag.").setRequired(true)),
 
-  async execute(client, interaction) {},
+  async execute(client, interaction) {
+    
+  },
 };

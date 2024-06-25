@@ -2,7 +2,7 @@ const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { isValidTag, containsExactlyOneEmoji } = require("../../../utils/gacha/format");
 const TagModel = require("../../../database/mongodb/models/card/tag");
 const Logger = require("../../../utils/Logger");
-const logger = new Logger("Tag create command");
+const logger = new Logger("Tags create command");
 
 module.exports = {
   category: "public/tags",
@@ -27,13 +27,13 @@ module.exports = {
         return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
       }
 
-      const tagDocument = await TagModel(client).findOneAndUpdate(
+      const updatedDocument = await TagModel(client).findOneAndUpdate(
         { userID: interaction.user.id }, // Filter
         { $setOnInsert: { userID: interaction.user.id } }, // Set userID only if inserting a new document
         { new: true, upsert: true } // Options: return the modified document and upsert if it doesn't exist
       );      
 
-      if (tagDocument.tagList.get(tag)) {
+      if (updatedDocument.tagList.get(tag)) {
         return interaction.editReply({ content: `The \`${tag}\` tag already exists.` });
       }
 
@@ -45,7 +45,7 @@ module.exports = {
       interaction.editReply({ content: `Successfully created tag ${emoji} \`${tag}\`!` });
     } catch (error) {
       logger.error(error.stack);
-      interaction.editReply({ content: "Something went wrong. Please try again.", ephemeral: true });
+      interaction.editReply({ content: "There was an issue creating your tag. Please try again." });
     }
   },
 };

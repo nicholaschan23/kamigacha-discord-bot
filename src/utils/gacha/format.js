@@ -14,13 +14,16 @@ function formatCardInfoPage(dataList, showTags = true) {
       const paddedRarity = data.rarity.padEnd(maxRarityLength, " ");
       const paddedSet = `${data.set}`.padEnd(maxSetLength, " ");
 
-      return [`${showTags ? `${data.tag} ` : ""}\`${paddedCode}\``, `\`${paddedRarity}\``, `\`◈${paddedSet}\``, `*${data.series}*`, `**${data.character}**`].join(" · ");
+      return [`${showTags ? `${data.emoji} ` : ""}\`${paddedCode}\``, `\`${paddedRarity}\``, `\`◈${paddedSet}\``, `*${data.series}*`, `**${data.character}**`].join(" · ");
     })
     .join("\n");
 }
 
 // Check if string containing only letters, numbers, dashes, or underscores
 function isValidTag(input) {
+  if (input === "untagged") { // Reserved tag for untagged cards
+    return false;
+  }
   const regex = /^[a-z0-9_-]+$/;
   return regex.test(input);
 }
