@@ -64,7 +64,7 @@ const cardSchema = new mongoose.Schema({
   // Collection tags
   tag: {
     type: String,
-    default: "untagged",
+    default: "untag",
   },
   emoji: {
     type: String,

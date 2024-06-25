@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { isValidTag } = require("../../../utils/gacha/format");
-const TagModel = require("../../../database/mongodb/models/card/tag");
+const TagModel = require("../../../database/mongodb/models/user/tag");
 const CardModel = require("../../../database/mongodb/models/card/card");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Tags delete command");

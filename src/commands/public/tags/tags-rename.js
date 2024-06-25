@@ -1,7 +1,7 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { isValidTag } = require("../../../utils/gacha/format");
 const CardModel = require("../../../database/mongodb/models/card/card");
-const TagModel = require("../../../database/mongodb/models/card/tag");
+const TagModel = require("../../../database/mongodb/models/user/tag");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Tags emoji command");
 
@@ -29,8 +29,8 @@ module.exports = {
       const tagDocument = await TagModel(client).findOne(
         { userID: interaction.user.id } // Filter
       );
-      const emoji = tagDocument.tagList.get(oldTag);
-      if (!emoji) {
+      const tagSchema = tagDocument.tagList.get(oldTag);
+      if (!tagSchema) {
         return interaction.editReply({ content: "That tag does not exist." });
       }
 
@@ -39,7 +39,7 @@ module.exports = {
         {
           // Update operation
           $unset: { [`tagList.${oldTag}`]: "" },
-          $set: { [`tagList.${newTag}`]: `${emoji}` },
+          $set: { [`tagList.${newTag}`]: tagSchema },
         },
         { new: true }
       );

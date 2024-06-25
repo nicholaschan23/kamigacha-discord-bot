@@ -19,6 +19,22 @@ function formatCardInfoPage(dataList, showTags = true) {
     .join("\n");
 }
 
+/**
+ * Formats the tag information from a Map into a specific structure.
+ *
+ * @param {Map} tagList - A Map where keys are tag names and values are objects with emoji and quantity properties.
+ * @returns {String} - Formatted tag info for display.
+ */
+function formatTagListPage(tagList) {
+  const formattedTags = [];
+
+  for (const [tagKey, tagValue] of tagList) {
+    formattedTags.push([`${tagValue.emoji} \`${tagKey}\``, `**${tagValue.quantity}** card${tagValue.quantity == 1 ? "" : "s"}`].join(" · "));
+  }
+
+  return formattedTags.join("\n");
+}
+
 // Check if string containing only letters and numbers
 // function isValidCode(input) {
 //   const regex = /^[a-z0-9]+$/;
@@ -27,9 +43,11 @@ function formatCardInfoPage(dataList, showTags = true) {
 
 // Check if string containing only letters, numbers, dashes, or underscores
 function isValidTag(input) {
-  if (input === "untagged") { // Reserved tag for untagged cards
+  // Reserved tag for untagged cards
+  if (input === "untag") {
     return false;
   }
+
   const regex = /^[a-z0-9_-]+$/;
   return regex.test(input);
 }
@@ -42,10 +60,21 @@ function containsExactlyOneEmoji(input) {
   return match && match.length === 1 && match[0] === input;
 }
 
+// Split the list of cards into chunks
+const chunkArray = (array, chunkSize) => {
+  const result = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    result.push(array.slice(i, i + chunkSize));
+  }
+  return result;
+};
+
 module.exports = {
   formatCardInfo,
   formatCardInfoPage,
+  formatTagListPage,
   // isValidCode,
   isValidTag,
   containsExactlyOneEmoji,
+  chunkArray,
 };

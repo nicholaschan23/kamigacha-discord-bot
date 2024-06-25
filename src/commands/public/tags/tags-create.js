@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { isValidTag, containsExactlyOneEmoji } = require("../../../utils/gacha/format");
-const TagModel = require("../../../database/mongodb/models/card/tag");
+const TagModel = require("../../../database/mongodb/models/user/tag");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Tags create command");
 
@@ -38,7 +38,7 @@ module.exports = {
 
       await TagModel(client).findOneAndUpdate(
         { userID: interaction.user.id }, // Filter
-        { $set: { [`tagList.${tag}`]: emoji } } // Update operation
+        { $set: { [`tagList.${tag}`]: { emoji: emoji } } } // Update operation
       );
 
       interaction.editReply({ content: `Successfully created tag ${emoji} \`${tag}\`!` });

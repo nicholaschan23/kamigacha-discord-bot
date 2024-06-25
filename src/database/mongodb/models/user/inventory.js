@@ -18,7 +18,7 @@ const inventorySchema = new mongoose.Schema({
   inventory: {
     type: Map,
     of: item,
-    default: new Map(),
+    default: {},
   },
 });
 
