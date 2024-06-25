@@ -19,6 +19,12 @@ function formatCardInfoPage(dataList, showTags = true) {
     .join("\n");
 }
 
+// Check if string containing only letters and numbers
+// function isValidCode(input) {
+//   const regex = /^[a-z0-9]+$/;
+//   return regex.test(input);
+// }
+
 // Check if string containing only letters, numbers, dashes, or underscores
 function isValidTag(input) {
   if (input === "untagged") { // Reserved tag for untagged cards
@@ -39,6 +45,7 @@ function containsExactlyOneEmoji(input) {
 module.exports = {
   formatCardInfo,
   formatCardInfoPage,
+  // isValidCode,
   isValidTag,
   containsExactlyOneEmoji,
 };

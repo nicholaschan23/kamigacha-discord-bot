@@ -89,7 +89,7 @@ class CardGenerator {
         guildID: this.guildID,
         generationType: numPulls > 1 ? "Multi-Pull" : "Pull",
         image: "test",
-        tag: ":black_small_square:",
+        emoji: ":black_small_square:",
       };
       this.cardData.push(card);
 

@@ -23,7 +23,7 @@ module.exports = {
 
     // Verify 10 card codes were entered
     if (inputCardCodes.length != 10) {
-      return interaction.editReply({ content: `Please enter exactly 10 card codes separated with spaces or commas (found ${inputCardCodes.length}).` });
+      return interaction.editReply({ content: `Please enter exactly 10 card codes separated with spaces or commas (entered ${inputCardCodes.length}).` });
     }
 
     // Fetch the cards from the database based on the provided card codes

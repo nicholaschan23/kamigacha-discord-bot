@@ -14,24 +14,23 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
+    const tag = interaction.options.getString("tag").toLowerCase();
+    const emoji = interaction.options.getString("emoji");
+
+    if (!isValidTag(tag)) {
+      return interaction.editReply({ content: `Please input a valid tag. It can only contain letters, numbers, dashes, or underscores.` });
+    }
+
+    if (!containsExactlyOneEmoji(emoji)) {
+      return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+    }
 
     try {
-      const tag = interaction.options.getString("tag").toLowerCase();
-      const emoji = interaction.options.getString("emoji");
-
-      if (!isValidTag(tag)) {
-        return interaction.editReply({ content: `Please input a valid tag. It can only contain letters, numbers, dashes, or underscores.` });
-      }
-
-      if (!containsExactlyOneEmoji(emoji)) {
-        return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
-      }
-
       const updatedDocument = await TagModel(client).findOneAndUpdate(
         { userID: interaction.user.id }, // Filter
         { $setOnInsert: { userID: interaction.user.id } }, // Set userID only if inserting a new document
         { new: true, upsert: true } // Options: return the modified document and upsert if it doesn't exist
-      );      
+      );
 
       if (updatedDocument.tagList.get(tag)) {
         return interaction.editReply({ content: `The \`${tag}\` tag already exists.` });
