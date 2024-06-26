@@ -1,7 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
-const { formatCardInfoPage, chunkArray } = require("../../utils/gacha/format");
-const ButtonPages = require("../../utils/pages/ButtonPages");
+const CollectionButtonPages = require("../../utils/pages/CollectionButtonPages");
 
 module.exports = {
   category: "public",
@@ -25,20 +24,7 @@ module.exports = {
         return interaction.reply({ content: "That player's collection is private.", ephemeral: true });
       }
 
-      // Split the list of cards into chunks of 10
-      const cardChunks = chunkArray(collectionDocument.cardsOwned.reverse(), 10);
-
-      // Create page embeds
-      let pages = [];
-      for (let i = 0; i < cardChunks.length; i++) {
-        const embed = new EmbedBuilder()
-          .setTitle(`Card Collection`)
-          .setDescription(`Cards owned by ${user}\n\n` + formatCardInfoPage(cardChunks[i]))
-          .setFooter({ text: `Page ${i + 1}` });
-        pages.push(embed);
-      }
-
-      const bp = new ButtonPages(interaction, pages, collectionDocument.isPrivate);
+      const bp = new CollectionButtonPages(interaction, collectionDocument);
       bp.publishPages();
     } catch (error) {
       console.error("Error fetching user card codes:", error);

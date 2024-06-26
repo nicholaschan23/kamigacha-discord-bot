@@ -35,8 +35,32 @@ module.exports = {
       emoji = tagDocument.tagList.get(tag).emoji;
     }
 
-    // Get card codes
-    const inputString = interaction.options.getString("cards").toLowerCase(); // Default latest card
+    // Retrieve card codes
+    let inputString = interaction.options.getString("cards")?.toLowerCase();
+    if (!inputString) {
+      // Retrieve latest card in collection
+      try {
+        const collectionDocument = await CollectionModel(client).findOne(
+          { userId: interaction.user.id },
+          { cardsOwned: { $slice: -1 } } // Only retrieve the first element in the cardsOwned array
+        );
+
+        const cardId = collectionDocument?.cardsOwned[0];
+        if (!cardId) {
+          return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+        }
+
+        const cardDocument = await CardModel(client).findById(cardId);
+        if (!cardDocument) {
+          return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+        }
+
+        inputString = cardDocument.code;
+      } catch (error) {
+        return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+      }
+    }
+
     const inputCardCodes = inputString.split(/[\s,]+/).filter((code) => code);
     if (inputCardCodes.length > 50) {
       return interaction.editReply({ content: `You can only tag up to 50 cards at a time (entered ${inputCardCodes.length}).` });
