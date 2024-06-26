@@ -1,7 +1,7 @@
 module.exports = {
   developer: {
-    userID: "195592343771021312",
-    guildID: "1036473558144127039",
+    userId: "195592343771021312",
+    guildId: "1036473558144127039",
   },
 
   // Debug mode for console log

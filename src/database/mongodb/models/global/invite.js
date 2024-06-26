@@ -2,13 +2,13 @@ const mongoose = require("mongoose");
 
 const inviteSchema = new mongoose.Schema({
   // Who sent the invite
-  senderUserID: {
+  senderUserId: {
     type: String,
     required: true,
   },
 
   // Who received the invite
-  receiverUserID: {
+  receiverUserId: {
     type: String,
     unique: true,
     required: true,

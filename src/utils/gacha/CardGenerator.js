@@ -7,10 +7,10 @@ const PityModel = require("../../database/mongodb/models/user/pity");
 const StatsModel = require("../../database/mongodb/models/user/stats");
 
 class CardGenerator {
-  constructor(client, userID, guildID, rates) {
+  constructor(client, userId, guildId, rates) {
     this.client = client;
-    this.userID = userID;
-    this.guildID = guildID;
+    this.userId = userId;
+    this.guildId = guildId;
     this.rates = rates;
     this.cg = new CodeGenerator(client);
 
@@ -84,9 +84,9 @@ class CardGenerator {
         set: set,
         rarity: rarity,
         character: character,
-        ownerID: this.userID,
-        pulledID: this.userID,
-        guildID: this.guildID,
+        ownerId: this.userId,
+        pulledId: this.userId,
+        guildId: this.guildId,
         generationType: numPulls > 1 ? "Multi-Pull" : "Pull",
         image: "test",
         emoji: ":black_small_square:",
@@ -103,7 +103,7 @@ class CardGenerator {
   }
 
   async fetchPity() {
-    const userDocument = await PityModel(this.client).findOne({ userID: this.userID });
+    const userDocument = await PityModel(this.client).findOne({ userId: this.userId });
     if (userDocument) {
       this.pity.UR = userDocument.UR;
       this.pity.SR = userDocument.SR;
@@ -187,7 +187,7 @@ class CardGenerator {
   async saveChanges() {
     // Save pity timers
     await PityModel(this.client).findOneAndUpdate(
-      { userID: this.userID }, // Filter
+      { userId: this.userId }, // Filter
       {
         UR: this.pity.UR,
         SR: this.pity.SR,
@@ -198,7 +198,7 @@ class CardGenerator {
 
     // Update stats
     await StatsModel(this.client).findOneAndUpdate(
-      { userID: this.userID },
+      { userId: this.userId },
       {
         $inc: {
           "totalCardsPulled.C": this.pullRarities["C"],
@@ -216,10 +216,10 @@ class CardGenerator {
     const savedCards = await CardModel(this.client).insertMany(cards);
 
     // Add cards to user's collection
-    const cardObjectIDs = savedCards.map((card) => card._id);
+    const cardObjectIds = savedCards.map((card) => card._id);
     await CollectionModel(this.client).findOneAndUpdate(
-      { userID: this.userID }, // Filter
-      { $addToSet: { cardsOwned: { $each: cardObjectIDs } } },
+      { userId: this.userId }, // Filter
+      { $addToSet: { cardsOwned: { $each: cardObjectIds } } },
       { upsert: true }
     );
   }

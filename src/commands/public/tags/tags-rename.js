@@ -27,7 +27,7 @@ module.exports = {
 
     try {
       const tagDocument = await TagModel(client).findOne(
-        { userID: interaction.user.id } // Filter
+        { userId: interaction.user.id } // Filter
       );
       const tagSchema = tagDocument.tagList.get(oldTag);
       if (!tagSchema) {
@@ -35,7 +35,7 @@ module.exports = {
       }
 
       const updatedTagDocument = await TagModel(client).findOneAndUpdate(
-        { userID: interaction.user.id }, // Filter
+        { userId: interaction.user.id }, // Filter
         {
           // Update operation
           $unset: { [`tagList.${oldTag}`]: "" },
@@ -46,7 +46,7 @@ module.exports = {
 
       // Update cards with the associated old tag with the new tag
       await CardModel(client).updateMany(
-        { userID: interaction.user.id, tag: oldTag }, // Filter
+        { userId: interaction.user.id, tag: oldTag }, // Filter
         { $set: { tag: newTag } } // Update operation
       );
 

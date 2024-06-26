@@ -13,12 +13,12 @@ module.exports = {
 
   async execute(client, interaction) {
     const blacklistUser = interaction.options.getUser("user");
-    const blacklistUserID = blacklistUser.id;
-    const moderatorUserID = interaction.user.id;
+    const blacklistUserId = blacklistUser.id;
+    const moderatorUserId = interaction.user.id;
     const reason = interaction.options.getString("reason");
 
     // Must be moderator to use this command
-    const userIsMod = await ModeratorModel(client).findOne({ userID: moderatorUserID });
+    const userIsMod = await ModeratorModel(client).findOne({ userId: moderatorUserId });
     if (!userIsMod) {
       return await interaction.reply({ content: `You do not have access to this command.`, ephemeral: true });
     }
@@ -29,7 +29,7 @@ module.exports = {
     }
 
     // You can't blacklist moderators
-    const blacklistUserIsMod = await ModeratorModel(client).findOne({ userID: blacklistUser.id });
+    const blacklistUserIsMod = await ModeratorModel(client).findOne({ userId: blacklistUser.id });
     if (blacklistUserIsMod) {
       return await interaction.reply({ content: `That user cannot be blacklisted.`, ephemeral: true });
     }
@@ -46,7 +46,7 @@ module.exports = {
 
     // Blacklist the user
     try {
-      await client.blacklistCache.addToBlacklist(blacklistUserID, moderatorUserID, reason);
+      await client.blacklistCache.addToBlacklist(blacklistUserId, moderatorUserId, reason);
       return interaction.reply({ content: `${blacklistUser} has been blacklisted. Reason: ${reason}`, allowedMentions: { parse: [] } });
     } catch (error) {
       logger.error(error);

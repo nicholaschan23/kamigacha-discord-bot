@@ -2,14 +2,14 @@ const mongoose = require("mongoose");
 
 const blacklistSchema = new mongoose.Schema({
   // Who is blacklisted
-  blacklistUserID: {
+  blacklistUserId: {
     type: String,
     unique: true,
     required: true,
   },
 
   // Who blacklisted the user
-  moderatorUserID: {
+  moderatorUserId: {
     type: String,
     required: true,
   },
@@ -21,7 +21,7 @@ const blacklistSchema = new mongoose.Schema({
   },
 
   // When user was blacklisted
-  unixTimeSeconds: { 
+  unixTimeSeconds: {
     type: Number,
     default: () => Math.floor(Date.now() / 1000),
   },

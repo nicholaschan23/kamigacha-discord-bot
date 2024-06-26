@@ -33,13 +33,13 @@ const cardSchema = new mongoose.Schema({
   },
 
   // Current owner of the card
-  ownerID: {
+  ownerId: {
     type: String,
     required: true,
   },
 
   // Who pulled the card
-  pulledID: {
+  pulledId: {
     type: String,
   },
 
@@ -50,7 +50,7 @@ const cardSchema = new mongoose.Schema({
   },
 
   // Which guild this card was pulled in
-  guildID: {
+  guildId: {
     type: String,
     required: true,
   },

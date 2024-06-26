@@ -16,19 +16,19 @@ module.exports = {
     const user = interaction.options.getUser("user");
 
     // Only the developer can use this command
-    if (config.developer.userID && interaction.user.id !== config.developer.userID) {
+    if (config.developer.userId && interaction.user.id !== config.developer.userId) {
       return await interaction.reply({ content: `You do not have access to this command.`, ephemeral: true });
     }
 
     // Check if the user is already a moderator
-    const userIsMod = await ModeratorModel(client).findOne({ userID: user.id });
+    const userIsMod = await ModeratorModel(client).findOne({ userId: user.id });
     if (userIsMod) {
       return await interaction.reply({ content: `This user is already a moderator.`, ephemeral: true });
     }
 
     // Promote the user to moderator
     try {
-      const newModerator = new (ModeratorModel(client))({ userID: user.id });
+      const newModerator = new (ModeratorModel(client))({ userId: user.id });
       await newModerator.save();
       return interaction.reply({ content: `${user} has been promoted to moderator.`, allowedMentions: { parse: [] } });
     } catch (error) {

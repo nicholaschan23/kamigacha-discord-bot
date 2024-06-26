@@ -14,8 +14,8 @@ class InviteCache {
   async initialize() {
     const allInvites = await InviteModel(this.client).find({});
     allInvites.forEach((invite) => {
-      this.invites.set(invite.receiverUserID, {
-        senderUserID: invite.senderUserID,
+      this.invites.set(invite.receiverUserId, {
+        senderUserId: invite.senderUserId,
         unixTimeSeconds: invite.unixTimeSeconds,
       });
     });
@@ -23,37 +23,37 @@ class InviteCache {
   }
 
   // Check if a user is invited
-  isInvited(userID) {
-    return this.invites.has(userID);
+  isInvited(userId) {
+    return this.invites.has(userId);
   }
 
   // Get the sender of the invite
-  getSender(userID) {
-    const invite = this.invites.get(userID);
-    return invite ? invite.senderUserID : null;
+  getSender(userId) {
+    const invite = this.invites.get(userId);
+    return invite ? invite.senderUserId : null;
   }
 
   // Add a new invite to the database and cache
-  async addInvite(senderUserID, receiverUserID) {
+  async addInvite(senderUserId, receiverUserId) {
     const newInvite = new (InviteModel(this.client))({
-      senderUserID,
-      receiverUserID,
+      senderUserId,
+      receiverUserId,
     });
     await newInvite.save();
 
     const data = {
-      senderUserID,
+      senderUserId,
       unixTimeSeconds: newInvite.unixTimeSeconds,
     };
-    this.invites.set(receiverUserID, data);
-    await this.broadcastUpdate("addInvite", receiverUserID, data);
+    this.invites.set(receiverUserId, data);
+    await this.broadcastUpdate("addInvite", receiverUserId, data);
   }
 
   // Remove an invite from the database and cache
-  async removeInvite(receiverUserID) {
-    await InviteModel(this.client).deleteOne({ receiverUserID });
-    this.invites.delete(receiverUserID);
-    await this.broadcastUpdate("removeInvite", receiverUserID);
+  async removeInvite(receiverUserId) {
+    await InviteModel(this.client).deleteOne({ receiverUserId });
+    this.invites.delete(receiverUserId);
+    await this.broadcastUpdate("removeInvite", receiverUserId);
   }
 
   // Refresh the invite cache from the database
@@ -63,17 +63,17 @@ class InviteCache {
   }
 
   // Broadcast an update to all shards
-  async broadcastUpdate(action, userID, data = null) {
+  async broadcastUpdate(action, userId, data = null) {
     await this.client.cluster.broadcastEval(
-      (client, { action, userID, data }) => {
+      (client, { action, userId, data }) => {
         const inviteCache = client.inviteCache;
         if (action === "addInvite") {
-          inviteCache.invites.set(userID, data);
+          inviteCache.invites.set(userId, data);
         } else if (action === "removeInvite") {
-          inviteCache.invites.delete(userID);
+          inviteCache.invites.delete(userId);
         }
       },
-      { context: { action, userID, data } }
+      { context: { action, userId, data } }
     );
   }
 }

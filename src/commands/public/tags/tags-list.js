@@ -1,7 +1,7 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
 const { formatTagListPage, chunkArray } = require("../../../utils/gacha/format");
-const buttonPages = require("../../../utils/buttonPages");
 const TagModel = require("../../../database/mongodb/models/user/tag");
+const ButtonPages = require("../../../utils/pages/ButtonPages");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Tags create command");
 
@@ -17,7 +17,7 @@ module.exports = {
 
     try {
       const tagDocument = await TagModel(client).findOne(
-        { userID: user.id } // Filter
+        { userId: user.id } // Filter
       );
 
       if (!tagDocument) {
@@ -46,7 +46,8 @@ module.exports = {
         pages.push(embed);
       }
 
-      buttonPages(interaction, pages, tagDocument.isPrivate);
+      const bp = new ButtonPages(interaction, pages, tagDocument.isPrivate);
+      bp.publishPages();
     } catch (error) {
       logger.error(error.stack);
       interaction.reply({ content: "There was an issue viewing those collection tags. Please try again." });

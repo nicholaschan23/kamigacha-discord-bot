@@ -22,7 +22,7 @@ module.exports = {
 
     try {
       const updatedDocument = await TagModel(client).findOneAndUpdate(
-        { userID: interaction.user.id }, // Filter
+        { userId: interaction.user.id }, // Filter
         { $unset: { [`tagList.${tag}`]: "" } },
         { new: true }
       );
@@ -34,7 +34,7 @@ module.exports = {
 
       // Update cards with the associated tag with default untagged values
       await CardModel(client).updateMany(
-        { userID: interaction.user.id, tag: tag }, // Filter
+        { userId: interaction.user.id, tag: tag }, // Filter
         {
           // Update operation
           $set: {

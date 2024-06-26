@@ -9,7 +9,7 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
     const settingsDocument = await SettingsModel(client).findOneAndUpdate(
-      { userID: interaction.user.id }, // Filter
+      { userId: interaction.user.id }, // Filter
       { new: true, upsert: true }
     );
     interaction.editReply({ embeds: [viewCooldownEmbed(settingsDocument)] });

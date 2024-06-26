@@ -27,8 +27,8 @@ module.exports = {
 
     try {
       const updatedDocument = await TagModel(client).findOneAndUpdate(
-        { userID: interaction.user.id }, // Filter
-        { $setOnInsert: { userID: interaction.user.id } }, // Set userID only if inserting a new document
+        { userId: interaction.user.id }, // Filter
+        { $setOnInsert: { userId: interaction.user.id } }, // Set userId only if inserting a new document
         { new: true, upsert: true } // Options: return the modified document and upsert if it doesn't exist
       );
 
@@ -37,7 +37,7 @@ module.exports = {
       }
 
       await TagModel(client).findOneAndUpdate(
-        { userID: interaction.user.id }, // Filter
+        { userId: interaction.user.id }, // Filter
         { $set: { [`tagList.${tag}`]: { emoji: emoji } } } // Update operation
       );
 

@@ -5,10 +5,10 @@ const crypto = require("crypto");
 const config = require("../../config");
 
 class CardUpgrader {
-  constructor(client, guildID, queriedCards, seriesSetFreq, rarityFreq) {
+  constructor(client, guildId, queriedCards, seriesSetFreq, rarityFreq) {
     this.client = client;
-    this.userID = queriedCards[0].ownerID;
-    this.guildID = guildID;
+    this.userId = queriedCards[0].ownerId;
+    this.guildId = guildId;
     this.queriedCards = queriedCards;
     this.queriedCodes = queriedCards.map((card) => card.code);
     this.seriesSetFreq = seriesSetFreq;
@@ -19,15 +19,15 @@ class CardUpgrader {
     // Re-verify ownership of cards
     const cards = await CardModel(this.client).find({
       code: { $in: cardCodes },
-      ownerID: this.userID,
+      ownerId: this.userId,
     });
     if (cards.length !== 10) {
       throw new Error("You no longer own all 10 specified cards. Make sure they stay in your collection during the upgrade process.");
     }
 
     // Remove card references from the user's collection
-    const cardObjectIds = this.queriedCards.map(card => card._id);
-    await CollectionModel(this.client).updateOne({ userID: this.userID }, { $pull: { cardsOwned: { $in: cardObjectIds } } });
+    const cardObjectIds = this.queriedCards.map((card) => card._id);
+    await CollectionModel(this.client).updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardObjectIds } } });
 
     // Delete the cards from existence
     await CardModel(this.client).deleteMany({ code: { $in: cardCodes } });
@@ -45,7 +45,7 @@ class CardUpgrader {
     const createdCard = await CardModel(this.client).create(cardInstance);
 
     // Add the new card to the user's collection
-    await CollectionModel(this.client).updateOne({ userID: this.userID }, { $addToSet: { cardsOwned: createdCard._id } });
+    await CollectionModel(this.client).updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } });
     return cardData;
   }
 
@@ -67,9 +67,9 @@ class CardUpgrader {
       set: set,
       rarity: rarity,
       character: character,
-      ownerID: this.userID,
-      pulledID: this.userID,
-      guildID: this.guildID,
+      ownerId: this.userId,
+      pulledId: this.userId,
+      guildId: this.guildId,
       generationType: "Upgrade",
       image: "test",
       emoji: ":black_small_square:",

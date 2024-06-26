@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const item = require("../../schemas/item");
 
 const inventorySchema = new mongoose.Schema({
-  userID: {
+  userId: {
     type: String,
     unique: true,
     required: true,
@@ -11,7 +11,7 @@ const inventorySchema = new mongoose.Schema({
   // Privacy settings
   isPrivate: {
     type: Boolean,
-    default: false
+    default: false,
   },
 
   // Collection

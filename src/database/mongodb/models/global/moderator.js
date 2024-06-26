@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
 const moderatorSchema = new mongoose.Schema({
-  // Moderator user ID
-  userID: {
+  // Moderator user Id
+  userId: {
     type: String,
     unique: true,
     required: true,

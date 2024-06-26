@@ -14,8 +14,8 @@ class BlacklistCache {
   async initialize() {
     const blacklistedUsers = await BlacklistModel(this.client).find({});
     blacklistedUsers.forEach((user) => {
-      this.blacklist.set(user.blacklistUserID, {
-        moderatorUserID: user.moderatorUserID,
+      this.blacklist.set(user.blacklistUserId, {
+        moderatorUserId: user.moderatorUserId,
         reason: user.reason,
         unixTimeSeconds: user.unixTimeSeconds,
       });
@@ -24,40 +24,40 @@ class BlacklistCache {
   }
 
   // Check if a user is blacklisted
-  isBlacklisted(userID) {
-    return this.blacklist.has(userID);
+  isBlacklisted(userId) {
+    return this.blacklist.has(userId);
   }
 
   // Get the reason a user was blacklisted
-  getReason(userID) {
-    const user = this.blacklist.get(userID);
+  getReason(userId) {
+    const user = this.blacklist.get(userId);
     return user ? user.reason : null;
   }
 
   // Add the blacklisted user to the database and cache then broadcast the update to all shards
-  async addToBlacklist(userID, moderatorUserID, reason) {
+  async addToBlacklist(userId, moderatorUserId, reason) {
     const newUser = new (BlacklistModel(this.client))({
-      blacklistUserID: userID,
-      moderatorUserID: moderatorUserID,
+      blacklistUserId: userId,
+      moderatorUserId: moderatorUserId,
       reason: reason,
     });
     await newUser.save();
 
     const data = {
-      moderatorUserID: moderatorUserID,
+      moderatorUserId: moderatorUserId,
       reason: reason,
       unixTimeSeconds: newUser.unixTimeSeconds,
     };
-    this.blacklist.set(userID, data);
-    await this.broadcastUpdate("addToBlacklist", userID, data);
+    this.blacklist.set(userId, data);
+    await this.broadcastUpdate("addToBlacklist", userId, data);
   }
 
   // Remove a user from the blacklist and broadcast the update to all shards
-  async removeFromBlacklist(userID) {
-    await BlacklistModel(this.client).deleteOne({ blacklistUserID: userID });
-    this.blacklist.delete(userID);
+  async removeFromBlacklist(userId) {
+    await BlacklistModel(this.client).deleteOne({ blacklistUserId: userId });
+    this.blacklist.delete(userId);
 
-    await this.broadcastUpdate("removeFromBlacklist", userID);
+    await this.broadcastUpdate("removeFromBlacklist", userId);
   }
 
   // Refresh the blacklist cache from the database
@@ -67,18 +67,18 @@ class BlacklistCache {
   }
 
   // Broadcast an update to all shards
-  async broadcastUpdate(action, userID, data = null) {
+  async broadcastUpdate(action, userId, data = null) {
     await this.client.cluster.broadcastEval(
       async (client, context) => {
-        const { action, userID, data } = context;
+        const { action, userId, data } = context;
         const blacklistCache = client.blacklistCache;
         if (action === "addToBlacklist") {
-          blacklistCache.blacklist.set(userID, data);
+          blacklistCache.blacklist.set(userId, data);
         } else if (action === "removeFromBlacklist") {
-          blacklistCache.blacklist.delete(userID);
+          blacklistCache.blacklist.delete(userId);
         }
       },
-      { context: { action, userID, data } }
+      { context: { action, userId, data } }
     );
   }
 }

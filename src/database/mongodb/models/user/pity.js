@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const userPitySchema = new mongoose.Schema({
-  userID: {
+  userId: {
     type: String,
     unique: true,
     required: true,

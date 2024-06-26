@@ -27,8 +27,7 @@ module.exports = {
 
       // Check if tag exists
       const tagDocument = await TagModel(client).findOne(
-        // Filter
-        { userID: interaction.user.id }
+        { userId: interaction.user.id } // Filter
       );
       if (!tagDocument.tagList.get(tag)) {
         return interaction.editReply({ content: "That tag does not exist." });
@@ -58,7 +57,7 @@ module.exports = {
       }
 
       // Verify ownership of cards
-      const unownedCodes = queriedCards.filter((card) => card.ownerID !== interaction.user.id).map((card) => card.code);
+      const unownedCodes = queriedCards.filter((card) => card.ownerId !== interaction.user.id).map((card) => card.code);
       if (unownedCodes.length > 0) {
         const formattedCodes = unownedCodes.map((code) => `\`${code}\``).join(", ");
         return interaction.editReply({ content: `The following cards are not owned by you: ${formattedCodes}` });
@@ -89,17 +88,16 @@ module.exports = {
           // Increment the quantity of the new tag
           updateTagQuantity(tag, 1);
         } else {
-          // Increment the quantity of the new tag
-          updateTagQuantity(tag, 1);
-
           // Decrement the quantity of the card's current tag
           updateTagQuantity(card.tag, -1);
+          // Increment the quantity of the new tag
+          updateTagQuantity(tag, 1);
         }
       }
 
       // Update quantity of cards in tags
       await TagModel(client).findOneAndUpdate(
-        { userID: interaction.user.id }, // Filter
+        { userId: interaction.user.id }, // Filter
         { $inc: incOperations } // Update operation
       );
 
@@ -107,7 +105,7 @@ module.exports = {
       await CardModel(client).updateMany(
         {
           // Filter
-          ownerID: interaction.user.id,
+          ownerId: interaction.user.id,
           code: { $in: inputCardCodes },
         },
         {

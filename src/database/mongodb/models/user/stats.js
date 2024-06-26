@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const totalCardsPulledSchema = require("../../schemas/totalCardsPulled");
 
 const userStatsSchema = new mongoose.Schema({
-  userID: {
+  userId: {
     type: String,
     unique: true,
     required: true,

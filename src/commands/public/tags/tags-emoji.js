@@ -28,21 +28,21 @@ module.exports = {
 
     try {
       const tagDocument = await TagModel(client).findOne(
-        { userID: interaction.user.id } // Filter
+        { userId: interaction.user.id } // Filter
       );
       if (!tagDocument.tagList.get(tag)) {
         return interaction.editReply({ content: "That tag does not exist." });
       }
 
       const updatedDocument = await TagModel(client).findOneAndUpdate(
-        { userID: interaction.user.id }, // Filter
+        { userId: interaction.user.id }, // Filter
         { $set: { [`tagList.${tag}`]: { emoji: emoji } } },
         { new: true }
       );
 
       // Update cards with the associated tag with the new emoji
       await CardModel(client).updateMany(
-        { userID: interaction.user.id, tag: tag }, // Filter
+        { userId: interaction.user.id, tag: tag }, // Filter
         { $set: { emoji: emoji } } // Update operation
       );
 

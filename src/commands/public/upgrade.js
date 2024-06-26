@@ -40,7 +40,7 @@ module.exports = {
     }
 
     // Verify ownership of cards
-    const unownedCodes = queriedCards.filter((card) => card.ownerID !== interaction.user.id).map((card) => card.code);
+    const unownedCodes = queriedCards.filter((card) => card.ownerId !== interaction.user.id).map((card) => card.code);
     if (unownedCodes.length > 0) {
       const formattedCodes = unownedCodes.map((code) => `\`${code}\``).join(", ");
       return interaction.editReply({ content: `The following cards are not owned by you: ${formattedCodes}` });

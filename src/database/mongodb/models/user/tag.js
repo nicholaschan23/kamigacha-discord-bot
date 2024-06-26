@@ -13,7 +13,7 @@ const tagSchema = new mongoose.Schema({
 });
 
 const collectionTagSchema = new mongoose.Schema({
-  userID: {
+  userId: {
     type: String,
     unique: true,
     required: true,

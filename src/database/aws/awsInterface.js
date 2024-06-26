@@ -1,9 +1,9 @@
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  accessKeyId: process.env.AWS_ACCESS_KEY_Id,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION
+  region: process.env.AWS_REGION,
 });
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
@@ -16,15 +16,15 @@ const CLOUDFRONT_URL = process.env.CLOUDFRONT_URL;
 async function listImages() {
   const params = {
     Bucket: BUCKET_NAME,
-    Prefix: 'your-directory-path/' // Optional: specify if you have a specific directory
+    Prefix: "your-directory-path/", // Optional: specify if you have a specific directory
   };
 
   try {
     const data = await s3.listObjectsV2(params).promise();
-    const imageKeys = data.Contents.map(item => item.Key);
+    const imageKeys = data.Contents.map((item) => item.Key);
     return imageKeys;
   } catch (err) {
-    console.error('Error fetching images from S3:', err);
+    console.error("Error fetching images from S3:", err);
     return [];
   }
 }
@@ -40,5 +40,5 @@ function getCloudFrontUrl(key) {
 
 module.exports = {
   listImages,
-  getCloudFrontUrl
+  getCloudFrontUrl,
 };

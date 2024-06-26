@@ -23,7 +23,7 @@ module.exports = async (client, commands) => {
 
     // Register developer commands to the developer guild
     logger.info(`Registering ${developerCommandData.length} developer command${developerCommandData.length > 1 ? "s" : ""} to the Discord API...`);
-    const developer_data = await rest.put(Routes.applicationGuildCommands(client.user.id, config.developer.guildID), {
+    const developer_data = await rest.put(Routes.applicationGuildCommands(client.user.id, config.developer.guildId), {
       body: developerCommandData,
     });
     logger.success(`Successfully registered ${developer_data.length} developer application (/) command${developer_data.length > 1 ? "s" : ""}`);
