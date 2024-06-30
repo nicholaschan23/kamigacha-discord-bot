@@ -1,75 +1,136 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
 const { formatCardInfoPage, chunkArray } = require("../gacha/format");
+const { parseFilterString, applyFilters } = require("../gacha/filter");
 
 class CollectionButtonPages extends ButtonPages {
-  constructor(interaction, collectionDocument) {
+  constructor(interaction, collectionDocument, filterString) {
     super(interaction, [], collectionDocument.isPrivate);
-    this.user = interaction.user;
-    this.cardList = collectionDocument.cardsOwned;
+    this.interaction = interaction;
+    this.collectionDocument = collectionDocument;
+    this.filterString = filterString;
 
-    // Split the list of cards into chunks of 10
-    this.cardChunks = chunkArray(this.cardList.reverse(), 10);
-
-    // Create page embeds
-    this.pages = this.createPages();
+    this.isEnd = false;
+    this.cardList = [...collectionDocument.cardsOwned].reverse();
+    this.updatePages(parseFilterString(filterString));
   }
 
-  createPages() {
+  updatePages(filters) {
+    this.filteredList = applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
+    this.filteredListReversed = null;
+
+    // if (sortBy === "date") {
+    //   this.filteredList = [...this.cardList];
+    //   this.filteredListReversed = [...this.collectionDocument.cardsOwned];
+    // }
+
+    // Split the list of cards into chunks of 10
+    this.cardChunksOriginal = chunkArray(this.filteredList, 10);
+    this.cardChunksReversed = null;
+    this.cardChunks = this.cardChunksOriginal;
+
+    // Create page embeds
+    this.pagesOriginal = this.createPages(this.cardChunks);
+    this.pagesReversed = null;
+    this.pages = this.pagesOriginal;
+  }
+
+  /**
+   * Helper function to create embeds for each page.
+   *
+   * @param {Array<Array>} cardDataChunks - An array of arrays, where each inner array contains card data.
+   * @returns {Array<EmbedBuilder>} An array of embed pages.
+   */
+  createPages(cardDataChunks) {
     const pages = [];
-    for (let i = 0; i < this.cardChunks.length; i++) {
+    if (cardDataChunks.length == 0) {
       const embed = new EmbedBuilder()
         .setTitle(`Card Collection`)
-        .setDescription(`Cards owned by ${this.user}\n\n` + formatCardInfoPage(this.cardChunks[i]))
-        .setFooter({ text: `Page ${i + 1}` });
+        .setDescription(`Cards owned by ${this.interaction.user}\n\n` + "No cards found with that filter.")
+        .setFooter({ text: `Showing cards 0-0 (${this.cardList.length.toLocaleString()} total)` });
+      pages.push(embed);
+    }
+
+    for (let i = 0; i < cardDataChunks.length; i++) {
+      const embed = new EmbedBuilder()
+        .setTitle(`Card Collection`)
+        .setDescription(`Cards owned by ${this.interaction.user}\n\n` + formatCardInfoPage(cardDataChunks[i]))
+        .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + this.cardChunks[i].length).toLocaleString()} (${this.cardList.length.toLocaleString()} total)` });
       pages.push(embed);
     }
     return pages;
   }
 
   addComponents() {
+    // Button row
+    const ends = new ButtonBuilder().setCustomId("toggleEnds").setEmoji("↔️").setStyle(ButtonStyle.Secondary);
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const clipboard = new ButtonBuilder().setCustomId("copyClipboard").setEmoji("📋").setStyle(ButtonStyle.Secondary);
-    const row = new ActionRowBuilder().addComponents(prev, next, clipboard);
-    this.buttons["viewPrev"] = prev;
-    this.buttons["viewNext"] = next;
-    this.buttons["copyClipboard"] = clipboard;
-    this.components.push(row);
+    const save = new ButtonBuilder().setCustomId("saveFilter").setEmoji("💾").setStyle(ButtonStyle.Secondary);
+    this.components["toggleEnds"] = ends;
+    this.components["viewPrev"] = prev;
+    this.components["viewNext"] = next;
+    this.components["copyClipboard"] = clipboard;
+    this.components["saveFilter"] = save;
+    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard, save);
+    this.messageComponents.push(buttonRow);
+
+    // Select menu row
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId("collectionFilters")
+      .setPlaceholder("Choose an option")
+      .addOptions([
+        { label: "Option 1", value: "option1" },
+        { label: "Option 2", value: "option2" },
+      ]);
+    const selectRow = new ActionRowBuilder().addComponents(selectMenu);
+    this.messageComponents.push(selectRow);
   }
 
   async handleCollect(i) {
-    // Only listen to the user who started interaction
-    if (this.interaction.user.id !== i.user.id) {
-      return await i.deferUpdate();
-    }
-
     await i.deferUpdate();
 
-    // Handle previous and next page buttons
-    if (i.customId === "viewPrev" || i.customId === "viewNext") {
-      if (i.customId === "viewPrev" && this.index > 0) this.index--;
-      if (i.customId === "viewNext" && this.index < this.pages.length - 1) this.index++;
+    // Handle page buttons page buttons
+    if (i.customId === "viewPrev" || i.customId === "viewNext" || i.customId === "toggleEnds") {
+      if (i.customId === "viewPrev" && this.index > 0) {
+        this.index--;
+      } else if (i.customId === "viewNext" && this.index < this.pages.length - 1) {
+        this.index++;
+      } else if (i.customId === "toggleEnds") {
+        if (!this.isEnd) {
+          this.index = this.pages.length - 1;
+        } else {
+          this.index = 0;
+        }
+        this.isEnd = !this.isEnd;
+      }
 
-      const prev = this.buttons["viewPrev"];
-      const next = this.buttons["viewNext"];
+      // Update disabled states of previous and next buttons
+      const prev = this.components["viewPrev"];
+      const next = this.components["viewNext"];
+      if (this.index === 0) {
+        prev.setDisabled(true);
+      } else {
+        prev.setDisabled(false);
+      }
+      if (this.index === this.pages.length - 1) {
+        next.setDisabled(true);
+      } else {
+        next.setDisabled(false);
+      }
 
-      if (this.index === 0) prev.setDisabled(true);
-      else prev.setDisabled(false);
-
-      if (this.index === this.pages.length - 1) next.setDisabled(true);
-      else next.setDisabled(false);
-
+      // Update message
       if (this.ephemeral) {
         await this.interaction.editReply({
           embeds: [this.pages[this.index]],
-          components: this.components,
+          components: this.messageComponents,
           fetchReply: true,
         });
       } else {
         await i.message.edit({
           embeds: [this.pages[this.index]],
-          components: this.components,
+          components: this.messageComponents,
         });
       }
     } else if (i.customId === "copyClipboard") {
@@ -78,9 +139,11 @@ class CollectionButtonPages extends ButtonPages {
         codes.push(cardData.code);
       }
       await this.interaction.followUp(codes.join(", "));
+    } else if (i.customId === "collectionFilters") {
+      const selectedValue = i.values;
+      await this.interaction.followUp(`You selected: ${selectedValue}`);
     }
 
-    // Reset time if any button was pressed
     this.collector.resetTimer();
   }
 }

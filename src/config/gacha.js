@@ -1,4 +1,5 @@
 const rarities = ["C", "R", "UR", "SR", "SSR"];
+const origins = ["Pull", "Multi-Pull", "Upgrade"];
 
 function getNextRarity(currentRarity) {
   const currentIndex = rarities.indexOf(currentRarity);
@@ -8,9 +9,38 @@ function getNextRarity(currentRarity) {
   return rarities[currentIndex + 1];
 }
 
+function getRarityRank(rarity) {
+  switch (rarity) {
+    case "c":
+      return 1;
+    case "r":
+      return 2;
+    case "ur":
+      return 3;
+    case "sr":
+      return 4;
+    case "ssr":
+      return 5;
+    case "C":
+      return 1;
+    case "R":
+      return 2;
+    case "UR":
+      return 3;
+    case "SR":
+      return 4;
+    case "SSR":
+      return 5;
+    default:
+      return -1;
+  }
+}
+
 module.exports = {
   rarities,
+  origins,
   getNextRarity,
+  getRarityRank,
 
   // Rates in percentages
   pullRate: [

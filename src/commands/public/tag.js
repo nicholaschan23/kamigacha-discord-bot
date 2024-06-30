@@ -11,16 +11,16 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("tag")
     .setDescription("Tag cards in your collection.")
-    .addStringOption((option) => option.setName("tag").setDescription("Tag name.").setRequired(true))
-    .addStringOption((option) => option.setName("cards").setDescription("Codes of cards you want to associate with this tag. Omit to tag your latest card.")),
+    .addStringOption((option) => option.setName("tag").setDescription('Name of tag. Use "none" to untag.').setRequired(true))
+    .addStringOption((option) => option.setName("cards").setDescription("Card codes to associate with this tag. Omit to tag your latest card.")),
 
   async execute(client, interaction) {
     await interaction.deferReply();
 
     // Get tag and emoji
     const tag = interaction.options.getString("tag").toLowerCase();
-    let emoji = ":black_small_square:";
-    if (tag !== "untag") {
+    let emoji = "▪️";
+    if (tag !== "none") {
       if (!isValidTag(tag)) {
         return interaction.editReply({ content: "That tag does not exist." });
       }
@@ -105,10 +105,10 @@ module.exports = {
           continue;
         }
 
-        if (tag === "untag") {
+        if (tag === "none") {
           // Decrement the quantity of the card's current tag
           updateTagQuantity(card.tag, -1);
-        } else if (card.tag === "untag") {
+        } else if (card.tag === "none") {
           // Increment the quantity of the new tag
           updateTagQuantity(tag, 1);
         } else {
@@ -142,9 +142,9 @@ module.exports = {
       );
 
       if (inputCardCodes.length > 1) {
-        interaction.editReply({ content: `Successfully ${tag === "untag" ? "untagged" : "tagged"} ${inputCardCodes.length} cards!` });
+        interaction.editReply({ content: `Successfully ${tag === "none" ? "untagged" : "tagged"} ${inputCardCodes.length} cards!` });
       } else {
-        interaction.editReply({ content: `Successfully ${tag === "untag" ? "untagged" : "tagged"} **${queriedCards[0].character}**!` });
+        interaction.editReply({ content: `Successfully ${tag === "none" ? "untagged" : "tagged"} **${queriedCards[0].character}**!` });
       }
     } catch (error) {
       logger.error(error.stack);

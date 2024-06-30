@@ -9,8 +9,8 @@ module.exports = {
   category: "public/tags",
   data: new SlashCommandSubcommandBuilder()
     .setName("list")
-    .setDescription("List a player's collection tags.")
-    .addUserOption((option) => option.setName("user").setDescription("The player's collection tags to view. Omit to view yours.")),
+    .setDescription("View a player's collection tags.")
+    .addUserOption((option) => option.setName("user").setDescription("Player's collection tags to view. Omit to view yours.")),
 
   async execute(client, interaction) {
     const user = interaction.options.getUser("user") || interaction.user;

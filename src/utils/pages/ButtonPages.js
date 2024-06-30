@@ -11,8 +11,9 @@ class ButtonPages {
     this.index = 0;
 
     // Message components
-    this.buttons = {};
-    this.components = [];
+    //  {customId, component}
+    this.components = {};
+    this.messageComponents = [];
     this.collector;
   }
 
@@ -34,12 +35,15 @@ class ButtonPages {
 
     const currentPage = await this.interaction.editReply({
       embeds: [this.pages[this.index]],
-      components: this.components,
+      components: this.messageComponents,
       fetchReply: true,
     });
 
+    // Get all valid customIds from the map
+    const validCustomIds = Object.keys(this.components);
+
     this.collector = await currentPage.createMessageComponentCollector({
-      componentType: ComponentType.Button,
+      filter: (i) => i.user.id === this.interaction.user.id && validCustomIds.includes(i.customId),
       time: 60_000,
     });
 
@@ -53,42 +57,40 @@ class ButtonPages {
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const row = new ActionRowBuilder().addComponents(prev, next);
-    this.buttons["viewPrev"] = prev;
-    this.buttons["viewNext"] = next;
-    this.components.push(row);
+    this.components["viewPrev"] = prev;
+    this.components["viewNext"] = next;
+    this.messageComponents.push(row);
   }
 
   async handleCollect(i) {
-    if (this.interaction.user.id === i.user.id) {
-      if (i.customId === "viewPrev" && this.index > 0) this.index--;
-      if (i.customId === "viewNext" && this.index < this.pages.length - 1) this.index++;
+    if (i.customId === "viewPrev" && this.index > 0) this.index--;
+    if (i.customId === "viewNext" && this.index < this.pages.length - 1) this.index++;
 
-      await i.deferUpdate();
+    await i.deferUpdate();
 
-      const prev = this.buttons["viewPrev"];
-      const next = this.buttons["viewNext"];
+    const prev = this.components["viewPrev"];
+    const next = this.components["viewNext"];
 
-      if (this.index === 0) prev.setDisabled(true);
-      else prev.setDisabled(false);
+    if (this.index === 0) prev.setDisabled(true);
+    else prev.setDisabled(false);
 
-      if (this.index === this.pages.length - 1) next.setDisabled(true);
-      else next.setDisabled(false);
+    if (this.index === this.pages.length - 1) next.setDisabled(true);
+    else next.setDisabled(false);
 
-      if (this.ephemeral) {
-        await this.interaction.editReply({
-          embeds: [this.pages[this.index]],
-          components: this.components,
-          fetchReply: true,
-        });
-      } else {
-        await i.message.edit({
-          embeds: [this.pages[this.index]],
-          components: this.components,
-        });
-      }
-
-      this.collector.resetTimer();
+    if (this.ephemeral) {
+      await this.interaction.editReply({
+        embeds: [this.pages[this.index]],
+        components: this.messageComponents,
+        fetchReply: true,
+      });
+    } else {
+      await i.message.edit({
+        embeds: [this.pages[this.index]],
+        components: this.messageComponents,
+      });
     }
+    
+    this.collector.resetTimer();
   }
 
   async handleEnd(currentPage) {

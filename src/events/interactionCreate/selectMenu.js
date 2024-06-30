@@ -8,10 +8,7 @@ module.exports = {
 
     const command = client.selectMenuInteractions.get(interaction.customId);
     if (!command) {
-      return interaction.reply({
-        content: messages.SELECTMENU_ERROR,
-        ephemeral: true,
-      });
+      return;
     }
 
     try {

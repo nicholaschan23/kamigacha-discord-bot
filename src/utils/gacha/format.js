@@ -44,7 +44,7 @@ function formatTagListPage(tagList) {
 // Check if string containing only letters, numbers, dashes, or underscores
 function isValidTag(input) {
   // Reserved tag for untagged cards
-  if (input === "untag") {
+  if (input === "none") {
     return false;
   }
 

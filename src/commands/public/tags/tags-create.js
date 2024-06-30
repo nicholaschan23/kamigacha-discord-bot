@@ -32,6 +32,10 @@ module.exports = {
         { new: true, upsert: true } // Options: return the modified document and upsert if it doesn't exist
       );
 
+      if (updatedDocument.tagList.size >= updatedDocument.tagLimit) {
+        return interaction.editReply({ content: `You've reached your tag limit of ${updatedDocument.tagLimit}.` });
+      }
+
       if (updatedDocument.tagList.get(tag)) {
         return interaction.editReply({ content: `The \`${tag}\` tag already exists.` });
       }

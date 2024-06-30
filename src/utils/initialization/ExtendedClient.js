@@ -43,13 +43,13 @@ class ExtendedClient extends Client {
 
     const commands = findCommands(this);
 
-    await this.login(process.env.DISCORD_BOT_TOKEN);
-
     this.once(Events.ClientReady, async (client) => {
       await registerCommands(client, commands);
       logger.info(`Bot is ready on cluster ${client.cluster.id}`);
     });
 
+    await this.login(process.env.DISCORD_BOT_TOKEN);
+    
     // Handle shutdown
     const shutdown = async () => {
       try {

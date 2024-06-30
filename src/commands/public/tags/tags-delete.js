@@ -39,7 +39,7 @@ module.exports = {
           // Update operation
           $set: {
             tag: "untagged",
-            emoji: ":black_small_square:",
+            emoji: "▪️",
           },
         }
       );

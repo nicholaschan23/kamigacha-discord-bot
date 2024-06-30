@@ -64,11 +64,11 @@ const cardSchema = new mongoose.Schema({
   // Collection tags
   tag: {
     type: String,
-    default: "untag",
+    default: "none",
   },
   emoji: {
     type: String,
-    default: ":black_small_square:",
+    default: "▪️",
   },
 
   // CDN link to image database

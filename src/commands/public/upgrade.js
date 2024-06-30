@@ -12,7 +12,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("upgrade")
     .setDescription("Combine 10 cards to upgrade into a higher rarity card.")
-    .addStringOption((option) => option.setName("codes").setDescription("10 card codes separated with spaces or commas.").setRequired(true)),
+    .addStringOption((option) => option.setName("codes").setDescription("10 card codes.").setRequired(true)),
 
   async execute(client, interaction) {
     await interaction.deferReply();
@@ -23,7 +23,7 @@ module.exports = {
 
     // Verify 10 card codes were entered
     if (inputCardCodes.length != 10) {
-      return interaction.editReply({ content: `Please enter exactly 10 card codes separated with spaces or commas (entered ${inputCardCodes.length}).` });
+      return interaction.editReply({ content: `Please enter exactly 10 cards separated with spaces or commas (entered ${inputCardCodes.length}).` });
     }
 
     // Fetch the cards from the database based on the provided card codes

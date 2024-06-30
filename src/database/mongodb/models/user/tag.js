@@ -25,7 +25,16 @@ const collectionTagSchema = new mongoose.Schema({
     default: false,
   },
 
-  // Tags for card sets: key = tag name, value = emoji
+  tagLimit: {
+    type: Number,
+    default: 25,
+  },
+
+  /**
+   * Collection tags list.
+   * @type {Map<string, {emoji: string, quantity: number}>}
+   * @default {}
+   */
   tagList: {
     type: Map,
     of: tagSchema,

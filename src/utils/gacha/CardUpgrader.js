@@ -72,7 +72,7 @@ class CardUpgrader {
       guildId: this.guildId,
       generationType: "Upgrade",
       image: "test",
-      emoji: ":black_small_square:",
+      emoji: "▪️",
     };
     return card;
   }
