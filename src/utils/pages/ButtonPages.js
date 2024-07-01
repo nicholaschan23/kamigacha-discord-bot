@@ -89,7 +89,7 @@ class ButtonPages {
         components: this.messageComponents,
       });
     }
-    
+
     this.collector.resetTimer();
   }
 

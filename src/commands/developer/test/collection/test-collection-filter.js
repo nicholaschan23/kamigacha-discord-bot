@@ -10,10 +10,14 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
     const testCases = [
-      "bad order=date wishlist<> wishlist>100 wrong fake  rarity>= false junk",
-      'series="attack on titan" series="character" character=goku score>=90',
-      'series  = "    dragon         ball "     wishlist   <> character=           "black   goku"',
+      "t=trade o=w",
     ];
+
+    // const testCases = [
+    //   "bad order=date wishlist<> wishlist>100 wrong fake  rarity>= false junk",
+    //   'series="attack on titan" series="character" character=goku score>=90',
+    //   'series  = "    dragon         ball "     wishlist   <> character=           "black   goku"',
+    // ];
 
     const output = [];
     for (const testCase of testCases) {

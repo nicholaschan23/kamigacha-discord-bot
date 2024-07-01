@@ -12,6 +12,7 @@ module.exports = {
   type: "on",
 
   async call(client, interaction) {
+    try {
     // Check if the user is blacklisted
     if (client.blacklistCache.isBlacklisted(interaction.user.id)) {
       return interaction.reply({
@@ -21,7 +22,6 @@ module.exports = {
     }
 
     // Determine interaction type and call the appropriate handler
-    try {
       if (interaction.isAutocomplete()) {
         await autocomplete.call(client, interaction);
       } else if (interaction.isButton()) {

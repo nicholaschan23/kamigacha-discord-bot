@@ -32,6 +32,12 @@ const cardSchema = new mongoose.Schema({
     required: true,
   },
 
+  characterId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "character stat",
+    // required: true,
+  },
+
   // Current owner of the card
   ownerId: {
     type: String,
@@ -43,8 +49,14 @@ const cardSchema = new mongoose.Schema({
     type: String,
   },
 
-  // When the card was pulled in Unix time in seconds
-  unixTimeSeconds: {
+  // When the card was last modified in Unix time seconds
+  modified: {
+    type: Number,
+    default: () => Math.floor(Date.now() / 1000),
+  },
+
+  // When the card was pulled in Unix time seconds
+  date: {
     type: Number,
     default: () => Math.floor(Date.now() / 1000),
   },

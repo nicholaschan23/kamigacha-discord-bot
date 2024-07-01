@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
 const CollectionButtonPages = require("../../utils/pages/CollectionButtonPages");
-const { parseFilterString } = require("../../utils/gacha/filter");
+const FilterModel = require("../../database/mongodb/models/user/filter");
 
 module.exports = {
   category: "public",
@@ -27,7 +27,16 @@ module.exports = {
         return interaction.reply({ content: "That player's collection is private.", ephemeral: true });
       }
 
-      const bp = new CollectionButtonPages(interaction, collectionDocument, filters);
+      const filterDocument = await FilterModel(client).findOneAndUpdate(
+        { userId: user.id }, // Filter
+        {}, // Update
+        { new: true, upsert: true }
+      );
+      if (!filterDocument.filterList) {
+        return interaction.reply({ content: "An error occurred while fetching that player's collection filters.", ephemeral: true });
+      }
+
+      const bp = new CollectionButtonPages(interaction, collectionDocument, filters, filterDocument.filterList);
       bp.publishPages();
     } catch (error) {
       console.error("Error fetching user card codes:", error);

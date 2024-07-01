@@ -20,7 +20,7 @@ const blacklistSchema = new mongoose.Schema({
     required: true,
   },
 
-  // When user was blacklisted
+  // When user was blacklisted in Unix time seconds
   unixTimeSeconds: {
     type: Number,
     default: () => Math.floor(Date.now() / 1000),

@@ -1,14 +1,15 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
 const { formatCardInfoPage, chunkArray } = require("../gacha/format");
 const { parseFilterString, applyFilters } = require("../gacha/filter");
 
 class CollectionButtonPages extends ButtonPages {
-  constructor(interaction, collectionDocument, filterString) {
+  constructor(interaction, collectionDocument, filterString, filterMenu) {
     super(interaction, [], collectionDocument.isPrivate);
     this.interaction = interaction;
     this.collectionDocument = collectionDocument;
     this.filterString = filterString;
+    this.filterMenu = filterMenu;
 
     this.isEnd = false;
     this.cardList = [...collectionDocument.cardsOwned].reverse();
@@ -16,13 +17,9 @@ class CollectionButtonPages extends ButtonPages {
   }
 
   updatePages(filters) {
-    this.filteredList = applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
+    let display;
+    [this.filteredList, display] = applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
     this.filteredListReversed = null;
-
-    // if (sortBy === "date") {
-    //   this.filteredList = [...this.cardList];
-    //   this.filteredListReversed = [...this.collectionDocument.cardsOwned];
-    // }
 
     // Split the list of cards into chunks of 10
     this.cardChunksOriginal = chunkArray(this.filteredList, 10);
@@ -33,6 +30,8 @@ class CollectionButtonPages extends ButtonPages {
     this.pagesOriginal = this.createPages(this.cardChunks);
     this.pagesReversed = null;
     this.pages = this.pagesOriginal;
+
+    this.index = 0;
   }
 
   /**
@@ -67,84 +66,108 @@ class CollectionButtonPages extends ButtonPages {
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const clipboard = new ButtonBuilder().setCustomId("copyClipboard").setEmoji("📋").setStyle(ButtonStyle.Secondary);
-    const save = new ButtonBuilder().setCustomId("saveFilter").setEmoji("💾").setStyle(ButtonStyle.Secondary);
     this.components["toggleEnds"] = ends;
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
     this.components["copyClipboard"] = clipboard;
-    this.components["saveFilter"] = save;
-    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard, save);
+    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard);
     this.messageComponents.push(buttonRow);
 
     // Select menu row
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("collectionFilters")
-      .setPlaceholder("Choose an option")
-      .addOptions([
-        { label: "Option 1", value: "option1" },
-        { label: "Option 2", value: "option2" },
-      ]);
+      .setPlaceholder("Select a filter")
+      .setMinValues(1)
+      .setMaxValues(1)
+      .addOptions(this.filterMenu.map(({ emoji, label, filter }) => new StringSelectMenuOptionBuilder().setEmoji(emoji).setLabel(label).setValue(filter).setDescription(filter)));
     const selectRow = new ActionRowBuilder().addComponents(selectMenu);
+    this.components["collectionFilters"] = selectMenu;
     this.messageComponents.push(selectRow);
   }
 
   async handleCollect(i) {
     await i.deferUpdate();
 
-    // Handle page buttons page buttons
-    if (i.customId === "viewPrev" || i.customId === "viewNext" || i.customId === "toggleEnds") {
-      if (i.customId === "viewPrev" && this.index > 0) {
-        this.index--;
-      } else if (i.customId === "viewNext" && this.index < this.pages.length - 1) {
-        this.index++;
-      } else if (i.customId === "toggleEnds") {
+    switch (i.customId) {
+      case "viewPrev": {
+        if (this.index > 0) {
+          this.index--;
+        }
+        await this.updatePageButtons(i);
+        break;
+      }
+      case "viewNext": {
+        if (this.index < this.pages.length - 1) {
+          this.index++;
+        }
+        await this.updatePageButtons(i);
+        break;
+      }
+      case "toggleEnds": {
         if (!this.isEnd) {
           this.index = this.pages.length - 1;
         } else {
           this.index = 0;
         }
         this.isEnd = !this.isEnd;
+        await this.updatePageButtons(i);
+        break;
       }
+      case "copyClipboard": {
+        const codes = [];
+        for (const cardData of this.cardChunks[this.index]) {
+          codes.push(cardData.code);
+        }
+        await this.interaction.followUp(codes.join(", "));
+        break;
+      }
+      case "collectionFilters": {
+        const selectedValue = i.values[0];
+        this.filterString = selectedValue;
+        this.updatePages(parseFilterString(this.filterString));
+        await this.updatePageButtons(i);
+        break;
+      }
+      default:
+        return;
+    }
+    this.collector.resetTimer();
+  }
 
-      // Update disabled states of previous and next buttons
-      const prev = this.components["viewPrev"];
-      const next = this.components["viewNext"];
-      if (this.index === 0) {
-        prev.setDisabled(true);
-      } else {
-        prev.setDisabled(false);
-      }
-      if (this.index === this.pages.length - 1) {
-        next.setDisabled(true);
-      } else {
-        next.setDisabled(false);
-      }
-
-      // Update message
-      if (this.ephemeral) {
-        await this.interaction.editReply({
-          embeds: [this.pages[this.index]],
-          components: this.messageComponents,
-          fetchReply: true,
-        });
-      } else {
-        await i.message.edit({
-          embeds: [this.pages[this.index]],
-          components: this.messageComponents,
-        });
-      }
-    } else if (i.customId === "copyClipboard") {
-      let codes = [];
-      for (const cardData of this.cardChunks[this.index]) {
-        codes.push(cardData.code);
-      }
-      await this.interaction.followUp(codes.join(", "));
-    } else if (i.customId === "collectionFilters") {
-      const selectedValue = i.values;
-      await this.interaction.followUp(`You selected: ${selectedValue}`);
+  async updatePageButtons(i) {
+    // Update disabled states of page buttons
+    const ends = this.components["toggleEnds"];
+    const prev = this.components["viewPrev"];
+    const next = this.components["viewNext"];
+    if (this.index === 0) {
+      prev.setDisabled(true);
+    } else {
+      prev.setDisabled(false);
+    }
+    if (this.index === this.pages.length - 1) {
+      next.setDisabled(true);
+    } else {
+      next.setDisabled(false);
+    }
+    if (this.index === 0 && this.index === this.pages.length - 1) {
+      ends.setDisabled(true);
+    } else {
+      ends.setDisabled(false);
     }
 
-    this.collector.resetTimer();
+    // Update message
+    if (this.ephemeral) {
+      await this.interaction.editReply({
+        embeds: [this.pages[this.index]],
+        components: this.messageComponents,
+        fetchReply: true,
+      });
+    } else {
+      await i.message.edit({
+        embeds: [this.pages[this.index]],
+        components: this.messageComponents,
+      });
+    }
   }
 }
 

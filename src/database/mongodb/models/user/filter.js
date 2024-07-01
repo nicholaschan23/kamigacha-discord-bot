@@ -1,20 +1,5 @@
 const mongoose = require("mongoose");
 
-const filterSchema = new mongoose.Schema({
-  emoji: {
-    type: String,
-    required: true,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  filter: {
-    type: String,
-    required: true,
-  },
-});
-
 const collectionFilterSchema = new mongoose.Schema({
   userId: {
     type: String,
@@ -35,16 +20,16 @@ const collectionFilterSchema = new mongoose.Schema({
 
   /**
    * Collection filters list.
-   * @type {Array<{emoji: string, name: string, filter: string}>}
+   * @type {Array<{emoji: string, label: string, filter: string}>}
    */
   filterList: {
-    type: [filterSchema],
+    type: [{}],
     default: () => [
-      { emoji: "🗓️", name: "Date", filter: "order=date" },
-      // { emoji: ":heart:", name: "Show Wishlist", filter: "wishlist<>" },
-      // { emoji: ":heart:", name: "Wishlist", filter: "order=wishlist" },
-      { emoji: "▪️", name: "Untagged", filter: "tag=none" },
-      { emoji: "🏷️", name: "Tagged", filter: "tag!=none" },
+      { emoji: "🗓️", label: "Date", filter: "order=date" },
+      // { emoji: ":heart:", label: "Show Wishlist", filter: "wishlist<>" },
+      // { emoji: ":heart:", label: "Wishlist", filter: "order=wishlist" },
+      { emoji: "▪️", label: "Untagged", filter: "tag=none" },
+      { emoji: "🏷️", label: "Tagged", filter: "tag!=none" },
     ],
   },
 });
