@@ -28,7 +28,7 @@ module.exports = {
 
     try {
       // Check if tag exists, if so change the emoji
-      const updatedDocument = await TagModel(client).findOneAndUpdate(
+      const tagDocument = await TagModel(client).findOneAndUpdate(
         {
           userId: interaction.user.id,
           "tagList.tag": tag,
@@ -36,7 +36,7 @@ module.exports = {
         { $set: { "tagList.$.emoji": emoji } }, // Update
         { new: true }
       );
-      if (!updatedDocument) {
+      if (!tagDocument) {
         return interaction.editReply({ content: "That tag does not exist." });
       }
 

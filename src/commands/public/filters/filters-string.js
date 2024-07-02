@@ -26,31 +26,20 @@ module.exports = {
     }
 
     try {
-      const filterDocument = await FilterModel(client).findOne(
-        { userId: interaction.user.id, "filterList.label": new RegExp(`^${label}$`, "i") }, // Filter
-        { "filterList.$": 1 } // Projection to only include the matched sub-document
+      // Check if filter exists, if so change the emoji
+      const filterDocument = await FilterModel(client).findOneAndUpdate(
+        {
+          userId: interaction.user.id,
+          "filterList.label": label,
+        }, // Filter
+        { $set: { "filterList.$.filter": filter } }, // Update
+        { new: true }
       );
       if (!filterDocument) {
         return interaction.editReply({ content: "That filter does not exist." });
       }
 
-      // Extract the actual label
-      const actualLabel = filterDocument.filterList[0].label;
-
-      // No duplicate filters
-      const duplicateFilter = filterDocument.filterList.find((option) => option.filter === filter);
-      if (duplicateFilter) {
-        return interaction.editReply({ content: "That filter string already exists." });
-      }
-
-      // Save filter
-      await FilterModel(client).findOneAndUpdate(
-        { userId: interaction.user.id, "filterList.label": actualLabel },
-        { $set: { "filterList.$.filter": filter } },
-        { new: true }
-      );
-
-      interaction.editReply({ content: `Successfully updated filter string to \`${filter}\`!` });
+      interaction.editReply({ content: `Successfully updated filter to **${label}** \`${filter}\`!` });
     } catch (error) {
       logger.error(error.stack);
       interaction.editReply({ content: `There was an issue changing the filter string for your filter. Please try again.` });

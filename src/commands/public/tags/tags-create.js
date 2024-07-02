@@ -14,36 +14,31 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
-    
+
     const tag = interaction.options.getString("tag").toLowerCase();
     if (!isValidTag(tag)) {
       return interaction.editReply({ content: `Please input a valid tag. It can only contain letters, numbers, dashes, or underscores.` });
     }
-    
+
     const emoji = interaction.options.getString("emoji");
     if (!containsExactlyOneEmoji(emoji)) {
       return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
     }
 
     try {
-      // Check if the tag already exists
-      const tagExists = await TagModel(client).findOne(
-        {
-          userId: interaction.user.id,
-          tagList: { $elemMatch: { tag: tag } },
-        },
-        { "tagList.$": 1 }
+      // Fetch tag data
+      const tagDocument = await TagModel(client).findOneAndUpdate(
+        { userId: interaction.user.id, "tagList.tag": { $ne: tag } }, // Filter
+        { $setOnInsert: { userId: interaction.user.id } }, // Update
+        { new: true, upsert: true }
       );
-      if (tagExists) {
+
+      // Check if the tag already exists
+      if (!tagDocument) {
         return interaction.editReply({ content: `The \`${tag}\` tag already exists.` });
       }
 
-      const tagDocument = await TagModel(client).findOneAndUpdate(
-        { userId: interaction.user.id }, // Filter
-        {}, // Update
-        { new: true, upsert: true } // Options: return the modified document and upsert if it doesn't exist
-      );
-
+      // Check if tag limit is reached
       if (tagDocument.tagList.length >= tagDocument.tagLimit) {
         return interaction.editReply({ content: `You've reached your tag limit of ${tagDocument.tagLimit}.` });
       }

@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidFilterLabel } = require("../../../utils/gacha/format");
+const { isValidFilterLabel, capitalizeFirstLetter } = require("../../../utils/gacha/format");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters delete command");
@@ -9,37 +9,28 @@ module.exports = {
   data: new SlashCommandSubcommandBuilder()
     .setName("delete")
     .setDescription("Delete a collection filter.")
-    .addStringOption((option) => option.setName("label").setDescription("Label of the filter to delete.").setRequired(true)),
+    .addStringOption((option) => option.setName("label").setDescription("Name of filter to delete.").setRequired(true)),
 
   async execute(client, interaction) {
     await interaction.deferReply();
 
-    const label = interaction.options.getString("label").replace(/\s+/g, " ");
+    const label = capitalizeFirstLetter(interaction.options.getString("label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(label)) {
-      return interaction.editReply({ content: "That label does not exist." });
+      return interaction.editReply({ content: "That filter does not exist." });
     }
 
     try {
-      const filterDocument = await FilterModel(client).findOne(
-        { userId: interaction.user.id, "filterList.label": new RegExp(`^${label}$`, "i") }, // Filter
-        { "filterList.$": 1 } // Projection to only include the matched sub-document
-      );
-
-      // Handle if document doesn't exist or if the field was undefined
-      if (!filterDocument) {
-        return interaction.editReply({ content: `That label does not exist.` });
-      }
-
-      // Extract the actual label
-      const actualLabel = filterDocument.filterList[0].label;
-
+      // Check if filter exists, if so delete it
       const updatedDocument = await FilterModel(client).findOneAndUpdate(
-        { userId: interaction.user.id }, // Filter
-        { $pull: { "filterList.label": actualLabel } }, // Update
+        { userId: interaction.user.id, "filterList.label": label }, // Filter
+        { $pull: { filterList: { label: label } } }, // Update
         { new: true }
       );
+      if (!updatedDocument) {
+        return interaction.editReply({ content: `That filter does not exist.` });
+      }
 
-      interaction.editReply({ content: `Successfully deleted the filter **${actualLabel}**!` });
+      interaction.editReply({ content: `Successfully deleted the filter **${label}**!` });
     } catch (error) {
       logger.error(error.stack);
       interaction.editReply({ content: `There was an issue deleting your filter. Please try again.` });

@@ -13,23 +13,24 @@ const collectionFilterSchema = new mongoose.Schema({
     default: false,
   },
 
-  filterLimit: {
-    type: Number,
-    default: 25,
-  },
-
   /**
    * Collection filters list.
    * @type {Array<{emoji: string, label: string, filter: string}>}
    */
   filterList: {
-    type: [{}],
+    type: [
+      {
+        emoji: { type: String, required: true },
+        label: { type: String, required: true },
+        filter: { type: String, required: true },
+      },
+    ],
     default: () => [
       { emoji: "🗓️", label: "Date", filter: "order=date" },
       // { emoji: ":heart:", label: "Show Wishlist", filter: "wishlist<>" },
       // { emoji: ":heart:", label: "Wishlist", filter: "order=wishlist" },
-      { emoji: "▪️", label: "Untagged", filter: "tag=none" },
       { emoji: "🏷️", label: "Tagged", filter: "tag!=none" },
+      { emoji: "▪️", label: "Untagged", filter: "tag=none" },
     ],
   },
 });

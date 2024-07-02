@@ -32,7 +32,7 @@ const collectionTagSchema = new mongoose.Schema({
 
   /**
    * Collection tags list.
-   * @type {Array, {tag: string, emoji: string, quantity: number}>}
+   * @type {Array<{tag: string, emoji: string, quantity: number}>}
    * @default {}
    */
   tagList: [

@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidFilterLabel } = require("../../../utils/gacha/format");
+const { isValidFilterLabel, capitalizeFirstLetter } = require("../../../utils/gacha/format");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters emoji command");
@@ -15,52 +15,59 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
 
-    let oldLabel = interaction.options.getString("old-label").replace(/\s+/g, " ");;
+    const oldLabel = capitalizeFirstLetter(interaction.options.getString("old-label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(oldLabel)) {
       return interaction.editReply({ content: "That filter does not exist." });
     }
 
-    const newLabel = interaction.options.getString("new-label").replace(/\s+/g, " ");;
+    const newLabel = capitalizeFirstLetter(interaction.options.getString("new-label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(newLabel)) {
       return interaction.editReply({ content: `Please input a valid label. It can only contain letters, numbers, and spaces.` });
     }
 
     try {
-      const filterDocument = await FilterModel(client).findOne(
-        { userId: interaction.user.id, "filterList.label": new RegExp(`^${oldLabel}$`, "i") }, // Filter
-        { "filterList.$": 1 } // Projection to only include the matched sub-document
-      );
+      // Find the filter document for the user
+      const filterDocument = await FilterModel(client).findOne({ userId: interaction.user.id });
+
+      // Handle case where no filter data exists
       if (!filterDocument) {
-        return interaction.editReply({ content: "That filter does not exist." });
+        return interaction.reply({ content: `You do not have any filters.` });
       }
 
-      // Extract the actual label
-      oldLabel = filterDocument.filterList[0].label;
-
-      // Check if the old label exists
-      const oldLabelIndex = filterDocument.filterList.findIndex((option) => option.label.toLowerCase() === oldLabel.toLowerCase());
-      if (oldLabelIndex === -1) {
-        return interaction.editReply({ content: "That filter does not exist." });
+      // Check if the new filter already exists
+      const duplicateFilter = filterDocument.filterList.some((label) => label.label === newLabel);
+      if (duplicateFilter) {
+        return interaction.editReply({ content: `The **${newLabel}** filter already exists.` });
       }
 
-      // Check for duplicate new label
-      const duplicateLabel = filterDocument.filterList.find((option) => option.label.toLowerCase() === newLabel.toLowerCase());
-      if (duplicateLabel) {
-        return interaction.editReply({ content: "That label is already being used for another filter." });
+      // Find the index of the old filter in the filterList array
+      const oldFilterIndex = filterDocument.filterList.findIndex((label) => label.label === oldLabel);
+      if (oldFilterIndex === -1) {
+        return interaction.editReply({ content: `The **${oldLabel}** filter does not exist.` });
       }
 
-      // Perform the update: remove old label and add new label, then sort
-      await FilterModel(client).updateOne(
+      // Extract old emoji and quantity
+      const { emoji: emoji, label: label, filter: filter } = filterDocument.filterList[oldFilterIndex];
+
+      // Remove the old filter
+      await FilterModel(client).findOneAndUpdate(
         { userId: interaction.user.id },
         {
-          $pull: { filterList: { label: new RegExp(`^${oldLabel}$`, "i") } },
+          $pull: { filterList: { label: oldLabel } },
+        }
+      );
+
+      // Add the new filter with sorted order
+      await FilterModel(client).findOneAndUpdate(
+        { userId: interaction.user.id },
+        {
           $push: {
             filterList: {
-              $each: [{ emoji: filterDocument.filterList[0].emoji, label: newLabel, filter: filterDocument.filterList[0].filter }],
-              $sort: { label: 1 }
-            }
-          }
-        }
+              $each: [{ emoji: emoji, label: newLabel, filter: filter }],
+              $sort: { tag: 1 }, // Sort by tag alphabetically
+            },
+          },
+        } // Update
       );
 
       interaction.editReply({ content: `Successfully updated **${oldLabel}** to **${newLabel}**!` });

@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidFilter, isValidFilterLabel, containsExactlyOneEmoji } = require("../../../utils/gacha/format");
+const { isValidFilter, isValidFilterLabel, containsExactlyOneEmoji, capitalizeFirstLetter } = require("../../../utils/gacha/format");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters create command");
@@ -9,52 +9,44 @@ module.exports = {
   data: new SlashCommandSubcommandBuilder()
     .setName("create")
     .setDescription("Create a collection filter.")
-    .addStringOption((option) => option.setName("string").setDescription("String of filters to apply to collection.").setRequired(true))
-    .addStringOption((option) => option.setName("label").setDescription("Label to associate with this filter.").setRequired(true))
+    .addStringOption((option) => option.setName("filter").setDescription("Filters string to apply to collection.").setRequired(true))
+    .addStringOption((option) => option.setName("label").setDescription("Name to associate with this filter.").setRequired(true))
     .addStringOption((option) => option.setName("emoji").setDescription("Emoji to associate with this filter.").setRequired(true)),
 
   async execute(client, interaction) {
     await interaction.deferReply();
 
-    const inputFilter = interaction.options.getString("string").toLowerCase().replace(",", "");
-    if (!isValidFilter(inputFilter)) {
+    const filter = interaction.options.getString("filter").toLowerCase().replace(",", "");
+    if (!isValidFilter(filter)) {
       return interaction.editReply({ content: `Please input a valid filter string. Refer to \`/help filters\` for details.` });
     }
 
-    const inputLabel = interaction.options.getString("label").replace(/\s+/g, " ");
-    if (!isValidFilterLabel(inputLabel)) {
+    const label = capitalizeFirstLetter(interaction.options.getString("label").replace(/\s+/g, " "));
+    if (!isValidFilterLabel(label)) {
       return interaction.editReply({ content: `Please input a valid label. It can only contain letters, numbers, and spaces.` });
     }
 
-    const inputEmoji = interaction.options.getString("emoji");
-    if (!containsExactlyOneEmoji(inputEmoji)) {
+    const emoji = interaction.options.getString("emoji");
+    if (!containsExactlyOneEmoji(emoji)) {
       return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
     }
 
     try {
+      // Find the filter document for the user
       const filterDocument = await FilterModel(client).findOneAndUpdate(
-        { userId: interaction.user.id }, // Filter
-        {}, // Update
-        { new: true, upsert: true } // Options: return the modified document and upsert if it doesn't exist
+        { userId: interaction.user.id, "filterList.label": { $ne: label } }, // Filter
+        { $setOnInsert: { userId: interaction.user.id } }, // Update
+        { new: true, upsert: true }
       );
 
-      // Check max limit
-      if (filterDocument.filterList.size >= filterDocument.filterLimit) {
-        return interaction.editReply({ content: `You've reached your filter limit of ${filterDocument.tagLimit}.` });
+      // Handle case where no filter data exists
+      if (!filterDocument) {
+        return interaction.editReply({ content: `The **${label}** filter already exists.` });
       }
 
-      // Check for any duplicates
-      for (const savedFilter of filterDocument.filterList) {
-        const { emoji, label, filter } = savedFilter;
-        if (emoji == inputEmoji) {
-          return interaction.editReply({ content: `That ${emoji} tag already exists.` });
-        }
-        if (label.toLowerCase() == inputLabel.toLowerCase()) {
-          return interaction.editReply({ content: `That \`${label}\` label already exists.` });
-        }
-        if (filter == inputFilter) {
-          return interaction.editReply({ content: `That \`${filter}\` filter string already exists.` });
-        }
+      // Check if filter limit is reached
+      if (filterDocument.filterList.length >= 25) {
+        return interaction.editReply({ content: `You've reached your filter limit of ${filterDocument.filterList.length}.` });
       }
 
       // Save document
@@ -63,14 +55,14 @@ module.exports = {
         {
           $push: {
             filterList: {
-              $each: [{ emoji: inputEmoji, label: inputLabel, filter: inputFilter }],
+              $each: [{ emoji: emoji, label: label, filter: filter }],
               $sort: { label: 1 },
             },
           },
-        }
+        } // Update
       );
 
-      interaction.editReply({ content: `Successfully created filter ${inputEmoji} **${inputLabel}** \`${inputFilter}\`!` });
+      interaction.editReply({ content: `Successfully created filter ${emoji} **${label}** \`${filter}\`!` });
     } catch (error) {
       logger.error(error.stack);
       interaction.editReply({ content: "There was an issue creating your filter. Please try again." });
