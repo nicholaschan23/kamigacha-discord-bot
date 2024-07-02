@@ -28,8 +28,9 @@ function formatCardInfoPage(dataList, showTags = true) {
 function formatTagListPage(tagList) {
   const formattedTags = [];
 
-  for (const [tagKey, tagValue] of tagList) {
-    formattedTags.push([`${tagValue.emoji} \`${tagKey}\``, `**${tagValue.quantity}** card${tagValue.quantity == 1 ? "" : "s"}`].join(" · "));
+  for (const element of tagList) {
+    const {tag, emoji, quantity } = element;
+    formattedTags.push([`${emoji} \`${tag}\``, `**${quantity}** card${quantity == 1 ? "" : "s"}`].join(" · "));
   }
 
   return formattedTags.join("\n");
@@ -69,12 +70,50 @@ const chunkArray = (array, chunkSize) => {
   return result;
 };
 
+function isValidFilter(input) {
+  const regex = /^[a-z0-9\s=!<>\-"]+$/;
+  return regex.test(input);
+}
+
+// Check if string containing only letters, numbers, and spaces
+function isValidFilterLabel(input) {
+  const regex = /^[a-zA-Z0-9\s]+$/;
+  return regex.test(input);
+}
+
+/**
+ * Formats the filter information from an array into a specific structure.
+ *
+ * @param {Array} filterList - An array of objects with emoji, label, and filter properties.
+ * @returns {String} - Formatted filter info for display.
+ */
+function formatFilterListPage(filterList) {
+  const formattedFilters = [];
+
+  for (const fObject of filterList) {
+    const {emoji, label, filter} = fObject;
+    formattedFilters.push([`${emoji} **${label}**`, `\`${filter}\``].join(" · "));
+  }
+
+  return formattedFilters.join("\n");
+}
+
+function capitalizeFirstLetter(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 module.exports = {
   formatCardInfo,
   formatCardInfoPage,
+
   formatTagListPage,
-  // isValidCode,
   isValidTag,
+
   containsExactlyOneEmoji,
   chunkArray,
+
+  isValidFilter,
+  isValidFilterLabel,
+  formatFilterListPage,
+  capitalizeFirstLetter
 };

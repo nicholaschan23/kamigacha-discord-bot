@@ -14,22 +14,21 @@ class CollectionButtonPages extends ButtonPages {
     this.isEnd = false;
     this.cardList = [...collectionDocument.cardsOwned].reverse();
     this.updatePages(parseFilterString(filterString));
+
+    if (!filterString) {
+      this.filterString = "order=date";
+    }
   }
 
   updatePages(filters) {
     let display;
     [this.filteredList, display] = applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
-    this.filteredListReversed = null;
 
     // Split the list of cards into chunks of 10
-    this.cardChunksOriginal = chunkArray(this.filteredList, 10);
-    this.cardChunksReversed = null;
-    this.cardChunks = this.cardChunksOriginal;
+    this.cardChunks = chunkArray(this.filteredList, 10);
 
     // Create page embeds
-    this.pagesOriginal = this.createPages(this.cardChunks);
-    this.pagesReversed = null;
-    this.pages = this.pagesOriginal;
+    this.pages = this.createPages(this.cardChunks);
 
     this.index = 0;
   }
@@ -65,12 +64,14 @@ class CollectionButtonPages extends ButtonPages {
     const ends = new ButtonBuilder().setCustomId("toggleEnds").setEmoji("↔️").setStyle(ButtonStyle.Secondary);
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
-    const clipboard = new ButtonBuilder().setCustomId("copyClipboard").setEmoji("📋").setStyle(ButtonStyle.Secondary);
+    const clipboard = new ButtonBuilder().setCustomId("copyCodes").setEmoji("📋").setStyle(ButtonStyle.Secondary);
+    const save = new ButtonBuilder().setCustomId("saveFilter").setEmoji("💾").setStyle(ButtonStyle.Secondary);
     this.components["toggleEnds"] = ends;
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
-    this.components["copyClipboard"] = clipboard;
-    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard);
+    this.components["copyCodes"] = clipboard;
+    this.components["saveFilter"] = save;
+    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard, save);
     this.messageComponents.push(buttonRow);
 
     // Select menu row
@@ -79,7 +80,7 @@ class CollectionButtonPages extends ButtonPages {
       .setPlaceholder("Select a filter")
       .setMinValues(1)
       .setMaxValues(1)
-      .addOptions(this.filterMenu.map(({ emoji, label, filter }) => new StringSelectMenuOptionBuilder().setEmoji(emoji).setLabel(label).setValue(filter).setDescription(filter)));
+      .addOptions(this.filterMenu.map(({ emoji, label, filter }) => new StringSelectMenuOptionBuilder().setEmoji(emoji).setLabel(label).setValue(filter)));
     const selectRow = new ActionRowBuilder().addComponents(selectMenu);
     this.components["collectionFilters"] = selectMenu;
     this.messageComponents.push(selectRow);
@@ -113,12 +114,16 @@ class CollectionButtonPages extends ButtonPages {
         await this.updatePageButtons(i);
         break;
       }
-      case "copyClipboard": {
+      case "copyCodes": {
         const codes = [];
         for (const cardData of this.cardChunks[this.index]) {
           codes.push(cardData.code);
         }
         await this.interaction.followUp(codes.join(", "));
+        break;
+      }
+      case "saveFilter": {
+        await this.interaction.followUp(this.filterString);
         break;
       }
       case "collectionFilters": {
@@ -131,6 +136,7 @@ class CollectionButtonPages extends ButtonPages {
       default:
         return;
     }
+
     this.collector.resetTimer();
   }
 
@@ -153,6 +159,14 @@ class CollectionButtonPages extends ButtonPages {
       ends.setDisabled(true);
     } else {
       ends.setDisabled(false);
+    }
+
+    // Disable if there are no codes to copy
+    const copy = this.components["copyCodes"];
+    if (this.cardChunks.length == 0) {
+      copy.setDisabled(true);
+    } else {
+      copy.setDisabled(false);
     }
 
     // Update message

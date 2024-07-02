@@ -15,42 +15,38 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
-    const tag = interaction.options.getString("tag").toLowerCase();
-    const emoji = interaction.options.getString("emoji");
 
+    const tag = interaction.options.getString("tag").toLowerCase();
     if (!isValidTag(tag)) {
       return interaction.editReply({ content: "That tag does not exist." });
     }
 
+    const emoji = interaction.options.getString("emoji");
     if (!containsExactlyOneEmoji(emoji)) {
       return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
     }
 
     try {
-      const tagDocument = await TagModel(client).findOne(
-        { userId: interaction.user.id } // Filter
-      );
-      if (!tagDocument.tagList.get(tag)) {
-        return interaction.editReply({ content: "That tag does not exist." });
-      }
-
+      // Check if tag exists, if so change the emoji
       const updatedDocument = await TagModel(client).findOneAndUpdate(
-        { userId: interaction.user.id }, // Filter
-        { $set: { [`tagList.${tag}`]: { emoji: emoji } } },
+        {
+          userId: interaction.user.id,
+          "tagList.tag": tag,
+        }, // Filter
+        { $set: { "tagList.$.emoji": emoji } }, // Update
         { new: true }
       );
+      if (!updatedDocument) {
+        return interaction.editReply({ content: "That tag does not exist." });
+      }
 
       // Update cards with the associated tag with the new emoji
       await CardModel(client).updateMany(
         { userId: interaction.user.id, tag: tag }, // Filter
-        { $set: { emoji: emoji } } // Update operation
+        { $set: { emoji: emoji } } // Update
       );
 
-      if (updatedDocument.tagList.get(tag) == emoji) {
-        interaction.editReply({ content: `Successfully updated tag to ${emoji} \`${tag}\`!` });
-      } else {
-        interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });
-      }
+      interaction.editReply({ content: `Successfully updated tag to ${emoji} \`${tag}\`!` });
     } catch (error) {
       logger.error(error.stack);
       interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });

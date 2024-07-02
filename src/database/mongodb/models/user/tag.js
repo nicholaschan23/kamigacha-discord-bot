@@ -32,14 +32,16 @@ const collectionTagSchema = new mongoose.Schema({
 
   /**
    * Collection tags list.
-   * @type {Map<string, {emoji: string, quantity: number}>}
+   * @type {Array, {tag: string, emoji: string, quantity: number}>}
    * @default {}
    */
-  tagList: {
-    type: Map,
-    of: tagSchema,
-    default: {},
-  },
+  tagList: [
+    {
+      tag: { type: String, required: true },
+      emoji: { type: String, required: true },
+      quantity: { type: Number, default: 0 },
+    },
+  ],
 });
 
 module.exports = (client) => {

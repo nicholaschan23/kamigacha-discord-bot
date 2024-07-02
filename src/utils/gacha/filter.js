@@ -97,12 +97,17 @@ function parseFilterString(filterString) {
 }
 
 function applyFilters(cardList, filters, userId, guildId) {
+  const filteredCards = [];
   const display = new Set(); // What stats to display on collection page
   let sortField;
   let sortOrder;
 
-  const filteredCards = cardList.filter((card) => {
-    return filters.every(({ key, operator, value }) => {
+  for (const card of cardList) {
+    if (filteredCards.length == 500) {
+      break;
+    }
+
+    const passedFilters = filters.every(({ key, operator, value }) => {
       // Check for display
       if (operator === "<>") {
         switch (key) {
@@ -229,7 +234,11 @@ function applyFilters(cardList, filters, userId, guildId) {
           return true;
       }
     });
-  });
+
+    if (passedFilters) {
+      filteredCards.push(card);
+    }
+  }
 
   switch (sortField) {
     case "date":

@@ -14,35 +14,51 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
+    
     const tag = interaction.options.getString("tag").toLowerCase();
-    const emoji = interaction.options.getString("emoji");
-
     if (!isValidTag(tag)) {
       return interaction.editReply({ content: `Please input a valid tag. It can only contain letters, numbers, dashes, or underscores.` });
     }
-
+    
+    const emoji = interaction.options.getString("emoji");
     if (!containsExactlyOneEmoji(emoji)) {
       return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
     }
 
     try {
-      const updatedDocument = await TagModel(client).findOneAndUpdate(
-        { userId: interaction.user.id }, // Filter
-        { $setOnInsert: { userId: interaction.user.id } }, // Set userId only if inserting a new document
-        { new: true, upsert: true } // Options: return the modified document and upsert if it doesn't exist
+      // Check if the tag already exists
+      const tagExists = await TagModel(client).findOne(
+        {
+          userId: interaction.user.id,
+          tagList: { $elemMatch: { tag: tag } },
+        },
+        { "tagList.$": 1 }
       );
-
-      if (updatedDocument.tagList.size >= updatedDocument.tagLimit) {
-        return interaction.editReply({ content: `You've reached your tag limit of ${updatedDocument.tagLimit}.` });
-      }
-
-      if (updatedDocument.tagList.get(tag)) {
+      if (tagExists) {
         return interaction.editReply({ content: `The \`${tag}\` tag already exists.` });
       }
 
+      const tagDocument = await TagModel(client).findOneAndUpdate(
+        { userId: interaction.user.id }, // Filter
+        {}, // Update
+        { new: true, upsert: true } // Options: return the modified document and upsert if it doesn't exist
+      );
+
+      if (tagDocument.tagList.length >= tagDocument.tagLimit) {
+        return interaction.editReply({ content: `You've reached your tag limit of ${tagDocument.tagLimit}.` });
+      }
+
+      // Save document
       await TagModel(client).findOneAndUpdate(
         { userId: interaction.user.id }, // Filter
-        { $set: { [`tagList.${tag}`]: { emoji: emoji } } } // Update operation
+        {
+          $push: {
+            tagList: {
+              $each: [{ tag: tag, emoji: emoji }],
+              $sort: { tag: 1 }, // Sort by tag alphabetically
+            },
+          },
+        } // Update
       );
 
       interaction.editReply({ content: `Successfully created tag ${emoji} \`${tag}\`!` });

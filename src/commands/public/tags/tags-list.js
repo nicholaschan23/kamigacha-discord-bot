@@ -19,7 +19,6 @@ module.exports = {
       const tagDocument = await TagModel(client).findOne(
         { userId: user.id } // Filter
       );
-
       if (!tagDocument) {
         return interaction.reply({ content: `That player does not have any tags.` });
       }
@@ -29,12 +28,8 @@ module.exports = {
         return interaction.reply({ content: `That player's tags are private.` });
       }
 
-      // Sort tags alphabetically
-      const sortedEntries = Array.from(tagDocument.tagList.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-      const sortedTagList = new Map(sortedEntries);
-
       // Split the list of cards into chunks of 10
-      const cardChunks = chunkArray([...sortedTagList], 10);
+      const cardChunks = chunkArray([...tagDocument.tagList], 10);
 
       // Create page embeds
       let pages = [];

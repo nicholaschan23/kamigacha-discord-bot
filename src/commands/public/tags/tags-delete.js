@@ -14,20 +14,19 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
+    
     const tag = interaction.options.getString("tag").toLowerCase();
-
     if (!isValidTag(tag)) {
       return interaction.editReply({ content: "That tag does not exist." });
     }
 
     try {
+      // Check if tag exists, if so delete it
       const updatedDocument = await TagModel(client).findOneAndUpdate(
         { userId: interaction.user.id }, // Filter
-        { $unset: { [`tagList.${tag}`]: "" } },
+        { $pull: { tagList: { tag: tag } } }, // Update
         { new: true }
       );
-
-      // Handle if document doesn't exist or if the field wasn't there to unset
       if (!updatedDocument) {
         return interaction.editReply({ content: `That tag does not exist.` });
       }
@@ -35,21 +34,10 @@ module.exports = {
       // Update cards with the associated tag with default untagged values
       await CardModel(client).updateMany(
         { userId: interaction.user.id, tag: tag }, // Filter
-        {
-          // Update operation
-          $set: {
-            tag: "untagged",
-            emoji: "▪️",
-          },
-        }
+        { $set: { tag: "untagged", emoji: "▪️" } } // Update
       );
 
-      // Check if the field was unset
-      if (!updatedDocument.tagList[tag]) {
         interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
-      } else {
-        interaction.editReply({ content: `There was an issue deleting your tag. Please try again.` });
-      }
     } catch (error) {
       logger.error(error.stack);
       interaction.editReply({ content: `There was an issue deleting your tag. Please try again.` });
