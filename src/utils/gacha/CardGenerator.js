@@ -5,6 +5,7 @@ const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/user/collection");
 const PityModel = require("../../database/mongodb/models/user/pity");
 const StatsModel = require("../../database/mongodb/models/user/stats");
+const { getCardStructure } = require("../../database/aws/s3Structure");
 
 class CardGenerator {
   constructor(client, userId, guildId, rates) {
@@ -22,57 +23,21 @@ class CardGenerator {
 
   async cardPull(numPulls) {
     await this.fetchPity();
-    const cardList = require("../../test/cardListSample");
+    const [jsonCards, seriesKeys] = getCardStructure();
 
     for (let i = 0; i < numPulls; i++) {
-      // Function to select a random key from an object
-      const getRandomKey = (obj) => {
-        const keys = Object.keys(obj);
-        const randomIndex = crypto.randomInt(0, keys.length);
-        return keys[randomIndex];
-      };
-
       // Select a random series
-      const series = getRandomKey(cardList);
-      // console.log(`Selected series: ${series}`);
+      const series = seriesKeys[crypto.randomInt(0, seriesKeys.length)];
 
-      // Select a random edition from the random series
-      const set = this.getSet(Object.keys(cardList[series]).length);
-      // console.log(`Selected set: ${set}`);
+      // Select a random set
+      const set = this.getSet(Object.keys(jsonCards[series]).length);
 
-      // Determine rarity of the pull
+      // Select a rarity
       const rarity = this.getRarity();
-      // console.log(`Selected rarity: ${rarity}`);
 
-      // Ensure that the selected series, set, and rarity exist in cardList
-      // if (!cardList[series]) {
-      //   console.error(`Series '${series}' not found in cardList`);
-      //   continue;
-      // }
-
-      // if (!cardList[series][set]) {
-      //   console.error(`Set '${set}' not found in series '${series}'`);
-      //   continue;
-      // }
-
-      // if (!cardList[series][set][rarity]) {
-      //   console.error(`Rarity '${rarity}' not found in set '${set}' of series '${series}'`);
-      //   continue;
-      // }
-
-      // Select a random character from the random rarity
-      const characterIndex = crypto.randomInt(0, cardList[series][set][rarity].length);
-      // console.log(`Selected character index: ${characterIndex}`);
-
-      // Ensure characterIndex is within the bounds
-      const characterArray = cardList[series][set][rarity];
-      // if (characterIndex < 0 || characterIndex >= characterArray.length) {
-      //   console.error("Character index out of bounds");
-      //   continue;
-      // }
-
-      const character = characterArray[characterIndex];
-      // console.log(`Selected character: ${character}`);
+      // Select a random character
+      const characterKeys = Object.keys(jsonCards[series][set][rarity]);
+      const character = characterKeys[crypto.randomInt(0, characterKeys.length)];
 
       // Generate card code
       const code = await this.cg.getNewCode();
@@ -88,7 +53,7 @@ class CardGenerator {
         pulledId: this.userId,
         guildId: this.guildId,
         generationType: numPulls > 1 ? "Multi-Pull" : "Pull",
-        image: "test",
+        image: [process.env.CLOUDFRONT_URL, "cards", series, set, rarity, character].join("/"),
         emoji: "▪️",
       };
       this.cardData.push(card);
@@ -109,6 +74,27 @@ class CardGenerator {
       this.pity.SR = userDocument.SR;
       this.pity.SSR = userDocument.SSR;
     }
+  }
+
+  // Function to get a random index with increasing probability (1-indexed)
+  getSet(length) {
+    if (length > 1) {
+      // Calculate the total weight sum (1 + 2 + ... + length)
+      const totalWeight = (length * (length + 1)) / 2;
+
+      // Generate a random number between 0 and total weight
+      const randomValue = crypto.randomInt(0, totalWeight);
+
+      // Find the index corresponding to the random value (1-indexed)
+      let cumulativeWeight = 0;
+      for (let i = 0; i < length; i++) {
+        cumulativeWeight += i + 1;
+        if (randomValue < cumulativeWeight) {
+          return i + 1; // Return 1-indexed value
+        }
+      }
+    }
+    return 1;
   }
 
   getRarity() {
@@ -136,24 +122,6 @@ class CardGenerator {
       }
     }
     return "C"; // Default to "Common" if no other rarity is selected
-  }
-
-  // Function to get a random index with increasing probability (1-indexed)
-  getSet(length) {
-    // Calculate the total weight sum (1 + 2 + ... + length)
-    const totalWeight = (length * (length + 1)) / 2;
-
-    // Generate a random number between 0 and total weight
-    const randomValue = crypto.randomInt(0, totalWeight);
-
-    // Find the index corresponding to the random value (1-indexed)
-    let cumulativeWeight = 0;
-    for (let i = 0; i < length; i++) {
-      cumulativeWeight += i + 1;
-      if (randomValue < cumulativeWeight) {
-        return i + 1; // Return 1-indexed value
-      }
-    }
   }
 
   updatePity(rarity) {

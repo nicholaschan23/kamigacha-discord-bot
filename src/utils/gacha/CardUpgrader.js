@@ -1,8 +1,9 @@
+const config = require("../../config");
+const crypto = require("crypto");
+const CodeGenerator = require("./CodeGenerator");
 const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/user/collection");
-const CodeGenerator = require("./CodeGenerator");
-const crypto = require("crypto");
-const config = require("../../config");
+const { getCardStructure } = require("../../database/aws/s3Structure");
 
 class CardUpgrader {
   constructor(client, guildId, queriedCards, seriesSetFreq, rarityFreq) {
@@ -50,13 +51,17 @@ class CardUpgrader {
   }
 
   async generateUpgradedCard() {
+    const [jsonCards, seriesKeys] = getCardStructure();
+
+    // Select a series and set
     const [series, set] = this.getSeriesSet();
+
+    // Select a rarity
     const rarity = this.getRarity();
 
-    const cardList = require("../../test/cardListSample");
-    const characterIndex = crypto.randomInt(0, cardList[series][set][rarity].length);
-    const characterArray = cardList[series][set][rarity];
-    const character = characterArray[characterIndex];
+    // Select a random character
+    const characterKeys = Object.keys(jsonCards[series][set][rarity]);
+    const character = characterKeys[crypto.randomInt(0, characterKeys.length)];
 
     const cg = new CodeGenerator(this.client);
     const code = await cg.getNewCode();
@@ -71,7 +76,7 @@ class CardUpgrader {
       pulledId: this.userId,
       guildId: this.guildId,
       generationType: "Upgrade",
-      image: "test",
+      image: [process.env.CLOUDFRONT_URL, "cards", series, set, rarity, character].join("/"),
       emoji: "▪️",
     };
     return card;

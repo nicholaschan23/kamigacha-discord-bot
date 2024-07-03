@@ -3,9 +3,13 @@ const fs = require("fs");
 const path = require("path");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("S3 structure");
+const s3Client = require("./s3Client");
 
-const s3Client = new S3Client({});
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+
+const CARDS_FILE_PATH = path.join(__dirname, "models/cards.json");
+const SLEEVES_FILE_PATH = path.join(__dirname, "models/sleeves.json");
+const FRAMES_FILE_PATH = path.join(__dirname, "models/frames.json");
 
 async function listAllObjects(prefix) {
   let isTruncated = true;
@@ -40,15 +44,18 @@ async function listAllObjects(prefix) {
 
 async function saveS3StructureLocally(filePath, prefix) {
   const keys = await listAllObjects(prefix);
+
   const directoryStructure = keys.reduce((acc, key) => {
-    const parts = key.split("/");
-    let current = acc;
-    parts.forEach((part) => {
-      if (!current[part]) {
-        current[part] = {};
-      }
-      current = current[part];
-    });
+    const parts = key.slice(`${prefix}/`.length).split("/");
+    if (parts[parts.length - 1].slice(-4) == ".jpg") {
+      let current = acc;
+      parts.forEach((part) => {
+        if (!current[part]) {
+          current[part] = {};
+        }
+        current = current[part];
+      });
+    }
     return acc;
   }, {});
 
@@ -71,10 +78,6 @@ async function saveS3StructureLocally(filePath, prefix) {
   });
 }
 
-const CARDS_FILE_PATH = path.join(__dirname, "models/cards.json");
-const SLEEVES_FILE_PATH = path.join(__dirname, "models/sleeves.json");
-const FRAMES_FILE_PATH = path.join(__dirname, "models/frames.json");
-
 async function loadS3Structures() {
   // If JSON file doesn't exist, create it from S3 Bucket
   if (!fs.existsSync(CARDS_FILE_PATH)) {
@@ -90,18 +93,21 @@ async function loadS3Structures() {
   // }
 }
 
-let cardS3Structure = null;
-async function getCardStructure() {
-  if (!cardS3Structure) {
+let parsedJsonCards = null;
+let seriesKeys = null;
+function getCardStructure() {
+  if (!parsedJsonCards) {
     const data = fs.readFileSync(CARDS_FILE_PATH);
-    cardS3Structure = JSON.parse(data);
+    parsedJsonCards = JSON.parse(data);
   }
-  const seriesKeys = Object.keys(cardS3Structure);
-  return [cardS3Structure, seriesKeys];
+  if (!seriesKeys) {
+    seriesKeys = Object.keys(parsedJsonCards);
+  }
+  return [parsedJsonCards, seriesKeys];
 }
 
 let sleeveS3Structure = null;
-async function getSleeveStructure() {
+function getSleeveStructure() {
   if (!sleeveS3Structure) {
     const data = fs.readFileSync(SLEEVES_FILE_PATH);
     sleeveS3Structure = JSON.parse(data);
@@ -110,7 +116,7 @@ async function getSleeveStructure() {
 }
 
 let frameS3Structure = null;
-async function getFrameStructure() {
+function getFrameStructure() {
   if (!frameS3Structure) {
     const data = fs.readFileSync(FRAMES_FILE_PATH);
     frameS3Structure = JSON.parse(data);
