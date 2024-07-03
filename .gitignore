@@ -6,3 +6,6 @@ node_modules/
 
 # VSCode workspace settings
 .vscode/
+
+# AWS models
+src/database/aws/models/

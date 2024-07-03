@@ -20,8 +20,8 @@
   },
   "homepage": "https://github.com/nicholaschan23/kami-gacha-discord-bot#readme",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.609.0",
     "assert": "^2.1.0",
-    "aws-sdk": "^2.1644.0",
     "colors": "^1.4.0",
     "discord-hybrid-sharding": "^2.2.0",
     "discord.js": "^14.15.3",

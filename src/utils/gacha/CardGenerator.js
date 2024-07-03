@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const config = require("../../config");
 const CodeGenerator = require("./CodeGenerator");
 const CardModel = require("../../database/mongodb/models/card/card");
-const CollectionModel = require("../../database/mongodb/models/card/collection");
+const CollectionModel = require("../../database/mongodb/models/card/user/collection");
 const PityModel = require("../../database/mongodb/models/user/pity");
 const StatsModel = require("../../database/mongodb/models/user/stats");
 

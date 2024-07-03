@@ -1,5 +1,5 @@
 const CardModel = require("../../database/mongodb/models/card/card");
-const CollectionModel = require("../../database/mongodb/models/card/collection");
+const CollectionModel = require("../../database/mongodb/models/card/user/collection");
 const CodeGenerator = require("./CodeGenerator");
 const crypto = require("crypto");
 const config = require("../../config");

@@ -1,8 +1,11 @@
-const s3 = require("./awsConfig");
+const { S3Client, ListObjectsCommand } = require("@aws-sdk/client-s3");
 const fs = require("fs");
-const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const path = require("path");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("S3 structure");
+
+const s3Client = new S3Client({});
+const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
 async function listAllObjects(prefix) {
   let isTruncated = true;
@@ -17,7 +20,7 @@ async function listAllObjects(prefix) {
     };
 
     try {
-      const response = await s3.listObjects(params).promise();
+      const response = await s3Client.send(new ListObjectsCommand(params));
       response.Contents.forEach((item) => {
         allKeys.push(item.Key);
       });
@@ -27,7 +30,7 @@ async function listAllObjects(prefix) {
         marker = response.Contents.slice(-1)[0].Key;
       }
     } catch (error) {
-      logger.error("Error listing objects:", error);
+      logger.error(error.stack);
       throw error;
     }
   }
@@ -36,36 +39,46 @@ async function listAllObjects(prefix) {
 }
 
 async function saveS3StructureLocally(filePath, prefix) {
-  try {
-    const keys = await listAllObjects(BUCKET_NAME, prefix);
-    const directoryStructure = keys.reduce((acc, key) => {
-      const parts = key.split("/");
-      let current = acc;
-      parts.forEach((part) => {
-        if (!current[part]) {
-          current[part] = {};
-        }
-        current = current[part];
-      });
-      return acc;
-    }, {});
+  const keys = await listAllObjects(prefix);
+  const directoryStructure = keys.reduce((acc, key) => {
+    const parts = key.split("/");
+    let current = acc;
+    parts.forEach((part) => {
+      if (!current[part]) {
+        current[part] = {};
+      }
+      current = current[part];
+    });
+    return acc;
+  }, {});
 
-    fs.writeFileSync(filePath, JSON.stringify(directoryStructure, null, 2));
-    logger.log("S3 structure saved locally.");
-  } catch (error) {
-    logger.error("Error saving S3 structure locally:", error);
-  }
+  // Ensure directory exists
+  fs.mkdir(path.dirname(filePath), { recursive: true }, (err) => {
+    if (err) {
+      logger.error("Error creating directory:" + err);
+      throw err;
+    }
+
+    // Write data to file asynchronously
+    fs.writeFile(filePath, JSON.stringify(directoryStructure, null, 2), { flag: "w" }, (err) => {
+      if (err) {
+        logger.error("Error writing to file:" + err);
+        throw err;
+      } else {
+        logger.success(`Saved S3 structure locally: ${filePath}`);
+      }
+    });
+  });
 }
 
-const CARDS_FILE_PATH = "cards.json";
-const SLEEVES_FILE_PATH = "sleeves.json";
-const FRAMES_FILE_PATH = "frames.json";
+const CARDS_FILE_PATH = path.join(__dirname, "models/cards.json");
+const SLEEVES_FILE_PATH = path.join(__dirname, "models/sleeves.json");
+const FRAMES_FILE_PATH = path.join(__dirname, "models/frames.json");
 
 async function loadS3Structures() {
   // If JSON file doesn't exist, create it from S3 Bucket
   if (!fs.existsSync(CARDS_FILE_PATH)) {
     await saveS3StructureLocally(CARDS_FILE_PATH, "cards");
-    logger.success(`File structure from S3 Bucket loaded: ${CARDS_FILE_PATH}`);
   } else {
     logger.info(`File structure from S3 Bucket already loaded: ${CARDS_FILE_PATH}`);
   }

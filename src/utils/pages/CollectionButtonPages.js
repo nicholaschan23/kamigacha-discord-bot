@@ -65,13 +65,13 @@ class CollectionButtonPages extends ButtonPages {
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const clipboard = new ButtonBuilder().setCustomId("copyCodes").setEmoji("📋").setStyle(ButtonStyle.Secondary);
-    const save = new ButtonBuilder().setCustomId("saveFilter").setEmoji("💾").setStyle(ButtonStyle.Secondary);
+    // const save = new ButtonBuilder().setCustomId("saveFilter").setEmoji("💾").setStyle(ButtonStyle.Secondary);
     this.components["toggleEnds"] = ends;
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
     this.components["copyCodes"] = clipboard;
-    this.components["saveFilter"] = save;
-    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard, save);
+    // this.components["saveFilter"] = save;
+    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard);
     this.messageComponents.push(buttonRow);
 
     // Select menu row
@@ -122,10 +122,10 @@ class CollectionButtonPages extends ButtonPages {
         await this.interaction.followUp(codes.join(", "));
         break;
       }
-      case "saveFilter": {
-        await this.interaction.followUp(this.filterString);
-        break;
-      }
+      // case "saveFilter": {
+      //   await this.interaction.followUp(this.filterString);
+      //   break;
+      // }
       case "collectionFilters": {
         const selectedValue = i.values[0];
         this.filterString = selectedValue;

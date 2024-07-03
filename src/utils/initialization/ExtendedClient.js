@@ -1,15 +1,16 @@
 // ExtendedClient.js
 const { Client, Collection, Events } = require("discord.js");
 const { ClusterClient } = require("discord-hybrid-sharding");
+const Logger = require("../Logger");
+const logger = new Logger("Client");
 const BlacklistCache = require("../../utils/cache/BlacklistCache");
 const InviteCache = require("../../utils/cache/InviteCache");
 const mongooseConnect = require("../../database/mongodb/mongooseConnect");
+const { loadS3Structures } = require("../../database/aws/s3Structure")
 const findEvents = require("./findEvents");
 const registerInteractions = require("./registerInteractions");
 const findCommands = require("./findCommands");
 const registerCommands = require("./registerCommands");
-const Logger = require("../Logger");
-const logger = new Logger("Client");
 
 class ExtendedClient extends Client {
   constructor(options) {
@@ -28,6 +29,9 @@ class ExtendedClient extends Client {
   }
 
   async init() {
+    // Fetch all cards from S3 Bucket
+    await loadS3Structures();
+    
     // Connect to MongoDB
     await mongooseConnect(this);
 
