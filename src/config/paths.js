@@ -5,9 +5,9 @@ const DEFAULT_SLEEVED_PATH = path.join(__dirname + "../../../images/cards/defaul
 const RAW_SCALED_PATH = path.join(__dirname + "../../../images/cards/raw-scaled");
 
 // Models
-const CARD_MODEL_PATH = path.join(__dirname, "models/cards.json");
-const SLEEVE_MODEL_PATH = path.join(__dirname, "models/sleeves.json");
-const FRAME_MODEL_PATH = path.join(__dirname, "models/frames.json");
+const CARD_MODEL_PATH = path.join(__dirname, "../database/aws/models/cards.json");
+const SLEEVE_MODEL_PATH = path.join(__dirname, "../database/aws/models/sleeves.json");
+const FRAME_MODEL_PATH = path.join(__dirname, "../database/aws/models/frames.json");
 
 module.exports = {
   DEFAULT_SLEEVED_PATH,

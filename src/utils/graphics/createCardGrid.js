@@ -1,11 +1,12 @@
 const { createCanvas, loadImage } = require("canvas");
 const { createCard } = require("./createCard");
+const config = require("../../config");
 
 async function createCardGrid(cardUrls, sleeveUrls) {
+  const cardWidth = config.cardWidth;
+  const cardHeight = config.cardHeight;
   const numColumns = 5;
   const numRows = 2;
-  const cardWidth = 216;
-  const cardHeight = 300;
 
   // Create a canvas to compose the grid of images
   const canvas = createCanvas(cardWidth * numColumns, cardHeight * numRows);

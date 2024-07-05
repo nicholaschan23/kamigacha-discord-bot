@@ -72,4 +72,9 @@ module.exports = {
     UR: 3,
     SR: 5,
   },
+
+  // Card dimensions
+  cardWidth: 288,
+  cardHeight: 400,
+  cardBorder: 20,
 };

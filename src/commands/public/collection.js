@@ -12,7 +12,7 @@ module.exports = {
     .addStringOption((option) => option.setName("filters").setDescription("Search filters to apply to collection.")),
 
   async execute(client, interaction) {
-    const user = interaction.options.getUser("user") || interaction.user;
+    const user = interaction.options.getUser("user") ?? interaction.user;
     const filters = interaction.options.getString("filters")?.toLowerCase().replace(",", "");
 
     try {

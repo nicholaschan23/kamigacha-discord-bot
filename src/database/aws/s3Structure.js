@@ -1,5 +1,4 @@
 const fs = require("fs").promises;
-const path = require("path");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("S3 structure");
 

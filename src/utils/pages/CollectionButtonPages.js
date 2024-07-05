@@ -44,7 +44,7 @@ class CollectionButtonPages extends ButtonPages {
     if (cardDataChunks.length == 0) {
       const embed = new EmbedBuilder()
         .setTitle(`Card Collection`)
-        .setDescription(`Cards owned by ${this.interaction.user}\n\n` + "No cards found with that filter.")
+        .setDescription(`Cards owned by <@${this.collectionDocument.userId}>\n\n` + "No cards found with that filter.")
         .setFooter({ text: `Showing cards 0-0 (${this.cardList.length.toLocaleString()} total)` });
       pages.push(embed);
     }
@@ -52,7 +52,7 @@ class CollectionButtonPages extends ButtonPages {
     for (let i = 0; i < cardDataChunks.length; i++) {
       const embed = new EmbedBuilder()
         .setTitle(`Card Collection`)
-        .setDescription(`Cards owned by ${this.interaction.user}\n\n` + formatCardInfoPage(cardDataChunks[i]))
+        .setDescription(`Cards owned by <@${this.collectionDocument.userId}>\n\n` + formatCardInfoPage(cardDataChunks[i]))
         .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + this.cardChunks[i].length).toLocaleString()} (${this.cardList.length.toLocaleString()} total)` });
       pages.push(embed);
     }

@@ -2,7 +2,6 @@ const { SlashCommandBuilder } = require("discord.js");
 const CardGenerator = require("../../utils/gacha/CardGenerator");
 const getMultiPullMsg = require("../../assets/messages/card/multiPullMsg");
 const config = require("../../config");
-const fs = require("fs");
 
 module.exports = {
   category: "public",
@@ -16,12 +15,10 @@ module.exports = {
 
     try {
       const message = await getMultiPullMsg(cg.cardData);
-
-      await interaction.editReply(message);
-      fs.unlink(message.files[0], () => {});
+      interaction.editReply(message);
     } catch (err) {
       console.error(err.stack);
-      interaction.reply({ content: "There was an error performing the card Multi-Pull.", ephemeral: true });
+      interaction.editReply({ content: "There was an error performing the card Multi-Pull.", ephemeral: true });
     }
   },
 };
