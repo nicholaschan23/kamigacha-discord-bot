@@ -3,7 +3,6 @@ const crypto = require("crypto");
 const CodeGenerator = require("./CodeGenerator");
 const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/user/collection");
-const { getCardStructure } = require("../../database/aws/s3Structure");
 
 class CardUpgrader {
   constructor(client, guildId, queriedCards, seriesSetFreq, rarityFreq) {
@@ -51,7 +50,7 @@ class CardUpgrader {
   }
 
   async generateUpgradedCard() {
-    const [jsonCards, seriesKeys] = getCardStructure();
+    const jsonCards = this.client.jsonCards;
 
     // Select a series and set
     const [series, set] = this.getSeriesSet();
@@ -60,8 +59,8 @@ class CardUpgrader {
     const rarity = this.getRarity();
 
     // Select a random character
-    const characterKeys = Object.keys(jsonCards[series][set][rarity]);
-    const character = characterKeys[crypto.randomInt(0, characterKeys.length)];
+    const characters = jsonCards[series][set][rarity];
+    const character = characters[crypto.randomInt(0, characters.length)];
 
     const cg = new CodeGenerator(this.client);
     const code = await cg.getNewCode();

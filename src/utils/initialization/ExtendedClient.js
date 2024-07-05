@@ -1,16 +1,23 @@
-// ExtendedClient.js
 const { Client, Collection, Events } = require("discord.js");
 const { ClusterClient } = require("discord-hybrid-sharding");
-const Logger = require("../Logger");
-const logger = new Logger("Client");
-const BlacklistCache = require("../../utils/cache/BlacklistCache");
-const InviteCache = require("../../utils/cache/InviteCache");
+
+// Database
 const mongooseConnect = require("../../database/mongodb/mongooseConnect");
-const { loadS3Structures } = require("../../database/aws/s3Structure")
+const { loadS3Structures, getCardStructure, getSleeveStructure } = require("../../database/aws/s3Structure");
+
+// Initialization helpers
 const findEvents = require("./findEvents");
 const registerInteractions = require("./registerInteractions");
 const findCommands = require("./findCommands");
 const registerCommands = require("./registerCommands");
+
+// Util
+const Logger = require("../Logger");
+const logger = new Logger("Client");
+const config = require("../../config");
+const { ensureDirExists } = require("../fileSystem");
+const BlacklistCache = require("../../utils/cache/BlacklistCache");
+const InviteCache = require("../../utils/cache/InviteCache");
 
 class ExtendedClient extends Client {
   constructor(options) {
@@ -29,9 +36,19 @@ class ExtendedClient extends Client {
   }
 
   async init() {
+    await ensureDirExists(config.DEFAULT_SLEEVED_PATH + "/foo");
+    await ensureDirExists(config.RAW_SCALED_PATH + "/foo");
+
     // Fetch all cards from S3 Bucket
     await loadS3Structures();
-    
+    const [jsonCards, seriesKeys] = await getCardStructure();
+    this.jsonCards = jsonCards;
+    this.jsonCardsKeys = seriesKeys;
+
+    // Fetch all sleeves from S3 Bucket
+    const jsonSleeves = await getSleeveStructure();
+    this.jsonSleeves = jsonSleeves;
+
     // Connect to MongoDB
     await mongooseConnect(this);
 
@@ -53,7 +70,7 @@ class ExtendedClient extends Client {
     });
 
     await this.login(process.env.DISCORD_BOT_TOKEN);
-    
+
     // Handle shutdown
     const shutdown = async () => {
       try {

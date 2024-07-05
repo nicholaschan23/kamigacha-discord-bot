@@ -1,5 +1,5 @@
 {
-  "name": "kami-gacha-discord-bot",
+  "name": "kamigacha-discord-bot",
   "version": "1.0.0",
   "description": "Gacha anime card collecting Discord bot",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nicholaschan23/kami-gacha-discord-bot.git"
+    "url": "git+https://github.com/nicholaschan23/kamigacha-discord-bot.git"
   },
   "keywords": [
     "Discord"
@@ -16,17 +16,20 @@
   "author": "irukanoko",
   "license": "NONE",
   "bugs": {
-    "url": "https://github.com/nicholaschan23/kami-gacha-discord-bot/issues"
+    "url": "https://github.com/nicholaschan23/kamigacha-discord-bot/issues"
   },
-  "homepage": "https://github.com/nicholaschan23/kami-gacha-discord-bot#readme",
+  "homepage": "https://github.com/nicholaschan23/kamigacha-discord-bot#readme",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.609.0",
     "assert": "^2.1.0",
+    "axios": "^1.7.2",
+    "canvas": "^2.11.2",
     "colors": "^1.4.0",
     "discord-hybrid-sharding": "^2.2.0",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
     "emoji-regex": "^10.3.0",
-    "mongoose": "^8.4.1"
+    "mongoose": "^8.4.1",
+    "sharp": "^0.33.4"
   }
 }

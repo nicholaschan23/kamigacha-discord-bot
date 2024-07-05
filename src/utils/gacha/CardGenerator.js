@@ -5,7 +5,6 @@ const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/user/collection");
 const PityModel = require("../../database/mongodb/models/user/pity");
 const StatsModel = require("../../database/mongodb/models/user/stats");
-const { getCardStructure } = require("../../database/aws/s3Structure");
 
 class CardGenerator {
   constructor(client, userId, guildId, rates) {
@@ -22,8 +21,9 @@ class CardGenerator {
   }
 
   async cardPull(numPulls) {
+    const jsonCards = this.client.jsonCards;
+    const seriesKeys = this.client.jsonCardsKeys
     await this.fetchPity();
-    const [jsonCards, seriesKeys] = getCardStructure();
 
     for (let i = 0; i < numPulls; i++) {
       // Select a random series
@@ -36,8 +36,8 @@ class CardGenerator {
       const rarity = this.getRarity();
 
       // Select a random character
-      const characterKeys = Object.keys(jsonCards[series][set][rarity]);
-      const character = characterKeys[crypto.randomInt(0, characterKeys.length)];
+      const characters = jsonCards[series][set][rarity];
+      const character = characters[crypto.randomInt(0, characters.length)];
 
       // Generate card code
       const code = await this.cg.getNewCode();

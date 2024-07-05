@@ -1,17 +1,15 @@
-const { S3Client, ListObjectsCommand } = require("@aws-sdk/client-s3");
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("S3 structure");
+
+const { ensureDirExists } = require("../../utils/fileSystem")
+const { ListObjectsCommand } = require("@aws-sdk/client-s3");
 const s3Client = require("./s3Client");
-
-const BUCKET_NAME = process.env.S3_BUCKET_NAME;
-
-const CARDS_FILE_PATH = path.join(__dirname, "models/cards.json");
-const SLEEVES_FILE_PATH = path.join(__dirname, "models/sleeves.json");
-const FRAMES_FILE_PATH = path.join(__dirname, "models/frames.json");
+const config = require("../../config")
 
 async function listAllObjects(prefix) {
+  const BUCKET_NAME = process.env.S3_BUCKET_NAME;
   let isTruncated = true;
   let marker;
   const allKeys = [];
@@ -47,81 +45,77 @@ async function saveS3StructureLocally(filePath, prefix) {
 
   const directoryStructure = keys.reduce((acc, key) => {
     const parts = key.slice(`${prefix}/`.length).split("/");
-    if (parts[parts.length - 1].slice(-4) == ".jpg") {
+    const fileName = parts.pop();
+    const fileType = fileName.slice(-4);
+
+    if (fileType === ".jpg" || fileType === ".png") {
       let current = acc;
-      parts.forEach((part) => {
-        if (!current[part]) {
-          current[part] = {};
+      parts.forEach((part, index) => {
+        if (index === parts.length - 1) {
+          // If this is the last part, initialize it as an array if it doesn't exist
+          if (!current[part]) {
+            current[part] = [];
+          }
+          current[part].push(fileName);
+        } else {
+          // Otherwise, keep nesting
+          if (!current[part]) {
+            current[part] = {};
+          }
+          current = current[part];
         }
-        current = current[part];
       });
     }
+
     return acc;
   }, {});
 
-  // Ensure directory exists
-  fs.mkdir(path.dirname(filePath), { recursive: true }, (err) => {
+  // Write data to file asynchronously
+  await fs.writeFile(filePath, JSON.stringify(directoryStructure, null, 2), { flag: "w" }, (err) => {
     if (err) {
-      logger.error("Error creating directory:" + err);
+      logger.error("Error writing to file:" + err);
       throw err;
+    } else {
+      logger.success(`Saved S3 structure locally: ${prefix}`);
     }
-
-    // Write data to file asynchronously
-    fs.writeFile(filePath, JSON.stringify(directoryStructure, null, 2), { flag: "w" }, (err) => {
-      if (err) {
-        logger.error("Error writing to file:" + err);
-        throw err;
-      } else {
-        logger.success(`Saved S3 structure locally: ${filePath}`);
-      }
-    });
   });
 }
 
+// Helper function to load structure from S3 if file does not exist
+async function loadStructureIfNotExist(filePath, s3Path) {
+  try {
+    await fs.access(filePath);
+    logger.info(`File structure from S3 Bucket already loaded: ${s3Path}`);
+  } catch {
+    await ensureDirExists(filePath);
+    await saveS3StructureLocally(filePath, s3Path);
+    logger.success(`File structure from S3 Bucket loaded: ${s3Path}`);
+  }
+}
+
+// Main function to load S3 structures
 async function loadS3Structures() {
-  // If JSON file doesn't exist, create it from S3 Bucket
-  if (!fs.existsSync(CARDS_FILE_PATH)) {
-    await saveS3StructureLocally(CARDS_FILE_PATH, "cards");
-  } else {
-    logger.info(`File structure from S3 Bucket already loaded: ${CARDS_FILE_PATH}`);
-  }
-  // if (!fs.existsSync(SLEEVES_FILE_PATH)) {
-  //   await saveS3StructureLocally(SLEEVES_FILE_PATH, "sleeves");
-  // }
-  // if (!fs.existsSync(FRAMES_FILE_PATH)) {
-  //   await saveS3StructureLocally(FRAMES_FILE_PATH, "frames");
-  // }
+  await loadStructureIfNotExist(config.CARD_MODEL_PATH, "cards");
+  await loadStructureIfNotExist(config.SLEEVE_MODEL_PATH, "customisations/sleeves");
+  // await loadStructureIfNotExist(config.FRAME_MODEL_PATH, "customisations/frames");
 }
 
-let parsedJsonCards = null;
-let seriesKeys = null;
-function getCardStructure() {
-  if (!parsedJsonCards) {
-    const data = fs.readFileSync(CARDS_FILE_PATH);
-    parsedJsonCards = JSON.parse(data);
-  }
-  if (!seriesKeys) {
-    seriesKeys = Object.keys(parsedJsonCards);
-  }
-  return [parsedJsonCards, seriesKeys];
+// Function to get card structure
+async function getCardStructure() {
+  const data = await fs.readFile(config.CARD_MODEL_PATH, "utf8");
+  const parsedJson = JSON.parse(data);
+  const keys = Object.keys(parsedJson);
+  return [parsedJson, keys];
 }
 
-let sleeveS3Structure = null;
-function getSleeveStructure() {
-  if (!sleeveS3Structure) {
-    const data = fs.readFileSync(SLEEVES_FILE_PATH);
-    sleeveS3Structure = JSON.parse(data);
-  }
-  return sleeveS3Structure;
+// Function to get sleeve structure
+async function getSleeveStructure() {
+  const data = await fs.readFile(config.SLEEVE_MODEL_PATH, "utf8");
+  return JSON.parse(data);
 }
 
-let frameS3Structure = null;
-function getFrameStructure() {
-  if (!frameS3Structure) {
-    const data = fs.readFileSync(FRAMES_FILE_PATH);
-    frameS3Structure = JSON.parse(data);
-  }
-  return frameS3Structure;
-}
-
-module.exports = { loadS3Structures, getCardStructure };
+module.exports = {
+  loadS3Structures,
+  getCardStructure,
+  getSleeveStructure,
+};
