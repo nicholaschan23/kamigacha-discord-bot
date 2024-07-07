@@ -15,7 +15,7 @@ const registerCommands = require("./registerCommands");
 const Logger = require("../Logger");
 const logger = new Logger("Client");
 const config = require("../../config");
-const { ensureDirExists } = require("../fileSystem");
+const { downloadFiles } = require("../../database/aws/downloadFiles");
 const BlacklistCache = require("../../utils/cache/BlacklistCache");
 const InviteCache = require("../../utils/cache/InviteCache");
 
@@ -36,8 +36,7 @@ class ExtendedClient extends Client {
   }
 
   async init() {
-    await ensureDirExists(config.DEFAULT_SLEEVED_PATH + "/foo");
-    await ensureDirExists(config.RAW_SCALED_PATH + "/foo");
+    await downloadFiles("customisations/boarders", config.IMAGES_PATH);
 
     // Fetch all cards from S3 Bucket
     await loadS3Structures();
@@ -46,8 +45,8 @@ class ExtendedClient extends Client {
     this.jsonCardsKeys = seriesKeys;
 
     // Fetch all sleeves from S3 Bucket
-    const jsonSleeves = await getSleeveStructure();
-    this.jsonSleeves = jsonSleeves;
+    // const jsonSleeves = await getSleeveStructure();
+    // this.jsonSleeves = jsonSleeves;
 
     // Connect to MongoDB
     await mongooseConnect(this);

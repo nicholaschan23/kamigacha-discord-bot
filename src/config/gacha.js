@@ -36,45 +36,52 @@ function getRarityRank(rarity) {
   }
 }
 
+// Rates in percentages
+const pullRate = [
+  { rarity: "C", chance: 70 },
+  { rarity: "R", chance: 15 },
+  { rarity: "UR", chance: 7 },
+  { rarity: "SR", chance: 5 },
+  { rarity: "SSR", chance: 3 },
+];
+const multiPullRate = [
+  { rarity: "C", chance: 80 },
+  { rarity: "R", chance: 10 },
+  { rarity: "UR", chance: 6 },
+  { rarity: "SR", chance: 3 },
+  { rarity: "SSR", chance: 1 },
+];
+
+// After X amount of pulls and you haven't gotten the respective rarity, guarantee that rarity
+const pity = {
+  UR: 30,
+  SR: 50,
+  SSR: 100,
+};
+
+// Fail rate influenced per rarity of card in percentages
+const upgradeFailRate = {
+  C: 0,
+  R: 1,
+  UR: 3,
+  SR: 5,
+};
+
+// Card dimensions
+const cardWidth = 288;
+const cardHeight = 400;
+const cardBorder = 20;
+
 module.exports = {
   rarities,
   origins,
   getNextRarity,
   getRarityRank,
-
-  // Rates in percentages
-  pullRate: [
-    { rarity: "C", chance: 70 },
-    { rarity: "R", chance: 15 },
-    { rarity: "UR", chance: 7 },
-    { rarity: "SR", chance: 5 },
-    { rarity: "SSR", chance: 3 },
-  ],
-  multiPullRate: [
-    { rarity: "C", chance: 80 },
-    { rarity: "R", chance: 10 },
-    { rarity: "UR", chance: 6 },
-    { rarity: "SR", chance: 3 },
-    { rarity: "SSR", chance: 1 },
-  ],
-
-  // After X amount of pulls and you haven't gotten the respective rarity, guarantee that rarity
-  pity: {
-    UR: 30,
-    SR: 50,
-    SSR: 100,
-  },
-
-  // Fail rate influenced per rarity of card in percentages
-  upgradeFailRate: {
-    C: 0,
-    R: 1,
-    UR: 3,
-    SR: 5,
-  },
-
-  // Card dimensions
-  cardWidth: 288,
-  cardHeight: 400,
-  cardBorder: 20,
+  pullRate,
+  multiPullRate,
+  pity,
+  upgradeFailRate,
+  cardWidth,
+  cardHeight,
+  cardBorder,
 };

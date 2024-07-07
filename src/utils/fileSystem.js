@@ -34,8 +34,18 @@ async function ensureDirExists(filePath) {
   }
 }
 
+async function fileExists(filePath) {
+  try {
+    await fsp.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 module.exports = {
   getJsFiles,
   abbrevCmdPath,
   ensureDirExists,
+  fileExists,
 };

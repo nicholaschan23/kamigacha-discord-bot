@@ -1,46 +1,13 @@
 const fs = require("fs").promises;
 const Logger = require("../../utils/Logger");
 const logger = new Logger("S3 structure");
+const { listObjects } = require("./listObjects");
+const { ensureDirExists } = require("../../utils/fileSystem");
 
-const { ensureDirExists } = require("../../utils/fileSystem")
-const { ListObjectsCommand } = require("@aws-sdk/client-s3");
-const s3Client = require("./s3Client");
-const config = require("../../config")
-
-async function listAllObjects(prefix) {
-  const BUCKET_NAME = process.env.S3_BUCKET_NAME;
-  let isTruncated = true;
-  let marker;
-  const allKeys = [];
-
-  while (isTruncated) {
-    const params = {
-      Bucket: BUCKET_NAME,
-      Marker: marker,
-      Prefix: prefix,
-    };
-
-    try {
-      const response = await s3Client.send(new ListObjectsCommand(params));
-      response.Contents.forEach((item) => {
-        allKeys.push(item.Key);
-      });
-
-      isTruncated = response.IsTruncated;
-      if (isTruncated) {
-        marker = response.Contents.slice(-1)[0].Key;
-      }
-    } catch (error) {
-      logger.error(error.stack);
-      throw error;
-    }
-  }
-
-  return allKeys;
-}
+const config = require("../../config");
 
 async function saveS3StructureLocally(filePath, prefix) {
-  const keys = await listAllObjects(prefix);
+  const keys = await listObjects(prefix);
 
   const directoryStructure = keys.reduce((acc, key) => {
     const parts = key.slice(`${prefix}/`.length).split("/");

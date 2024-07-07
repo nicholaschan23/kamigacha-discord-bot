@@ -1,6 +1,6 @@
 const { EmbedBuilder, AttachmentBuilder } = require("discord.js");
 const { formatCardInfo } = require("../../../utils/gacha/format");
-const { getDefaultSleeve } = require("../../../utils/graphics/getSleeve");
+const { getCardBorder } = require("../../../utils/graphics/getCardBorder");
 const { createCard } = require("../../../utils/graphics/createCard");
 const { v4: uuidv4 } = require("uuid");
 
@@ -12,7 +12,7 @@ module.exports = async (data) => {
   const description = `Owned by <@${data.ownerId}>\n` + `\n` + `${formatCardInfo(data)}`;
 
   // Create the card image buffer
-  const buffer = await createCard(data.image, getDefaultSleeve(data.rarity));
+  const buffer = await createCard(data.image, getCardBorder(data.rarity));
 
   // Create a unique attachment name
   const attachmentName = `pull-${uuidv4()}.png`;

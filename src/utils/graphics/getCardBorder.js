@@ -1,5 +1,7 @@
-function getDefaultSleeve(rarity) {
-  const prefix = [process.env.CLOUDFRONT_URL, "customisations/sleeves"];
+const config = require("../../config");
+
+function getCardBorder(rarity) {
+  const prefix = [config.IMAGES_PATH, "customisations/boarders"];
   switch (rarity.toLowerCase()) {
     case "r":
       prefix.push("default/default-r.png");
@@ -20,4 +22,4 @@ function getDefaultSleeve(rarity) {
   return prefix.join("/");
 }
 
-module.exports = { getDefaultSleeve };
+module.exports = { getCardBorder };

@@ -1,8 +1,8 @@
 const path = require("path");
 
 // Images
-const DEFAULT_SLEEVED_PATH = path.join(__dirname + "../../../images/cards/default-sleeved");
-const RAW_SCALED_PATH = path.join(__dirname + "../../../images/cards/raw-scaled");
+const IMAGES_PATH = path.join(__dirname + "../../../images");
+const CARD_BORDERS_PATH = path.join(__dirname + "../../../images/borders");
 
 // Models
 const CARD_MODEL_PATH = path.join(__dirname, "../database/aws/models/cards.json");
@@ -10,8 +10,8 @@ const SLEEVE_MODEL_PATH = path.join(__dirname, "../database/aws/models/sleeves.j
 const FRAME_MODEL_PATH = path.join(__dirname, "../database/aws/models/frames.json");
 
 module.exports = {
-  DEFAULT_SLEEVED_PATH,
-  RAW_SCALED_PATH,
+  IMAGES_PATH,
+  CARD_BORDERS_PATH,
   CARD_MODEL_PATH,
   SLEEVE_MODEL_PATH,
   FRAME_MODEL_PATH,

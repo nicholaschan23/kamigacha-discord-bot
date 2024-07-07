@@ -8,18 +8,20 @@ async function fetchImage(url) {
     url: url,
     responseType: "arraybuffer",
   });
-  return response;
+  return response.data;
 }
 
-async function createCard(cardUrl, sleeveUrl) {
+async function createCard(cardUrl, borderPath) {
   const canvasWidth = config.cardWidth;
   const canvasHeight = config.cardHeight;
   const borderSize = config.cardBorder;
-  const [card, sleeve] = await Promise.all([fetchImage(cardUrl), fetchImage(sleeveUrl)]);
 
+  // Fetch the card image and read the border image from the local filesystem
+  const [cardData, borderData] = await Promise.all([fetchImage(cardUrl), sharp(borderPath).toBuffer()]);
+  
   // Convert the image buffer to a Sharp instance
-  const cardImage = sharp(card.data);
-  const sleeveImage = sharp(sleeve.data);
+  const cardImage = sharp(cardData);
+  const borderImage = sharp(borderData);
 
   // Resize the image and chain operations
   const overlaidImage = await sharp({
@@ -43,18 +45,14 @@ async function createCard(cardUrl, sleeveUrl) {
         left: borderSize,
         blend: "over",
       },
-      // {
-      //   input: await sleeveImage
-      //     .resize({
-      //       width: canvasWidth - 2 * borderSize,
-      //       height: canvasHeight - 2 * borderSize,
-      //     })
-      //     .png()
-      //     .toBuffer(),
-      //   top: borderSize,
-      //   left: borderSize,
-      //   blend: "over",
-      // },
+      {
+        input: await borderImage
+          .png()
+          .toBuffer(),
+        top: 0,
+        left: 0,
+        blend: "over",
+      },
     ])
     .png()
     .toBuffer();
