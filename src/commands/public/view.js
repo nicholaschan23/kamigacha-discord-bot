@@ -14,7 +14,7 @@ module.exports = {
     const code = interaction.options.getString("code").toLowerCase();
     const data = await CardModel(client).findOne({ code: code });
     if (data) {
-      const [embed, file] = await viewCardEmbed(data);
+      const { embed, file } = await viewCardEmbed(data);
       return interaction.editReply({ embeds: [embed], files: [file] });
     }
     interaction.editReply({ content: "That card code does not exist.", ephemeral: true });

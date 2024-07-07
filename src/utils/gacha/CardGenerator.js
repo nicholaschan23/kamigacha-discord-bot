@@ -22,18 +22,15 @@ class CardGenerator {
 
   async cardPull(numPulls) {
     const jsonCards = this.client.jsonCards;
-    const seriesKeys = this.client.jsonCardsKeys
+    const seriesKeys = this.client.jsonCardsKeys;
     await this.fetchPity();
 
     for (let i = 0; i < numPulls; i++) {
-      // Select a random series
-      const series = seriesKeys[crypto.randomInt(0, seriesKeys.length)];
-
-      // Select a random set
-      const set = this.getSet(Object.keys(jsonCards[series]).length);
-
       // Select a rarity
       const rarity = this.getRarity();
+
+      // Select a series and set
+      const { series, set } = this.selectSeriesAndSet(rarity, jsonCards, seriesKeys);
 
       // Select a random character
       const characters = jsonCards[series][set][rarity];
@@ -76,25 +73,64 @@ class CardGenerator {
     }
   }
 
+  selectSeriesAndSet(rarity, jsonCards, seriesKeys) {
+    let series, set;
+
+    if (rarity !== "C") {
+      // Initialize arrays to hold series and set keys that match the rarity
+      const matchingSeriesSets = [];
+
+      // Traverse through series and sets to find matches
+      seriesKeys.forEach((series) => {
+        Object.keys(jsonCards[series]).forEach((setKey) => {
+          if (jsonCards[series][setKey][rarity]) {
+            matchingSeriesSets.push({ series: series, set: setKey });
+          }
+        });
+      });
+
+      // Select a random series from the matching list
+      const selectedEntry = matchingSeriesSets[crypto.randomInt(0, matchingSeriesSets.length)];
+      series = selectedEntry.series;
+
+      // Filter matchingSeriesSets to get all sets for the selected series
+      const matchingSetsForSeries = matchingSeriesSets.filter((entry) => entry.series === series).map((entry) => entry.set);
+
+      // Select a set by weight from the filtered set keys
+      set = this.getSet(matchingSetsForSeries);
+    } else {
+      // Select a random series
+      series = seriesKeys[crypto.randomInt(0, seriesKeys.length)];
+
+      // Select a random set
+      set = this.getSet(Object.keys(jsonCards[series]));
+    }
+
+    return { series, set };
+  }
+
   // Function to get a random index with increasing probability (1-indexed)
-  getSet(length) {
-    if (length > 1) {
-      // Calculate the total weight sum (1 + 2 + ... + length)
-      const totalWeight = (length * (length + 1)) / 2;
+  getSet(setKeys) {
+    if (setKeys.length > 1) {
+      // Convert array to numbers
+      const numSetKeys = setKeys.map((set) => parseInt(set));
+
+      // Calculate the total weight sum
+      const totalWeight = numSetKeys.reduce((a, b) => a + b, 0);
 
       // Generate a random number between 0 and total weight
       const randomValue = crypto.randomInt(0, totalWeight);
 
       // Find the index corresponding to the random value (1-indexed)
       let cumulativeWeight = 0;
-      for (let i = 0; i < length; i++) {
-        cumulativeWeight += i + 1;
+      for (let i = 0; i < setKeys.length; i++) {
+        cumulativeWeight += numSetKeys[i];
         if (randomValue < cumulativeWeight) {
-          return i + 1; // Return 1-indexed value
+          return setKeys[i];
         }
       }
     }
-    return 1;
+    return setKeys[0];
   }
 
   getRarity() {

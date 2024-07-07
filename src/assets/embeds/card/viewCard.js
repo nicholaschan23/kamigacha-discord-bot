@@ -23,5 +23,8 @@ module.exports = async (data) => {
   // Create the attachment URL
   const attachmentUrl = `attachment://${attachmentName}`;
 
-  return [new EmbedBuilder().setTitle(title).setDescription(description).setImage(attachmentUrl), imageFile];
+  return {
+    embed: new EmbedBuilder().setTitle(title).setDescription(description).setImage(attachmentUrl),
+    file: imageFile,
+  };
 };

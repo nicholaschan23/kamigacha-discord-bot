@@ -53,6 +53,18 @@ module.exports = {
       return interaction.editReply({ content: `The following SSR cards are already the highest rarity and cannot be further upgraded: ${formattedCodes}` });
     }
 
+    // Verify all cards have an upgrade rarity
+    const noUpgradeCodes = queriedCards.filter((card) => {
+      const nextRarity = config.getNextRarity(card.rarity);
+      if (!client.jsonCards[card.series][card.set][nextRarity]) {
+        return card.code;
+      }
+    });
+    if (noUpgradeCodes.length > 0) {
+      const formattedCodes = noUpgradeCodes.map((code) => `\`${code}\``).join(", ");
+      return interaction.editReply({ content: `The following cards are the highest rarity in their set and cannot be further upgraded: ${formattedCodes}` });
+    }
+
     // Count frequency of card stats
     const seriesSetFreq = {};
     const rarityFreq = {};
@@ -96,7 +108,8 @@ module.exports = {
             if (createdCard) {
               embed.setColor(config.embedColor.green);
               await i.update({ embeds: [embed], components: [] });
-              await interaction.followUp({ embeds: [viewUpgradeEmbed(createdCard)] });
+              const { embed: upgradeEmbed, file: upgradeFile } = await viewUpgradeEmbed(createdCard);
+              await interaction.followUp({ embeds: [upgradeEmbed], files: [upgradeFile] });
             } else {
               embed.setColor(config.embedColor.red);
               await i.update({ embeds: [embed], components: [] });

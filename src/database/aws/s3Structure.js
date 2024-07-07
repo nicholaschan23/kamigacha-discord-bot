@@ -62,7 +62,7 @@ async function loadStructureIfNotExist(filePath, s3Path) {
 // Main function to load S3 structures
 async function loadS3Structures() {
   await loadStructureIfNotExist(config.CARD_MODEL_PATH, "cards");
-  await loadStructureIfNotExist(config.SLEEVE_MODEL_PATH, "customisations/sleeves");
+  // await loadStructureIfNotExist(config.SLEEVE_MODEL_PATH, "customisations/sleeves");
   // await loadStructureIfNotExist(config.FRAME_MODEL_PATH, "customisations/frames");
 }
 

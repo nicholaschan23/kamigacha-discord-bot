@@ -1,9 +1,10 @@
-const { EmbedBuilder } = require("discord.js");
-const { formatCardInfo } = require("../../../utils/gacha/format");
+const viewCardEmbed = require("../card/viewCard");
+const config = require("../../../config");
 
-module.exports = (data) => {
-  const title = "Upgrade";
-  const description = `Owned by: <@${data.ownerId}>\n` + `\n` + `${formatCardInfo(data)}`;
-
-  return new EmbedBuilder().setTitle(title).setDescription(description);
+module.exports = async (data) => {
+  const { embed, file } = await viewCardEmbed(data);
+  return {
+    embed: embed.setTitle("Upgrade").setColor(config.embedColor.green),
+    file: file,
+  };
 };
