@@ -7,6 +7,7 @@ const { downloadFiles } = require("../../database/aws/downloadFiles");
 const { loadCardModel } = require("../../database/aws/load/loadCardModel");
 const { loadCharacterModel } = require("../../database/aws/load/loadCharacterModel");
 const { loadSearchModel } = require("../../database/aws/load/loadSearchModel");
+const { loadFormattedNames } = require("../../database/aws/load/loadFormattedNames");
 
 // Initialization helpers
 const findEvents = require("./findEvents");
@@ -45,13 +46,20 @@ class ExtendedClient extends Client {
     this.jsonCards = jsonCards;
     this.jsonCardsKeys = seriesKeys;
 
+    // Organize into unique characters
     const { object: jsonCharacters, keys: characterKeys } = await loadCharacterModel(this.jsonCards, this.jsonCardsKeys);
     this.jsonCharacters = jsonCharacters;
     this.jsonCharacterKeys = characterKeys;
-
+    
+    // Pre-process card search
     const { object: jsonSearches, keys: searchKeys } = await loadSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
     this.jsonSearches = jsonSearches;
     this.jsonSearchKeys = searchKeys;
+
+    // Map character and series names 
+    this.characterNameMap = await loadFormattedNames(this.jsonCharacterKeys, config.CHARACTER_NAME_MAP_PATH);
+    this.seriesNameMap = await loadFormattedNames(this.jsonCardsKeys, config.SERIES_NAME_MAP_PATH);
+    return;
 
     // Connect to MongoDB
     await mongooseConnect(this);
