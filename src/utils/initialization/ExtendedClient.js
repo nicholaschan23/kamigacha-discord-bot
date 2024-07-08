@@ -3,7 +3,10 @@ const { ClusterClient } = require("discord-hybrid-sharding");
 
 // Database
 const mongooseConnect = require("../../database/mongodb/mongooseConnect");
-const { loadS3Structures, getCardStructure, getSleeveStructure } = require("../../database/aws/s3Structure");
+const { downloadFiles } = require("../../database/aws/downloadFiles");
+const { loadCardModel } = require("../../database/aws/load/loadCardModel");
+const { loadCharacterModel } = require("../../database/aws/load/loadCharacterModel");
+const { loadSearchModel } = require("../../database/aws/load/loadSearchModel");
 
 // Initialization helpers
 const findEvents = require("./findEvents");
@@ -15,7 +18,6 @@ const registerCommands = require("./registerCommands");
 const Logger = require("../Logger");
 const logger = new Logger("Client");
 const config = require("../../config");
-const { downloadFiles } = require("../../database/aws/downloadFiles");
 const BlacklistCache = require("../../utils/cache/BlacklistCache");
 const InviteCache = require("../../utils/cache/InviteCache");
 
@@ -39,14 +41,17 @@ class ExtendedClient extends Client {
     await downloadFiles("customisations/boarders", config.IMAGES_PATH);
 
     // Fetch all cards from S3 Bucket
-    await loadS3Structures();
-    const [jsonCards, seriesKeys] = await getCardStructure();
+    const { object: jsonCards, keys: seriesKeys } = await loadCardModel();
     this.jsonCards = jsonCards;
     this.jsonCardsKeys = seriesKeys;
 
-    // Fetch all sleeves from S3 Bucket
-    // const jsonSleeves = await getSleeveStructure();
-    // this.jsonSleeves = jsonSleeves;
+    const { object: jsonCharacters, keys: characterKeys } = await loadCharacterModel(this.jsonCards, this.jsonCardsKeys);
+    this.jsonCharacters = jsonCharacters;
+    this.jsonCharacterKeys = characterKeys;
+
+    const { object: jsonSearches, keys: searchKeys } = await loadSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
+    this.jsonSearches = jsonSearches;
+    this.jsonSearchKeys = searchKeys;
 
     // Connect to MongoDB
     await mongooseConnect(this);
