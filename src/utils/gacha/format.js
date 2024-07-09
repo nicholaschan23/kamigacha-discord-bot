@@ -29,7 +29,7 @@ function formatTagListPage(tagList) {
   const formattedTags = [];
 
   for (const element of tagList) {
-    const {tag, emoji, quantity } = element;
+    const { tag, emoji, quantity } = element;
     formattedTags.push([`${emoji} \`${tag}\``, `**${quantity}** card${quantity == 1 ? "" : "s"}`].join(" · "));
   }
 
@@ -91,15 +91,11 @@ function formatFilterListPage(filterList) {
   const formattedFilters = [];
 
   for (const fObject of filterList) {
-    const {emoji, label, filter} = fObject;
+    const { emoji, label, filter } = fObject;
     formattedFilters.push([`${emoji} **${label}**`, `\`${filter}\``].join(" · "));
   }
 
   return formattedFilters.join("\n");
-}
-
-function capitalizeFirstLetter(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 module.exports = {
@@ -115,5 +111,4 @@ module.exports = {
   isValidFilter,
   isValidFilterLabel,
   formatFilterListPage,
-  capitalizeFirstLetter
 };

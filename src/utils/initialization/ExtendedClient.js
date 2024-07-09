@@ -4,10 +4,10 @@ const { ClusterClient } = require("discord-hybrid-sharding");
 // Database
 const mongooseConnect = require("../../database/mongodb/mongooseConnect");
 const { downloadFiles } = require("../../database/aws/downloadFiles");
-const { loadCardModel } = require("../../database/aws/load/loadCardModel");
-const { loadCharacterModel } = require("../../database/aws/load/loadCharacterModel");
-const { loadSearchModel } = require("../../database/aws/load/loadSearchModel");
-const { loadFormattedNames } = require("../../database/aws/load/loadFormattedNames");
+const { getCardModel } = require("../../database/aws/preprocessing/cardModel");
+const { getCharacterModel } = require("../../database/aws/preprocessing/characterModel");
+const { getSearchModel } = require("../../database/aws/preprocessing/searchModel");
+const { getFormattedNames } = require("../../database/aws/preprocessing/formattedNames");
 
 // Initialization helpers
 const findEvents = require("./findEvents");
@@ -42,24 +42,23 @@ class ExtendedClient extends Client {
     await downloadFiles("customisations/boarders", config.IMAGES_PATH);
 
     // Fetch all cards from S3 Bucket
-    const { object: jsonCards, keys: seriesKeys } = await loadCardModel();
+    const { model: jsonCards, keys: seriesKeys } = await getCardModel();
     this.jsonCards = jsonCards;
     this.jsonCardsKeys = seriesKeys;
 
     // Organize into unique characters
-    const { object: jsonCharacters, keys: characterKeys } = await loadCharacterModel(this.jsonCards, this.jsonCardsKeys);
+    const { model: jsonCharacters, keys: characterKeys } = await getCharacterModel(this.jsonCards, this.jsonCardsKeys);
     this.jsonCharacters = jsonCharacters;
     this.jsonCharacterKeys = characterKeys;
-    
-    // Pre-process card search
-    const { object: jsonSearches, keys: searchKeys } = await loadSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
+
+    // Map character and series names to hash table
+    this.characterNameMap = await getFormattedNames(this.jsonCharacterKeys, config.CHARACTER_NAME_MAP_PATH);
+    this.seriesNameMap = await getFormattedNames(this.jsonCardsKeys, config.SERIES_NAME_MAP_PATH);
+
+    // Preprocess card search
+    const { model: jsonSearches, keys: searchKeys } = await getSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
     this.jsonSearches = jsonSearches;
     this.jsonSearchKeys = searchKeys;
-
-    // Map character and series names 
-    this.characterNameMap = await loadFormattedNames(this.jsonCharacterKeys, config.CHARACTER_NAME_MAP_PATH);
-    this.seriesNameMap = await loadFormattedNames(this.jsonCardsKeys, config.SERIES_NAME_MAP_PATH);
-    return;
 
     // Connect to MongoDB
     await mongooseConnect(this);

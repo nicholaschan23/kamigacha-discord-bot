@@ -1,5 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidFilter, isValidFilterLabel, containsExactlyOneEmoji, capitalizeFirstLetter } = require("../../../utils/gacha/format");
+const { isValidFilter, isValidFilterLabel, containsExactlyOneEmoji } = require("../../../utils/gacha/format");
+const { capitalizeFirstLetter } = require("../../../utils/stringUtils")
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters create command");
