@@ -5,7 +5,7 @@ const path = require("path");
 const config = require("../../../config");
 const { ensureDirExists } = require("../../../utils/fileSystem");
 
-async function createModel(characterModel, characterKeys, existingModel = {}) {
+async function createModel(characterModel, characterKeys, characterNameMap, seriesNameMap, existingModel = {}) {
   const searchModel = { ...existingModel };
 
   for (const character of characterKeys) {
@@ -21,8 +21,10 @@ async function createModel(characterModel, characterKeys, existingModel = {}) {
       const existingEntryIndex = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
 
       if (existingEntryIndex === -1) {
-        searchModel[word].push({ character: character, series: series, wishlist: 0 });
-        searchModel[word].sort((a, b) => a.wishlist - b.wishlist);
+        searchModel[word].push({ character: characterNameMap[character], series: seriesNameMap[series], wishlist: 0 });
+        searchModel[word].sort((a, b) => {
+          return a.wishlist - b.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+        });
       }
     });
   }
@@ -51,12 +53,12 @@ async function saveModel(data, filePath) {
   logger.success("Saved: " + path.basename(filePath));
 }
 
-async function getSearchModel(characterModel, characterKeys) {
+async function getSearchModel(characterModel, characterKeys, characterNameMap, seriesNameMap) {
   const filePath = config.SEARCH_MODEL_PATH;
 
   // Create and save model
   const existingModel = await loadModel(filePath);
-  const updatedModel = await createModel(characterModel, characterKeys, existingModel);
+  const updatedModel = await createModel(characterModel, characterKeys, characterNameMap, seriesNameMap, existingModel);
   await saveModel(updatedModel, filePath);
 
   // Parse model

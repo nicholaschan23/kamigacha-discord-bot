@@ -1,12 +1,14 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
 const { formatCardInfoPage, chunkArray } = require("../gacha/format");
 const { parseFilterString, applyFilters } = require("../gacha/filter");
+const { getCardBorder } = require("../graphics/getCardBorder");
+const { createCardGrid } = require("../graphics/createCardGrid");
+const { v4: uuidv4 } = require("uuid");
 
 class CollectionButtonPages extends ButtonPages {
   constructor(interaction, collectionDocument, filterString, filterMenu) {
     super(interaction, [], collectionDocument.isPrivate);
-    this.interaction = interaction;
     this.collectionDocument = collectionDocument;
     this.filterString = filterString;
     this.filterMenu = filterMenu;
@@ -65,13 +67,13 @@ class CollectionButtonPages extends ButtonPages {
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const clipboard = new ButtonBuilder().setCustomId("copyCodes").setEmoji("📋").setStyle(ButtonStyle.Secondary);
-    // const save = new ButtonBuilder().setCustomId("saveFilter").setEmoji("💾").setStyle(ButtonStyle.Secondary);
+    const view = new ButtonBuilder().setCustomId("viewImages").setEmoji("🖼️").setStyle(ButtonStyle.Secondary);
     this.components["toggleEnds"] = ends;
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
     this.components["copyCodes"] = clipboard;
-    // this.components["saveFilter"] = save;
-    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard);
+    this.components["viewImages"] = view;
+    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard, view);
     this.messageComponents.push(buttonRow);
 
     // Select menu row
@@ -122,10 +124,23 @@ class CollectionButtonPages extends ButtonPages {
         await this.interaction.followUp(codes.join(", "));
         break;
       }
-      // case "saveFilter": {
-      //   await this.interaction.followUp(this.filterString);
-      //   break;
-      // }
+      case "viewImages": {
+        const imageUrls = this.cardChunks[this.index].map((card) => card.image);
+        const borderPaths = this.cardChunks[this.index].map((card) => getCardBorder(card.rarity));
+        const buffer = await createCardGrid(imageUrls, borderPaths);
+
+        // Create a unique attachment name
+        const attachmentName = `${uuidv4()}.png`;
+
+        // Create an attachment from the buffer
+        const imageFile = new AttachmentBuilder(buffer, { name: attachmentName });
+
+        // Create the attachment URL
+        const attachmentUrl = `attachment://${attachmentName}`;
+
+        await this.interaction.followUp({ embeds: [new EmbedBuilder().setImage(attachmentUrl)], files: [imageFile] });
+        break;
+      }
       case "collectionFilters": {
         const selectedValue = i.values[0];
         this.filterString = selectedValue;

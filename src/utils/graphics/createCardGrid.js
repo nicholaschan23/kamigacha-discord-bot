@@ -16,7 +16,7 @@ async function createCardGrid(cardUrls, borderPaths) {
   const createPromises = [];
 
   // Generate promises for creating images
-  for (let i = 0; i < numRows * numColumns; i++) {
+  for (let i = 0; i < cardUrls.length; i++) {
     const row = Math.floor(i / numColumns);
     const col = i % numColumns;
 

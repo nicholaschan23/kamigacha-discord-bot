@@ -15,7 +15,7 @@ module.exports = async (data) => {
   const buffer = await createCard(data.image, getCardBorder(data.rarity));
 
   // Create a unique attachment name
-  const attachmentName = `pull-${uuidv4()}.png`;
+  const attachmentName = `${uuidv4()}.png`;
 
   // Create an attachment from the buffer
   const imageFile = new AttachmentBuilder(buffer, { name: attachmentName });
