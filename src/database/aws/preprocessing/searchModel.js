@@ -18,7 +18,7 @@ async function createModel(characterModel, characterKeys, characterNameMap, seri
       if (!searchModel[word]) {
         searchModel[word] = [];
       }
-      const existingEntryIndex = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
+      const existingEntryIndex = searchModel[word].findIndex((entry) => entry.character === characterNameMap[character] && entry.series === seriesNameMap[series]);
 
       if (existingEntryIndex === -1) {
         searchModel[word].push({ character: characterNameMap[character], series: seriesNameMap[series], wishlist: 0 });
@@ -63,8 +63,7 @@ async function getSearchModel(characterModel, characterKeys, characterNameMap, s
 
   // Parse model
   const model = await loadModel(filePath);
-  const keys = Object.keys(model);
-  return { model: model, keys: keys };
+  return { model: model };
 }
 
 module.exports = { getSearchModel };

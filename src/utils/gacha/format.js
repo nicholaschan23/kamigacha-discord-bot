@@ -98,6 +98,39 @@ function formatFilterListPage(filterList) {
   return formattedFilters.join("\n");
 }
 
+function getWishlistEmoji(wishlist) {
+  if (wishlist >= 5000) {
+    return "💖";
+  } else if (wishlist >= 1000) {
+    return "❤️";
+  } else if (wishlist >= 100) {
+    return "⭐";
+  } else if (wishlist >= 1) {
+    return "▫️";
+  } else {
+    return "▪️";
+  }
+  // if (wishlist >= 10000) {
+  //   return ":heartpulse:";
+  // } else if (wishlist >= 1000) {
+  //   return ":heart:";
+  // } else if (wishlist >= 100) {
+  //   return ":star";
+  // } else if (wishlist >= 1) {
+  //   return ":white_small_square:";
+  // } else {
+  //   return ":black_small_square:";
+  // }
+}
+
+function formatLookupPage(results) {
+  const output = [];
+  for (const r of results) {
+    output.push([`${getWishlistEmoji(r.wishlist)} \`❤${r.wishlist}\``, `${r.series}`, `**${r.character}**`].join(" · "));
+  }
+  return output.join("\n");
+}
+
 module.exports = {
   formatCardInfo,
   formatCardInfoPage,
@@ -111,4 +144,7 @@ module.exports = {
   isValidFilter,
   isValidFilterLabel,
   formatFilterListPage,
+
+  formatLookupPage,
+  getWishlistEmoji,
 };

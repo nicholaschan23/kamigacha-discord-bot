@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { replaceAccents } = require("../../utils/stringUtils");
+const LookupButtonPages = require("../../utils/pages/LookupButtonPages");
 const config = require("../../config");
 
 module.exports = {
@@ -20,14 +21,11 @@ module.exports = {
         return interaction.reply("That character could not be found. It may not exist, or you may have misspelled their name.");
       }
 
-      const reply = [];
-      for (const r of results) {
-        reply.push(`\`${r.wishlist}\` ${r.series} ${r.character}`);
-      }
-      interaction.reply(reply.join("\n"));
+      const bp = new LookupButtonPages(interaction, results);
+      bp.publishPages();
+    } else {
+      interaction.reply("WIP");
     }
-
-    interaction.reply("WIP")
   },
 };
 
@@ -37,22 +35,35 @@ function lookup(query, searchMap) {
     .replace(/[^a-z0-9]+/gi, "")
     .split(/[\s,]+/);
 
+  let maxCount = 0;
   const matchedCharacters = [];
   queryWords.forEach((word) => {
     if (searchMap[word]) {
       searchMap[word].forEach(({ character, series, wishlist }) => {
-        const i = matchedCharacters.findIndex((entry) => entry.character === character && entry.series === series);
+        let i = matchedCharacters.findIndex((entry) => entry.character === character && entry.series === series);
 
         if (i === -1) {
-          matchedCharacters.push({ character, series, wishlist, count: 1 });
+          matchedCharacters.push({
+            character: character,
+            series: series,
+            wishlist: wishlist,
+            count: 1,
+          });
+          i = matchedCharacters.length - 1;
         } else {
           matchedCharacters[i].count++;
+        }
+
+        if (matchedCharacters[i].count > maxCount) {
+          maxCount = matchedCharacters[i].count;
         }
       });
     }
   });
 
-  return matchedCharacters.sort((a, b) => {
-    return a.wishlist - b.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
-  });
+  return matchedCharacters
+    .filter((characters) => characters.count === maxCount)
+    .sort((a, b) => {
+      return b.wishlist - a.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+    });
 }

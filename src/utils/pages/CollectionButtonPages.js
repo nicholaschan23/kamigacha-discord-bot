@@ -55,7 +55,7 @@ class CollectionButtonPages extends ButtonPages {
       const embed = new EmbedBuilder()
         .setTitle(`Card Collection`)
         .setDescription(`Cards owned by <@${this.collectionDocument.userId}>\n\n` + formatCardInfoPage(cardDataChunks[i]))
-        .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + this.cardChunks[i].length).toLocaleString()} (${this.cardList.length.toLocaleString()} total)` });
+        .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + cardDataChunks[i].length).toLocaleString()} (${this.cardList.length.toLocaleString()} total)` });
       pages.push(embed);
     }
     return pages;
@@ -92,6 +92,16 @@ class CollectionButtonPages extends ButtonPages {
     await i.deferUpdate();
 
     switch (i.customId) {
+      case "toggleEnds": {
+        if (!this.isEnd) {
+          this.index = this.pages.length - 1;
+        } else {
+          this.index = 0;
+        }
+        this.isEnd = !this.isEnd;
+        await this.updatePageButtons(i);
+        break;
+      }
       case "viewPrev": {
         if (this.index > 0) {
           this.index--;
@@ -106,17 +116,11 @@ class CollectionButtonPages extends ButtonPages {
         await this.updatePageButtons(i);
         break;
       }
-      case "toggleEnds": {
-        if (!this.isEnd) {
-          this.index = this.pages.length - 1;
-        } else {
-          this.index = 0;
-        }
-        this.isEnd = !this.isEnd;
-        await this.updatePageButtons(i);
-        break;
-      }
       case "copyCodes": {
+        // Allow pressing once
+        const copy = this.components["copyCodes"];
+        copy.setDisabled(true);
+
         const codes = [];
         for (const cardData of this.cardChunks[this.index]) {
           codes.push(cardData.code);
@@ -125,6 +129,10 @@ class CollectionButtonPages extends ButtonPages {
         break;
       }
       case "viewImages": {
+        // Allow pressing once
+        const view = this.components["viewImages"];
+        view.setDisabled(true);
+
         const imageUrls = this.cardChunks[this.index].map((card) => card.image);
         const borderPaths = this.cardChunks[this.index].map((card) => getCardBorder(card.rarity));
         const buffer = await createCardGrid(imageUrls, borderPaths);
@@ -182,6 +190,14 @@ class CollectionButtonPages extends ButtonPages {
       copy.setDisabled(true);
     } else {
       copy.setDisabled(false);
+    }
+
+    // Disable if there are no card images to view
+    const view = this.components["viewImages"];
+    if (this.cardChunks.length == 0) {
+      view.setDisabled(true);
+    } else {
+      view.setDisabled(false);
     }
 
     // Update message
