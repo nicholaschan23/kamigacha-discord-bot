@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { replaceAccents } = require("../../utils/stringUtils");
 const LookupButtonPages = require("../../utils/pages/LookupButtonPages");
-const config = require("../../config");
+const CollectionModel = require("../../database/mongodb/models/card/collection");
 
 module.exports = {
   category: "public",
@@ -24,7 +24,32 @@ module.exports = {
       const bp = new LookupButtonPages(interaction, results);
       bp.publishPages();
     } else {
-      interaction.reply("WIP");
+      await interaction.deferReply();
+
+      // Retrieve latest card in collection
+      try {
+        const collectionDocument = await CollectionModel(client).findOne(
+          { userId: interaction.user.id },
+          { cardsOwned: { $slice: -1 } } // Only retrieve the first element in the cardsOwned array
+        );
+
+        const cardId = collectionDocument?.cardsOwned[0];
+        if (!cardId) {
+          return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+        }
+
+        const cardDocument = await CardModel(client).findById(cardId);
+        if (!cardDocument) {
+          return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+        }
+
+        // Found card, pull up stats
+        const character = cardDocument.character;
+        const series = cardDocument.series;
+
+      } catch {
+        return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+      }
     }
   },
 };

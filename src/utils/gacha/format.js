@@ -110,17 +110,6 @@ function getWishlistEmoji(wishlist) {
   } else {
     return "▪️";
   }
-  // if (wishlist >= 10000) {
-  //   return ":heartpulse:";
-  // } else if (wishlist >= 1000) {
-  //   return ":heart:";
-  // } else if (wishlist >= 100) {
-  //   return ":star";
-  // } else if (wishlist >= 1) {
-  //   return ":white_small_square:";
-  // } else {
-  //   return ":black_small_square:";
-  // }
 }
 
 function formatLookupPage(results) {

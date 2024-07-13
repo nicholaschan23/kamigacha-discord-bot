@@ -6,8 +6,9 @@ const mongooseConnect = require("../../database/mongodb/mongooseConnect");
 const { downloadFiles } = require("../../database/aws/downloadFiles");
 const { getCardModel } = require("../../database/aws/preprocessing/cardModel");
 const { getCharacterModel } = require("../../database/aws/preprocessing/characterModel");
-const { getSearchModel } = require("../../database/aws/preprocessing/searchModel");
 const { getFormattedNames } = require("../../database/aws/preprocessing/formattedNames");
+const { initCharacterDB } = require("../../database/mongodb/initialization/characterDB");
+const { getSearchModel } = require("../../database/aws/preprocessing/searchModel");
 
 // Initialization helpers
 const findEvents = require("./findEvents");
@@ -61,6 +62,9 @@ class ExtendedClient extends Client {
 
     // Connect to MongoDB
     await mongooseConnect(this);
+
+    await initCharacterDB(this);
+    return;
 
     // Initialize caches
     this.blacklistCache = new BlacklistCache(this);

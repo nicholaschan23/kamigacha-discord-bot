@@ -20,13 +20,13 @@ const wishlistSchema = new mongoose.Schema({
 
   wishlist: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "character",
+      character: String,
+      series: String,
     },
   ],
 });
 
 module.exports = (client) => {
-  const database = client.cardDB;
+  const database = client.userDB;
   return database.model("wishlist", wishlistSchema);
 };

@@ -1,24 +1,24 @@
 const mongoose = require("mongoose");
 
-const characterVersionSchema = new mongoose.Schema({
-  set: Number,
-  rarity: String,
-  imageUrl: String,
-  circulation: {
-    type: Number,
-    default: 0,
-  }
-});
+const circulationSchema = new mongoose.Schema(
+  {
+    destroyed: {
+      type: Number,
+      default: 0,
+    },
+    generated: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { _id: false }
+);
 
 const characterSchema = new mongoose.Schema({
-  name: {
+  character: {
     type: String,
     required: true,
   },
-
-  // alias: {
-  //   type: [String],
-  // },
 
   series: {
     type: String,
@@ -31,10 +31,15 @@ const characterSchema = new mongoose.Schema({
     default: 0,
   },
 
-  versions: [characterVersionSchema]
+  // Key is .jpg name
+  circulation: {
+    type: Map,
+    of: circulationSchema,
+    default: () => new Map(),
+  },
 });
 
 module.exports = (client) => {
-  const database = client.cardDB;
+  const database = client.globalDB;
   return database.model("character", characterSchema);
 };

@@ -32,12 +32,6 @@ const cardSchema = new mongoose.Schema({
     required: true,
   },
 
-  characterId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "character stat",
-    // required: true,
-  },
-
   // Current owner of the card
   ownerId: {
     type: String,

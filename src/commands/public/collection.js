@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const CollectionModel = require("../../database/mongodb/models/card/user/collection");
+const CollectionModel = require("../../database/mongodb/models/card/collection");
 const CollectionButtonPages = require("../../utils/pages/CollectionButtonPages");
 const FilterModel = require("../../database/mongodb/models/user/filter");
 

@@ -18,13 +18,24 @@ async function createModel(characterModel, characterKeys, characterNameMap, seri
       if (!searchModel[word]) {
         searchModel[word] = [];
       }
+
       const existingEntryIndex = searchModel[word].findIndex((entry) => entry.character === characterNameMap[character] && entry.series === seriesNameMap[series]);
+      // TODO: Get actual wishlist value from Character DB
+      const updatedWishlist = 0; // fetchWishlist();
 
       if (existingEntryIndex === -1) {
-        searchModel[word].push({ character: characterNameMap[character], series: seriesNameMap[series], wishlist: 0 });
+        searchModel[word].push({ character: characterNameMap[character], series: seriesNameMap[series], wishlist: updatedWishlist });
         searchModel[word].sort((a, b) => {
-          return a.wishlist - b.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+          return b.wishlist - a.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
         });
+      } else {
+        // Update wishlist from database
+        if (searchModel[word].wishlist !== updatedWishlist) {
+          searchModel[word].wishlist = updatedWishlist;
+          searchModel[word].sort((a, b) => {
+            return b.wishlist - a.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+          });
+        }
       }
     });
   }

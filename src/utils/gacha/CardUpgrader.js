@@ -2,7 +2,7 @@ const config = require("../../config");
 const crypto = require("crypto");
 const CodeGenerator = require("./CodeGenerator");
 const CardModel = require("../../database/mongodb/models/card/card");
-const CollectionModel = require("../../database/mongodb/models/card/user/collection");
+const CollectionModel = require("../../database/mongodb/models/card/collection");
 
 class CardUpgrader {
   constructor(client, guildId, queriedCards, seriesSetFreq, rarityFreq) {
