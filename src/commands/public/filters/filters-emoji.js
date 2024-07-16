@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { isValidFilterLabel, containsExactlyOneEmoji } = require("../../../utils/gacha/format");
-const { capitalizeFirstLetter } = require("../../../utils/stringUtils")
+const { capitalizeFirstLetter } = require("../../../utils/stringUtils");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters emoji command");
@@ -28,7 +28,7 @@ module.exports = {
 
     try {
       // Check if filter exists, if so change the emoji
-      const filterDocument = await FilterModel(client).findOneAndUpdate(
+      const filterDocument = await FilterModel().findOneAndUpdate(
         {
           userId: interaction.user.id,
           "filterList.label": label,

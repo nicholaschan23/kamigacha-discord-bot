@@ -17,7 +17,7 @@ module.exports = {
 
     try {
       // Fetch user's collection
-      const collectionDocument = await CollectionModel(client).findOne({ userId: user.id }).populate("cardsOwned");
+      const collectionDocument = await CollectionModel().findOne({ userId: user.id }).populate("cardsOwned");
       if (!collectionDocument || collectionDocument.cardsOwned.length == 0) {
         return interaction.reply({ content: "That player has no collection.", ephemeral: true });
       }
@@ -27,7 +27,7 @@ module.exports = {
         return interaction.reply({ content: "That player's collection is private.", ephemeral: true });
       }
 
-      const filterDocument = await FilterModel(client).findOneAndUpdate(
+      const filterDocument = await FilterModel().findOneAndUpdate(
         { userId: user.id }, // Filter
         {}, // Update
         { new: true, upsert: true }

@@ -27,7 +27,7 @@ module.exports = {
 
     try {
       // Fetch tag data
-      const tagDocument = await TagModel(client).findOneAndUpdate(
+      const tagDocument = await TagModel().findOneAndUpdate(
         { userId: interaction.user.id, "tagList.tag": { $ne: tag } }, // Filter
         { $setOnInsert: { userId: interaction.user.id } }, // Update
         { new: true, upsert: true }
@@ -44,7 +44,7 @@ module.exports = {
       }
 
       // Save document
-      await TagModel(client).findOneAndUpdate(
+      await TagModel().findOneAndUpdate(
         { userId: interaction.user.id }, // Filter
         {
           $push: {

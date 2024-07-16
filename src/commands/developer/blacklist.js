@@ -18,7 +18,7 @@ module.exports = {
     const reason = interaction.options.getString("reason");
 
     // Must be moderator to use this command
-    const userIsMod = await ModeratorModel(client).findOne({ userId: moderatorUserId });
+    const userIsMod = await ModeratorModel().findOne({ userId: moderatorUserId });
     if (!userIsMod) {
       return await interaction.reply({ content: `You do not have access to this command.`, ephemeral: true });
     }
@@ -29,7 +29,7 @@ module.exports = {
     }
 
     // You can't blacklist moderators
-    const blacklistUserIsMod = await ModeratorModel(client).findOne({ userId: blacklistUser.id });
+    const blacklistUserIsMod = await ModeratorModel().findOne({ userId: blacklistUser.id });
     if (blacklistUserIsMod) {
       return await interaction.reply({ content: `That user cannot be blacklisted.`, ephemeral: true });
     }

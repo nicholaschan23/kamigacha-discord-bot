@@ -39,7 +39,7 @@ const characterSchema = new mongoose.Schema({
   },
 });
 
-module.exports = (client) => {
-  const database = client.globalDB;
-  return database.model("character", characterSchema);
+module.exports = () => {
+  const client = require("../../../../../bot");
+  return client.globalDB.model("character", characterSchema);
 };

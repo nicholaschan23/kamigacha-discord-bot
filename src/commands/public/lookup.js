@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { replaceAccents } = require("../../utils/stringUtils");
+const { lookup } = require("../../utils/gacha/lookupCharacter");
 const LookupButtonPages = require("../../utils/pages/LookupButtonPages");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
 
@@ -28,7 +28,7 @@ module.exports = {
 
       // Retrieve latest card in collection
       try {
-        const collectionDocument = await CollectionModel(client).findOne(
+        const collectionDocument = await CollectionModel().findOne(
           { userId: interaction.user.id },
           { cardsOwned: { $slice: -1 } } // Only retrieve the first element in the cardsOwned array
         );
@@ -38,7 +38,7 @@ module.exports = {
           return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
         }
 
-        const cardDocument = await CardModel(client).findById(cardId);
+        const cardDocument = await CardModel().findById(cardId);
         if (!cardDocument) {
           return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
         }
@@ -52,42 +52,3 @@ module.exports = {
     }
   },
 };
-
-function lookup(query, searchMap) {
-  const queryWords = replaceAccents(query)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gi, "")
-    .split(/[\s,]+/);
-
-  let maxCount = 0;
-  const matchedCharacters = [];
-  queryWords.forEach((word) => {
-    if (searchMap[word]) {
-      searchMap[word].forEach(({ character, series, wishlist }) => {
-        let i = matchedCharacters.findIndex((entry) => entry.character === character && entry.series === series);
-
-        if (i === -1) {
-          matchedCharacters.push({
-            character: character,
-            series: series,
-            wishlist: wishlist,
-            count: 1,
-          });
-          i = matchedCharacters.length - 1;
-        } else {
-          matchedCharacters[i].count++;
-        }
-
-        if (matchedCharacters[i].count > maxCount) {
-          maxCount = matchedCharacters[i].count;
-        }
-      });
-    }
-  });
-
-  return matchedCharacters
-    .filter((characters) => characters.count === maxCount)
-    .sort((a, b) => {
-      return b.wishlist - a.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
-    });
-}

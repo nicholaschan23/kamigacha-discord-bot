@@ -28,7 +28,7 @@ module.exports = {
 
     try {
       // Check if tag exists, if so change the emoji
-      const tagDocument = await TagModel(client).findOneAndUpdate(
+      const tagDocument = await TagModel().findOneAndUpdate(
         {
           userId: interaction.user.id,
           "tagList.tag": tag,
@@ -41,7 +41,7 @@ module.exports = {
       }
 
       // Update cards with the associated tag with the new emoji
-      await CardModel(client).updateMany(
+      await CardModel().updateMany(
         { userId: interaction.user.id, tag: tag }, // Filter
         { $set: { emoji: emoji } } // Update
       );

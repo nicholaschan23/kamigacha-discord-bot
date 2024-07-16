@@ -32,7 +32,7 @@ const collectionTagSchema = new mongoose.Schema({
   ],
 });
 
-module.exports = (client) => {
-  const database = client.userDB;
-  return database.model("collection tag", collectionTagSchema);
+module.exports = () => {
+  const client = require("../../../../../bot");
+  return client.userDB.model("collection tag", collectionTagSchema);
 };

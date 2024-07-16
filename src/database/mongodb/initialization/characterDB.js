@@ -30,7 +30,9 @@ async function initCharacterDB(client) {
   //   await upsertCharacter(client, { character: character, series: series }, imageUrls)
   // }
 
-  const total = await CharacterModel(client).countDocuments({});
+  const total = await CharacterModel().countDocuments({});
+  logger.info(`${total} characters in database`);
+  logger.info(`${characterKeys.length} characters parsed`);
   if (total === characterKeys.length) {
     logger.info("No new characters to initialize");
     return;
@@ -89,7 +91,7 @@ async function upsertCharacter(client, query, imageKeys) {
 
   const options = { new: true, upsert: true };
 
-  const character = await CharacterModel(client).findOneAndUpdate(query, update, options);
+  const character = await CharacterModel().findOneAndUpdate(query, update, options);
 
   if (character) {
     let modified = false;

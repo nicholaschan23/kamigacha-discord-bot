@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { isValidFilter, isValidFilterLabel, containsExactlyOneEmoji } = require("../../../utils/gacha/format");
-const { capitalizeFirstLetter } = require("../../../utils/stringUtils")
+const { capitalizeFirstLetter } = require("../../../utils/stringUtils");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters create command");
@@ -34,7 +34,7 @@ module.exports = {
 
     try {
       // Find the filter document for the user
-      const filterDocument = await FilterModel(client).findOneAndUpdate(
+      const filterDocument = await FilterModel().findOneAndUpdate(
         { userId: interaction.user.id, "filterList.label": { $ne: label } }, // Filter
         { $setOnInsert: { userId: interaction.user.id } }, // Update
         { new: true, upsert: true }
@@ -51,7 +51,7 @@ module.exports = {
       }
 
       // Save document
-      await FilterModel(client).findOneAndUpdate(
+      await FilterModel().findOneAndUpdate(
         { userId: interaction.user.id }, // Filter
         {
           $push: {

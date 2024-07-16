@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { isValidFilterLabel } = require("../../../utils/gacha/format");
-const { capitalizeFirstLetter } = require("../../../utils/stringUtils")
+const { capitalizeFirstLetter } = require("../../../utils/stringUtils");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters delete command");
@@ -22,7 +22,7 @@ module.exports = {
 
     try {
       // Check if filter exists, if so delete it
-      const updatedDocument = await FilterModel(client).findOneAndUpdate(
+      const updatedDocument = await FilterModel().findOneAndUpdate(
         { userId: interaction.user.id, "filterList.label": label }, // Filter
         { $pull: { filterList: { label: label } } }, // Update
         { new: true }

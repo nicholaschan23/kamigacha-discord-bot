@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { isValidFilterLabel } = require("../../../utils/gacha/format");
-const { capitalizeFirstLetter } = require("../../../utils/stringUtils")
+const { capitalizeFirstLetter } = require("../../../utils/stringUtils");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters emoji command");
@@ -28,7 +28,7 @@ module.exports = {
 
     try {
       // Find the filter document for the user
-      const filterDocument = await FilterModel(client).findOne({ userId: interaction.user.id });
+      const filterDocument = await FilterModel().findOne({ userId: interaction.user.id });
 
       // Handle case where no filter data exists
       if (!filterDocument) {
@@ -51,7 +51,7 @@ module.exports = {
       const { emoji: emoji, label: label, filter: filter } = filterDocument.filterList[oldFilterIndex];
 
       // Remove the old filter
-      await FilterModel(client).findOneAndUpdate(
+      await FilterModel().findOneAndUpdate(
         { userId: interaction.user.id },
         {
           $pull: { filterList: { label: oldLabel } },
@@ -59,7 +59,7 @@ module.exports = {
       );
 
       // Add the new filter with sorted order
-      await FilterModel(client).findOneAndUpdate(
+      await FilterModel().findOneAndUpdate(
         { userId: interaction.user.id },
         {
           $push: {

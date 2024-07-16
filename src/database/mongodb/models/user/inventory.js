@@ -1,5 +1,28 @@
 const mongoose = require("mongoose");
-const item = require("../../schemas/item");
+
+// Define a schema for storing an item
+const itemSchema = new mongoose.Schema(
+  {
+    // Item name
+    name: {
+      type: String,
+      required: true,
+    },
+
+    // Item quantity
+    quantity: {
+      type: Number,
+      required: true,
+    },
+
+    // Item icon as a Discord emoji
+    icon: {
+      type: String,
+      require: true,
+    },
+  },
+  { _id: false }
+);
 
 const inventorySchema = new mongoose.Schema({
   userId: {
@@ -17,12 +40,12 @@ const inventorySchema = new mongoose.Schema({
   // Collection
   inventory: {
     type: Map,
-    of: item,
+    of: itemSchema,
     default: {},
   },
 });
 
-module.exports = (client) => {
-  const database = client.userDB;
-  return database.model("inventory", inventorySchema);
+module.exports = () => {
+  const client = require("../../../../../bot");
+  return client.userDB.model("inventory", inventorySchema);
 };

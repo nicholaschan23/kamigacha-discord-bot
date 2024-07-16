@@ -13,10 +13,10 @@ module.exports = {
     .addUserOption((option) => option.setName("user").setDescription("Player's collection filters to view. Omit to view yours.")),
 
   async execute(client, interaction) {
-    const user = interaction.options.getUser("user") || interaction.user;
+    const user = interaction.options.getUser("user") ?? interaction.user;
 
     try {
-      const filterDocument = await FilterModel(client).findOne(
+      const filterDocument = await FilterModel().findOne(
         { userId: user.id } // Filter
       );
       if (!filterDocument) {

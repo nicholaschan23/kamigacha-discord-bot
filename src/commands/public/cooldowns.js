@@ -8,7 +8,7 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
-    const settingsDocument = await SettingsModel(client).findOneAndUpdate(
+    const settingsDocument = await SettingsModel().findOneAndUpdate(
       { userId: interaction.user.id }, // Filter
       { new: true, upsert: true }
     );

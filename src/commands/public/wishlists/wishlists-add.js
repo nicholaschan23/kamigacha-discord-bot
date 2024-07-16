@@ -1,6 +1,7 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const WishlistAddPages = require("../../../utils/pages/WishlistAddPages");
 const WishlistModel = require("../../../database/mongodb/models/user/wishlist");
+const { lookup } = require("../../../utils/gacha/lookupCharacter")
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters create command");
 

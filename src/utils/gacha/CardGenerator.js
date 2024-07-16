@@ -45,7 +45,7 @@ class CardGenerator {
         series: series,
         set: set,
         rarity: rarity,
-        character: character,
+        character: character.split(`-${series}-`)[0],
         ownerId: this.userId,
         pulledId: this.userId,
         guildId: this.guildId,
@@ -65,7 +65,7 @@ class CardGenerator {
   }
 
   async fetchPity() {
-    const userDocument = await PityModel(this.client).findOne({ userId: this.userId });
+    const userDocument = await PityModel().findOne({ userId: this.userId });
     if (userDocument) {
       this.pity.UR = userDocument.UR;
       this.pity.SR = userDocument.SR;
@@ -190,7 +190,7 @@ class CardGenerator {
 
   async saveChanges() {
     // Save pity timers
-    await PityModel(this.client).findOneAndUpdate(
+    await PityModel().findOneAndUpdate(
       { userId: this.userId }, // Filter
       {
         UR: this.pity.UR,
@@ -201,7 +201,7 @@ class CardGenerator {
     );
 
     // Update stats
-    await StatsModel(this.client).findOneAndUpdate(
+    await StatsModel().findOneAndUpdate(
       { userId: this.userId },
       {
         $inc: {
@@ -216,12 +216,12 @@ class CardGenerator {
     );
 
     // Add card models to database
-    const cards = this.cardData.map((data) => new (CardModel(this.client))(data));
-    const savedCards = await CardModel(this.client).insertMany(cards);
+    const cards = this.cardData.map((data) => new (CardModel())(data));
+    const savedCards = await CardModel().insertMany(cards);
 
     // Add cards to user's collection
     const cardObjectIds = savedCards.map((card) => card._id);
-    await CollectionModel(this.client).findOneAndUpdate(
+    await CollectionModel().findOneAndUpdate(
       { userId: this.userId }, // Filter
       { $addToSet: { cardsOwned: { $each: cardObjectIds } } },
       { upsert: true }

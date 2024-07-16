@@ -17,7 +17,7 @@ class CardUpgrader {
 
   async cardUpgrade(cardCodes = this.queriedCodes) {
     // Re-verify ownership of cards
-    const cards = await CardModel(this.client).find({
+    const cards = await CardModel().find({
       code: { $in: cardCodes },
       ownerId: this.userId,
     });
@@ -27,10 +27,10 @@ class CardUpgrader {
 
     // Remove card references from the user's collection
     const cardObjectIds = this.queriedCards.map((card) => card._id);
-    await CollectionModel(this.client).updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardObjectIds } } });
+    await CollectionModel().updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardObjectIds } } });
 
     // Delete the cards from existence
-    await CardModel(this.client).deleteMany({ code: { $in: cardCodes } });
+    await CardModel().deleteMany({ code: { $in: cardCodes } });
 
     // Determine success of upgrade
     if (!this.getSuccess) {
@@ -41,11 +41,11 @@ class CardUpgrader {
     const cardData = await this.generateUpgradedCard();
 
     // Create the new card
-    const cardInstance = new (CardModel(this.client))(cardData);
-    const createdCard = await CardModel(this.client).create(cardInstance);
+    const cardInstance = new (CardModel())(cardData);
+    const createdCard = await CardModel().create(cardInstance);
 
     // Add the new card to the user's collection
-    await CollectionModel(this.client).updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } });
+    await CollectionModel().updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } });
     return cardData;
   }
 
@@ -70,7 +70,7 @@ class CardUpgrader {
       series: series,
       set: set,
       rarity: rarity,
-      character: character,
+      character: character.split(`-${series}-`)[0],
       ownerId: this.userId,
       pulledId: this.userId,
       guildId: this.guildId,

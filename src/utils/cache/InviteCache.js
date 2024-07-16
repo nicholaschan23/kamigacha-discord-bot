@@ -12,7 +12,7 @@ class InviteCache {
 
   // Initialize the invite cache from the database
   async initialize() {
-    const allInvites = await InviteModel(this.client).find({});
+    const allInvites = await InviteModel().find({});
     allInvites.forEach((invite) => {
       this.invites.set(invite.receiverUserId, {
         senderUserId: invite.senderUserId,
@@ -35,7 +35,7 @@ class InviteCache {
 
   // Add a new invite to the database and cache
   async addInvite(senderUserId, receiverUserId) {
-    const newInvite = new (InviteModel(this.client))({
+    const newInvite = new (InviteModel())({
       senderUserId,
       receiverUserId,
     });
@@ -51,7 +51,7 @@ class InviteCache {
 
   // Remove an invite from the database and cache
   async removeInvite(receiverUserId) {
-    await InviteModel(this.client).deleteOne({ receiverUserId });
+    await InviteModel().deleteOne({ receiverUserId });
     this.invites.delete(receiverUserId);
     await this.broadcastUpdate("removeInvite", receiverUserId);
   }

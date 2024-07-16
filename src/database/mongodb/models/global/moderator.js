@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const client = require("../../../../../bot");
 
 const moderatorSchema = new mongoose.Schema({
   // Moderator user Id
@@ -9,7 +10,7 @@ const moderatorSchema = new mongoose.Schema({
   },
 });
 
-module.exports = (client) => {
-  const database = client.globalDB;
-  return database.model("moderator", moderatorSchema);
+module.exports = () => {
+  const client = require("../../../../../bot");
+  return client.globalDB.model("moderator", moderatorSchema);
 };

@@ -5,7 +5,7 @@ const counterSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  
+
   sequenceValue: {
     type: Number,
     default: -1,
@@ -13,7 +13,7 @@ const counterSchema = new mongoose.Schema({
   },
 });
 
-module.exports = (client) => {
-  const database = client.cardDB;
-  return database.model("counter", counterSchema);
+module.exports = () => {
+  const client = require("../../../../../bot");
+  return client.cardDB.model("counter", counterSchema);
 };

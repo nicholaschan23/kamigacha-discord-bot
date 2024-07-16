@@ -16,7 +16,7 @@ module.exports = {
     const user = interaction.options.getUser("user") || interaction.user;
 
     try {
-      const tagDocument = await TagModel(client).findOne(
+      const tagDocument = await TagModel().findOne(
         { userId: user.id } // Filter
       );
       if (!tagDocument) {

@@ -22,7 +22,7 @@ const userPitySchema = new mongoose.Schema({
   },
 });
 
-module.exports = (client) => {
-  const database = client.userDB;
-  return database.model("pity", userPitySchema);
+module.exports = () => {
+  const client = require("../../../../../bot");
+  return client.userDB.model("pity", userPitySchema);
 };

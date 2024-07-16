@@ -35,7 +35,7 @@ const collectionFilterSchema = new mongoose.Schema({
   },
 });
 
-module.exports = (client) => {
-  const database = client.userDB;
-  return database.model("collection filter", collectionFilterSchema);
+module.exports = () => {
+  const client = require("../../../../../bot");
+  return client.userDB.model("collection filter", collectionFilterSchema);
 };

@@ -40,7 +40,7 @@ module.exports = async (client) => {
   }
 
   try {
-    client.cardDB.model("card", CardModel(client).schema);
+    client.cardDB.model("card", CardModel().schema);
   } catch (error) {
     logger.error("Failed to register models", error.stack);
     throw error;
