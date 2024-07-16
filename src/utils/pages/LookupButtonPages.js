@@ -92,8 +92,7 @@ class CollectionButtonPages extends ButtonPages {
       }
       case "characterSelect": {
         const selectedValue = i.values[0];
-        this.filterString = selectedValue;
-        // this.updatePages(parseFilterString(this.filterString));
+        await this.handleSelect(i, selectedValue);
         break;
       }
       default:
@@ -140,6 +139,10 @@ class CollectionButtonPages extends ButtonPages {
         components: this.messageComponents,
       });
     }
+  }
+
+  async handleSelect(interaction, value) {
+    return;
   }
 }
 

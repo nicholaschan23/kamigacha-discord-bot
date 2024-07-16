@@ -3,6 +3,8 @@ function formatCardInfo(data) {
 }
 
 function formatCardInfoPage(dataList, showTags = true) {
+  const client = require("../../../bot")
+
   // Calculate max lengths for padding
   const maxCodeLength = Math.max(...dataList.map((data) => data.code.length));
   const maxRarityLength = Math.max(...dataList.map((data) => data.rarity.length));
@@ -14,7 +16,7 @@ function formatCardInfoPage(dataList, showTags = true) {
       const paddedRarity = data.rarity.padEnd(maxRarityLength, " ");
       const paddedSet = `${data.set}`.padEnd(maxSetLength, " ");
 
-      return [`${showTags ? `${data.emoji} ` : ""}\`${paddedCode}\``, `\`${paddedRarity}\``, `\`◈${paddedSet}\``, `*${data.series}*`, `**${data.character}**`].join(" · ");
+      return [`${showTags ? `${data.emoji} ` : ""}\`${paddedCode}\``, `\`${paddedRarity}\``, `\`◈${paddedSet}\``, `*${client.seriesNameMap[data.series]}*`, `**${client.characterNameMap[data.character]}**`].join(" · ");
     })
     .join("\n");
 }

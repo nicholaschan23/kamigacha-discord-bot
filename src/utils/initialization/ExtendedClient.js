@@ -64,7 +64,6 @@ class ExtendedClient extends Client {
     await mongooseConnect(this);
 
     await initCharacterDB(this);
-    return;
 
     // Initialize caches
     this.blacklistCache = new BlacklistCache(this);

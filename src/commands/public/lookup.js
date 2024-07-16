@@ -8,13 +8,13 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("lookup")
     .setDescription("Find info on a character's available cards.")
-    .addStringOption((option) => option.setName("search").setDescription("Search by character and series name. Omit to lookup your latest card.")),
+    .addStringOption((option) => option.setName("character").setDescription("Search by character and series name. Omit to lookup your latest card.")),
 
   async execute(client, interaction) {
-    const search = interaction.options.getString("search");
+    const character = interaction.options.getString("character");
 
-    if (search) {
-      const results = lookup(search, client.jsonSearches);
+    if (character) {
+      const results = lookup(character, client.jsonSearches);
 
       // No results
       if (results.length == 0) {
@@ -46,7 +46,6 @@ module.exports = {
         // Found card, pull up stats
         const character = cardDocument.character;
         const series = cardDocument.series;
-
       } catch {
         return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
       }

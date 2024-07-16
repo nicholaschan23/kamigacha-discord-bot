@@ -30,7 +30,13 @@ async function initCharacterDB(client) {
   //   await upsertCharacter(client, { character: character, series: series }, imageUrls)
   // }
 
-  logger.info("Initializing characters...")
+  const total = await CharacterModel(client).countDocuments({});
+  if (total === characterKeys.length) {
+    logger.info("No new characters to initialize");
+    return;
+  }
+
+  logger.info("Initializing characters...");
   let totalCards = 0;
 
   const promises = characterKeys.map(async (character) => {
@@ -52,7 +58,7 @@ async function initCharacterDB(client) {
   });
 
   await Promise.all(promises);
-  logger.success(`${characterKeys.length} characters and ${totalCards.toLocaleString()} total cards have been initialized`)
+  logger.success(`${characterKeys.length} characters and ${totalCards.toLocaleString()} total cards have been initialized`);
 }
 
 /**
