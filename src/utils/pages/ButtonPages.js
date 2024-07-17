@@ -1,4 +1,4 @@
-const { ButtonBuilder, ButtonStyle, ActionRowBuilder, ComponentType } = require("discord.js");
+const { ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
 
 class ButtonPages {
   constructor(interaction, pages, ephemeral = false) {
@@ -21,14 +21,14 @@ class ButtonPages {
     await this.interaction.deferReply({ ephemeral: this.ephemeral });
 
     // 1 page, no buttons
-    if (this.pages.length === 1) {
-      const page = await this.interaction.editReply({
-        embeds: this.pages,
-        components: [],
-        fetchReply: true,
-      });
-      return page;
-    }
+    // if (this.pages.length === 1) {
+    //   const page = await this.interaction.editReply({
+    //     embeds: this.pages,
+    //     components: [],
+    //     fetchReply: true,
+    //   });
+    //   return page;
+    // }
 
     // Multiple pages, with buttons
     this.addComponents();

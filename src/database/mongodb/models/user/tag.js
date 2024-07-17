@@ -29,6 +29,7 @@ const collectionTagSchema = new mongoose.Schema({
       emoji: { type: String, required: true },
       quantity: { type: Number, default: 0 },
     },
+    { _id: false },
   ],
 });
 

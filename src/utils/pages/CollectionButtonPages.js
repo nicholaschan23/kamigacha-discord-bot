@@ -99,21 +99,21 @@ class CollectionButtonPages extends ButtonPages {
           this.index = 0;
         }
         this.isEnd = !this.isEnd;
-        await this.updatePageButtons(i);
+        this.updatePageButtons(i);
         break;
       }
       case "viewPrev": {
         if (this.index > 0) {
           this.index--;
         }
-        await this.updatePageButtons(i);
+        this.updatePageButtons(i);
         break;
       }
       case "viewNext": {
         if (this.index < this.pages.length - 1) {
           this.index++;
         }
-        await this.updatePageButtons(i);
+        this.updatePageButtons(i);
         break;
       }
       case "copyCodes": {
@@ -153,7 +153,7 @@ class CollectionButtonPages extends ButtonPages {
         const selectedValue = i.values[0];
         this.filterString = selectedValue;
         this.updatePages(parseFilterString(this.filterString));
-        await this.updatePageButtons(i);
+        this.updatePageButtons(i);
         break;
       }
       default:
@@ -163,7 +163,7 @@ class CollectionButtonPages extends ButtonPages {
     this.collector.resetTimer();
   }
 
-  async updatePageButtons(i) {
+  updatePageButtons(i) {
     // Update disabled states of page buttons
     const ends = this.components["toggleEnds"];
     const prev = this.components["viewPrev"];
@@ -202,13 +202,13 @@ class CollectionButtonPages extends ButtonPages {
 
     // Update message
     if (this.ephemeral) {
-      await this.interaction.editReply({
+      this.interaction.editReply({
         embeds: [this.pages[this.index]],
         components: this.messageComponents,
         fetchReply: true,
       });
     } else {
-      await i.message.edit({
+      i.message.edit({
         embeds: [this.pages[this.index]],
         components: this.messageComponents,
       });

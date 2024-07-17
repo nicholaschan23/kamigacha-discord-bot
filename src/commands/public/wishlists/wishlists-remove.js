@@ -1,18 +1,15 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const WishlistModel = require("../../../database/mongodb/models/user/wishlist");
+const WishlistRemovePages = require("../../../utils/pages/WishlistRemovePages");
 const Logger = require("../../../utils/Logger");
-const logger = new Logger("Filters create command");
+const logger = new Logger("Wishlists remove command");
 
 module.exports = {
   category: "public/wishlists",
-  data: new SlashCommandSubcommandBuilder()
-    .setName("remove")
-    .setDescription("Remove a character from your wishlist.")
-    .addStringOption((option) => option.setName("character").setDescription("Search by character and series name.")),
+  data: new SlashCommandSubcommandBuilder().setName("remove").setDescription("Remove a character from your wishlist."),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-
+    let bp;
     try {
       // Find the wishlist document for the user
       const wishlistDocument = await WishlistModel().findOneAndUpdate(
@@ -21,31 +18,18 @@ module.exports = {
         { new: true, upsert: true }
       );
 
-      // Check if wishlist limit is reached
-      if (!wishlistDocument) {
-        return interaction.editReply({ content: `Your wishlist is empty.` });
+      // Wishlist is empty
+      if (wishlistDocument.wishlist.length === 0) {
+        return interaction.reply({ content: `Your wishlist is empty.`, ephemeral: true });
       }
 
-      // Button pages for wishlist
-
-      // Select menu to choose wishlist to remove
-
-      // Save document
-      await WishlistModel().findOneAndUpdate(
-        { character: interaction.user.id }, // Filter
-        {
-          $pull: {
-            wishlist: {
-              $each: [{ character: character, series: series }],
-            },
-          },
-        } // Update
-      );
-
-      interaction.editReply({ content: `Successfully removed **${character}** from ${series} your wishlist!` });
+      // Pages with select menu to choose wishlist to remove
+      bp = new WishlistRemovePages(interaction, wishlistDocument);
     } catch (error) {
       logger.error(error.stack);
-      interaction.editReply({ content: "There was an issue removing from your wishlist. Please try again." });
+      interaction.reply({ content: "There was an issue removing from your wishlist. Please try again.", ephemeral: true });
     }
+    bp.createPages();
+    bp.publishPages();
   },
 };

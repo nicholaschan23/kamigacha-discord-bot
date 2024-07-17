@@ -1,38 +1,57 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
 const { formatLookupPage, getWishlistEmoji, chunkArray } = require("../gacha/format");
+const client = require("../../../bot");
 
-class CollectionButtonPages extends ButtonPages {
-  constructor(interaction, results) {
+class LookupButtonPages extends ButtonPages {
+  constructor(interaction, pageData) {
     super(interaction);
-    this.results = results;
+    this.pageData = pageData;
 
     // Split the list of cards into chunks of 10
-    this.cardChunks = chunkArray(this.results, 10);
-
-    // Create page embeds
-    this.pages = this.createPages(this.cardChunks);
-    this.index = 0;
+    this.pageDataChunks = chunkArray(this.pageData, 10);
   }
 
   /**
    * Helper function to create embeds for each page.
    *
-   * @param {Array<Array>} cardDataChunks - An array of arrays, where each inner array contains card data.
-   * @returns {Array<EmbedBuilder>} An array of embed pages.
+   * @param {Array<Array>} pageDataChunks - An array of arrays, where each inner array contains string data to format.
    */
-  createPages(cardDataChunks) {
+  createPages(pageDataChunks = this.pageDataChunks) {
     const pages = [];
 
-    for (let i = 0; i < cardDataChunks.length; i++) {
+    for (let i = 0; i < pageDataChunks.length; i++) {
       const embed = new EmbedBuilder()
         .setTitle(`Character Results`)
-        .setDescription(formatLookupPage(cardDataChunks[i], i * 10 + 1))
-        .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + cardDataChunks[i].length).toLocaleString()} (${this.results.length.toLocaleString()} total)` });
+        .setDescription(formatLookupPage(pageDataChunks[i]))
+        .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
       pages.push(embed);
     }
 
-    return pages;
+    this.pages = pages;
+    this.index = 0;
+  }
+
+  // Update disabled states of page buttons
+  toggleComponents() {
+    const ends = this.components["toggleEnds"];
+    const prev = this.components["viewPrev"];
+    const next = this.components["viewNext"];
+    if (this.index === 0 && this.index === this.pages.length - 1) {
+      ends.setDisabled(true);
+    } else {
+      ends.setDisabled(false);
+    }
+    if (this.index === 0) {
+      prev.setDisabled(true);
+    } else {
+      prev.setDisabled(false);
+    }
+    if (this.index === this.pages.length - 1) {
+      next.setDisabled(true);
+    } else {
+      next.setDisabled(false);
+    }
   }
 
   addComponents() {
@@ -43,6 +62,7 @@ class CollectionButtonPages extends ButtonPages {
     this.components["toggleEnds"] = ends;
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
+    this.toggleComponents();
     const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next);
     this.messageComponents.push(buttonRow);
 
@@ -56,7 +76,14 @@ class CollectionButtonPages extends ButtonPages {
       .setPlaceholder("Select a character")
       .setMinValues(1)
       .setMaxValues(1)
-      .addOptions(this.cardChunks[this.index].map(({ character, series, wishlist }) => new StringSelectMenuOptionBuilder().setEmoji(getWishlistEmoji(wishlist)).setLabel(character).setValue(`${character} ${series}}`)));
+      .addOptions(
+        this.pageDataChunks[this.index].map(({ character, series, wishlist }) =>
+          new StringSelectMenuOptionBuilder()
+            .setEmoji(getWishlistEmoji(wishlist))
+            .setLabel(client.characterNameMap[character])
+            .setValue(`${JSON.stringify({ character: character, series: series })}`)
+        )
+      );
     this.components["characterSelect"] = selectMenu;
     const selectRow = new ActionRowBuilder().addComponents(selectMenu);
     this.messageComponents.push(selectRow);
@@ -73,21 +100,21 @@ class CollectionButtonPages extends ButtonPages {
           this.index = 0;
         }
         this.isEnd = !this.isEnd;
-        await this.updatePageButtons(i);
+        this.updatePageButtons(i);
         break;
       }
       case "viewPrev": {
         if (this.index > 0) {
           this.index--;
         }
-        await this.updatePageButtons(i);
+        this.updatePageButtons(i);
         break;
       }
       case "viewNext": {
         if (this.index < this.pages.length - 1) {
           this.index++;
         }
-        await this.updatePageButtons(i);
+        this.updatePageButtons(i);
         break;
       }
       case "characterSelect": {
@@ -102,39 +129,21 @@ class CollectionButtonPages extends ButtonPages {
     this.collector.resetTimer();
   }
 
-  async updatePageButtons(i) {
-    // Update disabled states of page buttons
-    const ends = this.components["toggleEnds"];
-    const prev = this.components["viewPrev"];
-    const next = this.components["viewNext"];
-    if (this.index === 0) {
-      prev.setDisabled(true);
-    } else {
-      prev.setDisabled(false);
-    }
-    if (this.index === this.pages.length - 1) {
-      next.setDisabled(true);
-    } else {
-      next.setDisabled(false);
-    }
-    if (this.index === 0 && this.index === this.pages.length - 1) {
-      ends.setDisabled(true);
-    } else {
-      ends.setDisabled(false);
-    }
+  updatePageButtons(i) {
+    this.toggleComponents();
 
     this.messageComponents.pop();
     this.updateSelectMenu();
 
     // Update message
     if (this.ephemeral) {
-      await this.interaction.editReply({
+      this.interaction.editReply({
         embeds: [this.pages[this.index]],
         components: this.messageComponents,
         fetchReply: true,
       });
     } else {
-      await i.message.edit({
+      i.message.edit({
         embeds: [this.pages[this.index]],
         components: this.messageComponents,
       });
@@ -146,4 +155,4 @@ class CollectionButtonPages extends ButtonPages {
   }
 }
 
-module.exports = CollectionButtonPages;
+module.exports = LookupButtonPages;

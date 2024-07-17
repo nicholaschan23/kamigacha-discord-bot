@@ -24,6 +24,7 @@ const collectionFilterSchema = new mongoose.Schema({
         label: { type: String, required: true },
         filter: { type: String, required: true },
       },
+      { _id: false },
     ],
     default: () => [
       { emoji: "🗓️", label: "Date", filter: "order=date" },

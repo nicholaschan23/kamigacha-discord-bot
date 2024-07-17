@@ -57,7 +57,7 @@ class ExtendedClient extends Client {
     this.seriesNameMap = await getFormattedNames(this.jsonCardsKeys, config.SERIES_NAME_MAP_PATH);
 
     // Preprocess card search
-    const { model: jsonSearches } = await getSearchModel(this.jsonCharacters, this.jsonCharacterKeys, this.characterNameMap, this.seriesNameMap);
+    const { model: jsonSearches } = await getSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
     this.jsonSearches = jsonSearches;
 
     // Connect to MongoDB

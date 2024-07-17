@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const client = require("../../../../../bot");
 
 const moderatorSchema = new mongoose.Schema({
   // Moderator user Id

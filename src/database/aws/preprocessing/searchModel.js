@@ -5,7 +5,7 @@ const path = require("path");
 const config = require("../../../config");
 const { ensureDirExists } = require("../../../utils/fileSystem");
 
-async function createModel(characterModel, characterKeys, characterNameMap, seriesNameMap, existingModel = {}) {
+async function createModel(characterModel, characterKeys, existingModel = {}) {
   const searchModel = { ...existingModel };
 
   for (const character of characterKeys) {
@@ -19,12 +19,12 @@ async function createModel(characterModel, characterKeys, characterNameMap, seri
           searchModel[word] = [];
         }
 
-        const existingEntryIndex = searchModel[word].findIndex((entry) => entry.character === characterNameMap[character] && entry.series === seriesNameMap[series]);
+        const existingEntryIndex = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
         // TODO: Get actual wishlist value from Character DB
         const updatedWishlist = 0; // fetchWishlist();
 
         if (existingEntryIndex === -1) {
-          searchModel[word].push({ character: characterNameMap[character], series: seriesNameMap[series], wishlist: updatedWishlist });
+          searchModel[word].push({ character: character, series: series, wishlist: updatedWishlist });
           searchModel[word].sort((a, b) => {
             return b.wishlist - a.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
           });
@@ -65,12 +65,12 @@ async function saveModel(data, filePath) {
   logger.success("Saved: " + path.basename(filePath));
 }
 
-async function getSearchModel(characterModel, characterKeys, characterNameMap, seriesNameMap) {
+async function getSearchModel(characterModel, characterKeys) {
   const filePath = config.SEARCH_MODEL_PATH;
 
   // Create and save model
   const existingModel = await loadModel(filePath);
-  const updatedModel = await createModel(characterModel, characterKeys, characterNameMap, seriesNameMap, existingModel);
+  const updatedModel = await createModel(characterModel, characterKeys, existingModel);
   await saveModel(updatedModel, filePath);
 
   // Parse model

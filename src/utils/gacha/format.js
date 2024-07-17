@@ -1,10 +1,11 @@
+const emojiRegex = require("emoji-regex");
+const client = require("../../../bot");
+
 function formatCardInfo(data) {
-  return [`\`${data.code}\``, `\`${data.rarity}\``, `\`◈${data.set}\``, `*${data.series}*`, `**${data.character}**`].join(" · ");
+  return [`\`${data.code}\``, `\`${data.rarity}\``, `\`◈${data.set}\``, `${client.seriesNameMap[data.series]}`, `**${client.characterNameMap[data.character]}**`].join(" · ");
 }
 
 function formatCardInfoPage(dataList, showTags = true) {
-  const client = require("../../../bot")
-
   // Calculate max lengths for padding
   const maxCodeLength = Math.max(...dataList.map((data) => data.code.length));
   const maxRarityLength = Math.max(...dataList.map((data) => data.rarity.length));
@@ -16,7 +17,7 @@ function formatCardInfoPage(dataList, showTags = true) {
       const paddedRarity = data.rarity.padEnd(maxRarityLength, " ");
       const paddedSet = `${data.set}`.padEnd(maxSetLength, " ");
 
-      return [`${showTags ? `${data.emoji} ` : ""}\`${paddedCode}\``, `\`${paddedRarity}\``, `\`◈${paddedSet}\``, `*${client.seriesNameMap[data.series]}*`, `**${client.characterNameMap[data.character]}**`].join(" · ");
+      return [`${showTags ? `${data.emoji} ` : ""}\`${paddedCode}\``, `\`${paddedRarity}\``, `\`◈${paddedSet}\``, `${client.seriesNameMap[data.series]}`, `**${client.characterNameMap[data.character]}**`].join(" · ");
     })
     .join("\n");
 }
@@ -25,7 +26,7 @@ function formatCardInfoPage(dataList, showTags = true) {
  * Formats the tag information from a Map into a specific structure.
  *
  * @param {Map} tagList - A Map where keys are tag names and values are objects with emoji and quantity properties.
- * @returns {String} - Formatted tag info for display.
+ * @returns {string} - Formatted tag info for display.
  */
 function formatTagListPage(tagList) {
   const formattedTags = [];
@@ -56,7 +57,6 @@ function isValidTag(input) {
 }
 
 // Checks if input is a single unicode emoji
-const emojiRegex = require("emoji-regex");
 function containsExactlyOneEmoji(input) {
   const regex = emojiRegex();
   const match = input.match(regex);
@@ -77,17 +77,25 @@ function isValidFilter(input) {
   return regex.test(input);
 }
 
-// Check if string containing only letters, numbers, and spaces
+/**
+ * Check if string containing only letters, numbers, and spaces.
+ * 
+ * @param {string} input - Filter label.
+ * @returns {string} Formatted filter label.
+ */
 function isValidFilterLabel(input) {
   const regex = /^[a-zA-Z0-9\s]+$/;
   return regex.test(input);
 }
 
 /**
- * Formats the filter information from an array into a specific structure.
+ * Formats the filter into a string output for an embed page.
  *
- * @param {Array} filterList - An array of objects with emoji, label, and filter properties.
- * @returns {String} - Formatted filter info for display.
+ * @param {Array<Object>} filterList - The array of filter property objects.
+ * @param {string} filterList[].emoji - The filter emoji.
+ * @param {string} filterList[].label - The filter label.
+ * @param {string} filterList[].filter - The filter string.
+ * @returns {string} Formatted filter info for display.
  */
 function formatFilterListPage(filterList) {
   const formattedFilters = [];
@@ -100,6 +108,12 @@ function formatFilterListPage(filterList) {
   return formattedFilters.join("\n");
 }
 
+/**
+ * Associate wishlist amount with an emoji.
+ * 
+ * @param {number} wishlist - The character's wishlist amount.
+ * @returns {string} Emoji.
+ */
 function getWishlistEmoji(wishlist) {
   if (wishlist >= 5000) {
     return "💖";
@@ -114,10 +128,35 @@ function getWishlistEmoji(wishlist) {
   }
 }
 
+/**
+ * Formats the lookup results into a string output for an embed page.
+ *
+ * @param {Array<Object>} results - The array of lookup result objects.
+ * @param {number} results[].wishlist - The character's wishlist amount.
+ * @param {string} results[].series - The name of the series the character belongs to.
+ * @param {string} results[].character - The name of the character.
+ * @returns {string} The formatted string output.
+ */
 function formatLookupPage(results) {
   const output = [];
   for (const r of results) {
-    output.push([`${getWishlistEmoji(r.wishlist)} \`❤${r.wishlist}\``, `${r.series}`, `**${r.character}**`].join(" · "));
+    output.push([`${getWishlistEmoji(r.wishlist)} \`❤${r.wishlist}\``, `${client.seriesNameMap[r.series]}`, `**${client.characterNameMap[r.character]}**`].join(" · "));
+  }
+  return output.join("\n");
+}
+
+/**
+ * Formats the wishlist into a string output for an embed page.
+ * 
+ * @param {Array<Object>} wishlist - The array of wishlist objects.
+ * @param {string} wishlist[].series - The name of the series the character belongs to.
+ * @param {string} wishlist[].character - The name of the character.
+ * @returns {string} The formatted string output.
+ */
+function formatWishlistPage(wishlist) {
+  const output = [];
+  for (const item of wishlist) {
+    output.push([`- ${client.seriesNameMap[item.series]}`, `**${client.characterNameMap[item.character]}**`].join(" · "));
   }
   return output.join("\n");
 }
@@ -136,6 +175,7 @@ module.exports = {
   isValidFilterLabel,
   formatFilterListPage,
 
-  formatLookupPage,
   getWishlistEmoji,
+  formatLookupPage,
+  formatWishlistPage,
 };

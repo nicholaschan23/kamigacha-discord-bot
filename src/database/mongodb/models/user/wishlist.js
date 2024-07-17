@@ -23,6 +23,7 @@ const wishlistSchema = new mongoose.Schema({
       character: String,
       series: String,
     },
+    { _id: false },
   ],
 });
 

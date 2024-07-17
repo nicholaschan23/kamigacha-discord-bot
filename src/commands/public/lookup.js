@@ -22,6 +22,7 @@ module.exports = {
       }
 
       const bp = new LookupButtonPages(interaction, results);
+      bp.createPages();
       bp.publishPages();
     } else {
       await interaction.deferReply();

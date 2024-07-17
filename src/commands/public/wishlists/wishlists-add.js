@@ -1,9 +1,9 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const WishlistAddPages = require("../../../utils/pages/WishlistAddPages");
 const WishlistModel = require("../../../database/mongodb/models/user/wishlist");
-const { lookup } = require("../../../utils/gacha/lookupCharacter")
+const WishlistAddPages = require("../../../utils/pages/WishlistAddPages");
+const { lookup } = require("../../../utils/gacha/lookupCharacter");
 const Logger = require("../../../utils/Logger");
-const logger = new Logger("Filters create command");
+const logger = new Logger("Wishlists add command");
 
 module.exports = {
   category: "public/wishlists",
@@ -13,8 +13,7 @@ module.exports = {
     .addStringOption((option) => option.setName("character").setDescription("Search by character and series name.").setRequired(true)),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-
+    let bp;
     try {
       // Find the wishlist document for the user
       const wishlistDocument = await WishlistModel().findOneAndUpdate(
@@ -37,27 +36,13 @@ module.exports = {
         return interaction.reply("That character could not be found. It may not exist, or you may have misspelled their name.");
       }
 
-      // Select menu to choose wishlist to add
-      const bp = new WishlistAddPages(interaction, results);
-      bp.publishPages();
-
-      // Save document
-      await WishlistModel().findOneAndUpdate(
-        { character: interaction.user.id }, // Filter
-        {
-          $push: {
-            wishlist: {
-              $each: [{ character: character, series: series }],
-              $sort: { series: 1, character: 1 },
-            },
-          },
-        } // Update
-      );
-
-      interaction.editReply({ content: `Successfully added **${character}** from ${series} to your wishlist!` });
+      // Pages with select menu to choose wishlist to add
+      bp = new WishlistAddPages(interaction, results);
     } catch (error) {
       logger.error(error.stack);
-      interaction.editReply({ content: "There was an issue adding to your wishlist. Please try again." });
+      interaction.reply({ content: "There was an issue adding to your wishlist. Please try again.", ephemeral: true });
     }
+    bp.createPages();
+    bp.publishPages();
   },
 };

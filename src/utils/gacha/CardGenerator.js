@@ -34,7 +34,7 @@ class CardGenerator {
 
       // Select a random character
       const characters = jsonCards[series][set][rarity];
-      const character = characters[crypto.randomInt(0, characters.length)];
+      const characterJpg = characters[crypto.randomInt(0, characters.length)];
 
       // Generate card code
       const code = await this.cg.getNewCode();
@@ -45,12 +45,12 @@ class CardGenerator {
         series: series,
         set: set,
         rarity: rarity,
-        character: character.split(`-${series}-`)[0],
+        character: characterJpg.split(`-${series}-`)[0],
         ownerId: this.userId,
         pulledId: this.userId,
         guildId: this.guildId,
         generationType: numPulls > 1 ? "Multi-Pull" : "Pull",
-        image: [process.env.CLOUDFRONT_URL, "cards", series, set, rarity, character].join("/"),
+        image: [process.env.CLOUDFRONT_URL, "cards", series, set, rarity, characterJpg].join("/"),
         emoji: "▪️",
       };
       this.cardData.push(card);
