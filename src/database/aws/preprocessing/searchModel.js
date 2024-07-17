@@ -4,6 +4,7 @@ const fsp = require("fs").promises;
 const path = require("path");
 const config = require("../../../config");
 const { ensureDirExists } = require("../../../utils/fileSystem");
+const CharacterModel = require("../../mongodb/models/global/character");
 
 async function createModel(characterModel, characterKeys, existingModel = {}) {
   const searchModel = { ...existingModel };
@@ -13,25 +14,24 @@ async function createModel(characterModel, characterKeys, existingModel = {}) {
       const characterWords = character.split("-");
       const seriesWords = series.split("-");
       const allWords = new Set([...characterWords, ...seriesWords]);
+      // const updatedWishCount = await CharacterModel().findOne({ character: character, series: series }).select("wishCount").lean().exec();
+      const updatedWishCount = 1;
 
       allWords.forEach((word) => {
         if (!searchModel[word]) {
           searchModel[word] = [];
         }
 
-        // TODO: Get actual wishCount value from Character DB
-        const updatedWishCount = 0;
-        const existingEntryIndex = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
-
-        if (existingEntryIndex === -1) {
+        const index = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
+        if (index === -1) {
           searchModel[word].push({ character: character, series: series, wishCount: updatedWishCount });
           searchModel[word].sort((a, b) => {
             return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
           });
         } else {
           // Update wishCount from database
-          if (searchModel[word].wishCount !== updatedWishCount) {
-            searchModel[word].wishCount = updatedWishCount;
+          if (searchModel[word][index].wishCount !== updatedWishCount) {
+            searchModel[word][index].wishCount = updatedWishCount;
             searchModel[word].sort((a, b) => {
               return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
             });

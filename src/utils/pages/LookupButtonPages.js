@@ -24,7 +24,7 @@ class LookupButtonPages extends ButtonPages {
       const embed = new EmbedBuilder()
         .setTitle(`Character Results`)
         .setDescription(formatLookupPage(pageDataChunks[i]))
-        .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
+        .setFooter({ text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
       pages.push(embed);
     }
 

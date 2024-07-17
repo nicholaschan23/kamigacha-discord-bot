@@ -24,8 +24,8 @@ class WishListRemoveButtonPages extends LookupButtonPages {
     for (let i = 0; i < pageDataChunks.length; i++) {
       const embed = new EmbedBuilder()
         .setTitle(`Wish List`)
-        .setDescription(`Showing wish list of ${this.user}\n` + `Available slots: **${this.pageData.length}**/${this.wishListLimit}\n\n` + `${formatWishListPage(pageDataChunks[i])}`)
-        .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
+        .setDescription(`Owned by ${this.user}\n` + `Available slots: **${this.wishListLimit - this.pageData.length}**/${this.wishListLimit}\n\n` + `${formatWishListPage(pageDataChunks[i])}`)
+        .setFooter({ text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
       pages.push(embed);
     }
 

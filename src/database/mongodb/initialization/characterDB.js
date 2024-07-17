@@ -30,68 +30,65 @@ async function initCharacterDB(client) {
   //   await upsertCharacter(client, { character: character, series: series }, imageUrls)
   // }
 
-  const total = await CharacterModel().countDocuments({});
-  logger.info(`${total} characters in database`);
-  logger.info(`${characterKeys.length} characters parsed`);
-  if (total === characterKeys.length) {
-    logger.info("No new characters to initialize");
-    return;
-  }
+  // const total = await CharacterModel().countDocuments({});
+  // logger.info(`${total} characters in database`);
+  // logger.info(`${characterKeys.length} characters parsed`);
+  // if (total === characterKeys.length) {
+  //   logger.info("No new characters to initialize");
+  //   return;
+  // }
 
   logger.info("Initializing characters...");
   let totalCards = 0;
+  const promises = [];
+  
+  for (const character of characterKeys) {
+    // Get series names
+    for (const series of Object.keys(characterModel[character])) {
+      // Get array of sets
+      const setsArr = Object.keys(characterModel[character][series]);
 
-  const promises = characterKeys.map(async (character) => {
-    // Get series name
-    const series = Object.keys(characterModel[character])[0];
-
-    // Get array of sets
-    const setsArr = Object.keys(characterModel[character][series]);
-
-    const imageKeys = [];
-    for (const set of setsArr) {
-      for (const rarity of characterModel[character][series][set]) {
-        imageKeys.push([character, series, set, `${rarity.toLowerCase()}`].join("-"));
+      const imageKeys = [];
+      for (const set of setsArr) {
+        for (const rarity of characterModel[character][series][set]) {
+          imageKeys.push([character, series, set, `${rarity.toLowerCase()}`].join("-"));
+        }
       }
-    }
-    totalCards += imageKeys.length;
+      totalCards += imageKeys.length;
 
-    return upsertCharacter(client, { character: character, series: series }, imageKeys);
-  });
+      // Push the promise to the array
+      promises.push(upsertCharacter({ character: character, series: series }, imageKeys));
+    }
+  }
 
   await Promise.all(promises);
   logger.success(`${characterKeys.length} characters and ${totalCards.toLocaleString()} total cards have been initialized`);
 }
 
 /**
- * Helper function to update Character Models in MongoDB using Mongoose
- * @param {Client} client
+ * Helper function to update Character Models in database.
+ *
  * @param {Object} query
  * @param {Array<String>} keys
  * @returns
  */
-async function upsertCharacter(client, query, imageKeys) {
+async function upsertCharacter(query, imageKeys) {
   // Convert imageUrls to a Map with default values
   const circulationData = {};
   imageKeys.forEach((url) => {
     circulationData[url] = { destroyed: 0, generated: 0 };
   });
 
-  // const circulationData = {};
-  // imageUrls.map((url) => { destroyed: 0, generated: 0 });
-  // //   circulationData[url] = { destroyed: 0, generated: 0 };
-  // // });
-
-  const update = {
-    $setOnInsert: {
-      ...query,
-      circulation: circulationData,
-    },
-  };
-
-  const options = { new: true, upsert: true };
-
-  const character = await CharacterModel().findOneAndUpdate(query, update, options);
+  const character = await CharacterModel().findOneAndUpdate(
+    query, // Filter
+    {
+      $setOnInsert: {
+        ...query,
+        circulation: circulationData,
+      },
+    }, // Update
+    { new: true, upsert: true } // Options
+  );
 
   if (character) {
     let modified = false;
@@ -106,7 +103,7 @@ async function upsertCharacter(client, query, imageKeys) {
       await character.save();
     }
 
-    return character;
+    return true;
   }
   return null;
 }

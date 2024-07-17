@@ -56,12 +56,12 @@ class ExtendedClient extends Client {
     this.characterNameMap = await getFormattedNames(this.jsonCharacterKeys, config.CHARACTER_NAME_MAP_PATH);
     this.seriesNameMap = await getFormattedNames(this.jsonCardsKeys, config.SERIES_NAME_MAP_PATH);
 
+    // Connect to MongoDB
+    await mongooseConnect(this);
+
     // Preprocess card search
     const { model: jsonSearches } = await getSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
     this.jsonSearches = jsonSearches;
-
-    // Connect to MongoDB
-    await mongooseConnect(this);
 
     await initCharacterDB(this);
 

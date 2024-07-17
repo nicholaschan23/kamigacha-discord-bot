@@ -23,7 +23,7 @@ class WishListAddButtonPages extends LookupButtonPages {
       {
         $push: {
           wishList: {
-            $each: characterToAdd,
+            $each: [characterToAdd],
             $sort: { series: 1, character: 1 },
           },
         },
