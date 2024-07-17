@@ -19,21 +19,21 @@ async function createModel(characterModel, characterKeys, existingModel = {}) {
           searchModel[word] = [];
         }
 
+        // TODO: Get actual wishCount value from Character DB
+        const updatedWishCount = 0;
         const existingEntryIndex = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
-        // TODO: Get actual wishlist value from Character DB
-        const updatedWishlist = 0; // fetchWishlist();
 
         if (existingEntryIndex === -1) {
-          searchModel[word].push({ character: character, series: series, wishlist: updatedWishlist });
+          searchModel[word].push({ character: character, series: series, wishCount: updatedWishCount });
           searchModel[word].sort((a, b) => {
-            return b.wishlist - a.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+            return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
           });
         } else {
-          // Update wishlist from database
-          if (searchModel[word].wishlist !== updatedWishlist) {
-            searchModel[word].wishlist = updatedWishlist;
+          // Update wishCount from database
+          if (searchModel[word].wishCount !== updatedWishCount) {
+            searchModel[word].wishCount = updatedWishCount;
             searchModel[word].sort((a, b) => {
-              return b.wishlist - a.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+              return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
             });
           }
         }

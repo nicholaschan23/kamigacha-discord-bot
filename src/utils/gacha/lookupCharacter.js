@@ -10,14 +10,14 @@ function lookup(query, searchMap) {
   const matchedCharacters = [];
   queryWords.forEach((word) => {
     if (searchMap[word]) {
-      searchMap[word].forEach(({ character, series, wishlist }) => {
+      searchMap[word].forEach(({ character, series, wishCount }) => {
         let i = matchedCharacters.findIndex((entry) => entry.character === character && entry.series === series);
 
         if (i === -1) {
           matchedCharacters.push({
             character: character,
             series: series,
-            wishlist: wishlist,
+            wishCount: wishCount,
             count: 1,
           });
           i = matchedCharacters.length - 1;
@@ -35,7 +35,7 @@ function lookup(query, searchMap) {
   return matchedCharacters
     .filter((characters) => characters.count === maxCount)
     .sort((a, b) => {
-      return b.wishlist - a.wishlist || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+      return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
     });
 }
 

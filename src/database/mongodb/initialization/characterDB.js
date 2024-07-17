@@ -4,7 +4,7 @@ const CharacterModel = require("../models/global/character");
 
 /**
  * Adds characters associated with new cards.
- * Initializes character wishlist and circulation for card versions.
+ * Initializes character wish count and circulation for card versions.
  * @param {Client} client
  * @param {Parsed JSON} characterModel
  * @param {Array<String>} characterKeys

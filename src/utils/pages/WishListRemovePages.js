@@ -1,16 +1,16 @@
 const { EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } = require("discord.js");
 const LookupButtonPages = require("./LookupButtonPages");
-const { formatWishlistPage } = require("../gacha/format");
-const WishlistModel = require("../../database/mongodb/models/user/wishlist");
+const { formatWishListPage } = require("../gacha/format");
+const WishModel = require("../../database/mongodb/models/user/wish");
 const CharacterModel = require("../../database/mongodb/models/global/character");
 const config = require("../../config");
 const client = require("../../../bot");
 
-class WishlistRemoveButtonPages extends LookupButtonPages {
-  constructor(interaction, wishlistDocument) {
-    super(interaction, wishlistDocument.wishlist);
+class WishListRemoveButtonPages extends LookupButtonPages {
+  constructor(interaction, wishDocument) {
+    super(interaction, wishDocument.wishList);
     this.user = interaction.user;
-    this.wishlistLimit = wishlistDocument.wishlistLimit;
+    this.wishListLimit = wishDocument.wishListLimit;
   }
 
   /**
@@ -23,8 +23,8 @@ class WishlistRemoveButtonPages extends LookupButtonPages {
 
     for (let i = 0; i < pageDataChunks.length; i++) {
       const embed = new EmbedBuilder()
-        .setTitle(`Wishlist`)
-        .setDescription(`Showing wishlist of ${this.user}\n` + `Available slots: **${this.pageData.length}**/${this.wishlistLimit}\n\n` + `${formatWishlistPage(pageDataChunks[i])}`)
+        .setTitle(`Wish List`)
+        .setDescription(`Showing wish list of ${this.user}\n` + `Available slots: **${this.pageData.length}**/${this.wishListLimit}\n\n` + `${formatWishListPage(pageDataChunks[i])}`)
         .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
       pages.push(embed);
     }
@@ -51,33 +51,33 @@ class WishlistRemoveButtonPages extends LookupButtonPages {
 
     // Save document
     const characterToAdd = { character: data.character, series: data.series };
-    const wishlistDocument = await WishlistModel().findOneAndUpdate(
+    const wishDocument = await WishModel().findOneAndUpdate(
       {
         userId: interaction.user.id,
-        wishlist: { $elemMatch: characterToAdd },
+        wishList: { $elemMatch: characterToAdd },
       }, // Filter
       {
         $pull: {
-          wishlist: characterToAdd,
+          wishList: characterToAdd,
         },
       }, // Update
       { new: true }
     );
 
-    // Somehow wishlist entry was not found to remove
-    if (!wishlistDocument) {
+    // Somehow wish list entry was not found to remove
+    if (!wishDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: `**${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} is not on your wishlist.` });
+      return await interaction.followUp({ content: `**${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} is not on your wish list.` });
     }
 
-    // Remove wishlist amount from character
+    // Remove wish count from character
     const characterDocument = await CharacterModel().findOneAndUpdate(
       {
         character: data.character,
         series: data.series,
       }, // Filter
-      { $inc: { wishlist: -1 } },
+      { $inc: { wishCount: -1 } },
       { new: true } // Options
     );
 
@@ -85,12 +85,12 @@ class WishlistRemoveButtonPages extends LookupButtonPages {
     if (!characterDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: "There was an issue removing from your wishlist. Please try again." });
+      return await interaction.followUp({ content: "There was an issue removing from your wish list. Please try again." });
     }
     embed.setColor(config.embedColor.green);
     this.collector.stop();
-    return await interaction.followUp({ content: `Successfully removed **${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} to your wishlist!` });
+    return await interaction.followUp({ content: `Successfully removed **${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} to your wish list!` });
   }
 }
 
-module.exports = WishlistRemoveButtonPages;
+module.exports = WishListRemoveButtonPages;

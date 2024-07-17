@@ -79,7 +79,7 @@ function isValidFilter(input) {
 
 /**
  * Check if string containing only letters, numbers, and spaces.
- * 
+ *
  * @param {string} input - Filter label.
  * @returns {string} Formatted filter label.
  */
@@ -109,19 +109,19 @@ function formatFilterListPage(filterList) {
 }
 
 /**
- * Associate wishlist amount with an emoji.
- * 
- * @param {number} wishlist - The character's wishlist amount.
+ * Associate wish amount with an emoji.
+ *
+ * @param {number} wish - The character's wish amount.
  * @returns {string} Emoji.
  */
-function getWishlistEmoji(wishlist) {
-  if (wishlist >= 5000) {
+function getWishListEmoji(wish) {
+  if (wish >= 5000) {
     return "💖";
-  } else if (wishlist >= 1000) {
+  } else if (wish >= 1000) {
     return "❤️";
-  } else if (wishlist >= 100) {
+  } else if (wish >= 100) {
     return "⭐";
-  } else if (wishlist >= 1) {
+  } else if (wish >= 1) {
     return "▫️";
   } else {
     return "▪️";
@@ -132,7 +132,7 @@ function getWishlistEmoji(wishlist) {
  * Formats the lookup results into a string output for an embed page.
  *
  * @param {Array<Object>} results - The array of lookup result objects.
- * @param {number} results[].wishlist - The character's wishlist amount.
+ * @param {number} results[].wishCount - The character's wish count.
  * @param {string} results[].series - The name of the series the character belongs to.
  * @param {string} results[].character - The name of the character.
  * @returns {string} The formatted string output.
@@ -140,22 +140,22 @@ function getWishlistEmoji(wishlist) {
 function formatLookupPage(results) {
   const output = [];
   for (const r of results) {
-    output.push([`${getWishlistEmoji(r.wishlist)} \`❤${r.wishlist}\``, `${client.seriesNameMap[r.series]}`, `**${client.characterNameMap[r.character]}**`].join(" · "));
+    output.push([`${getWishListEmoji(r.wishCount)} \`❤${r.wishCount}\``, `${client.seriesNameMap[r.series]}`, `**${client.characterNameMap[r.character]}**`].join(" · "));
   }
   return output.join("\n");
 }
 
 /**
- * Formats the wishlist into a string output for an embed page.
- * 
- * @param {Array<Object>} wishlist - The array of wishlist objects.
- * @param {string} wishlist[].series - The name of the series the character belongs to.
- * @param {string} wishlist[].character - The name of the character.
+ * Formats the wish list into a string output for an embed page.
+ *
+ * @param {Array<Object>} wishList - The array of wish list objects.
+ * @param {string} wishList[].series - The name of the series the character belongs to.
+ * @param {string} wishList[].character - The name of the character.
  * @returns {string} The formatted string output.
  */
-function formatWishlistPage(wishlist) {
+function formatWishListPage(wishList) {
   const output = [];
-  for (const item of wishlist) {
+  for (const item of wishList) {
     output.push([`- ${client.seriesNameMap[item.series]}`, `**${client.characterNameMap[item.character]}**`].join(" · "));
   }
   return output.join("\n");
@@ -175,7 +175,7 @@ module.exports = {
   isValidFilterLabel,
   formatFilterListPage,
 
-  getWishlistEmoji,
+  getWishListEmoji,
   formatLookupPage,
-  formatWishlistPage,
+  formatWishListPage,
 };

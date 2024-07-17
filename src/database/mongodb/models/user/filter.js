@@ -28,8 +28,8 @@ const collectionFilterSchema = new mongoose.Schema({
     ],
     default: () => [
       { emoji: "🗓️", label: "Date", filter: "order=date" },
-      // { emoji: ":heart:", label: "Show Wishlist", filter: "wishlist<>" },
-      // { emoji: ":heart:", label: "Wishlist", filter: "order=wishlist" },
+      // { emoji: ":heart:", label: "Show Wish", filter: "wish<>" },
+      // { emoji: ":heart:", label: "Wish", filter: "order=wish" },
       { emoji: "🏷️", label: "Tagged", filter: "tag!=none" },
       { emoji: "▪️", label: "Untagged", filter: "tag=none" },
     ],

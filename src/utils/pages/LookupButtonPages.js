@@ -1,6 +1,6 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
-const { formatLookupPage, getWishlistEmoji, chunkArray } = require("../gacha/format");
+const { formatLookupPage, getWishListEmoji, chunkArray } = require("../gacha/format");
 const client = require("../../../bot");
 
 class LookupButtonPages extends ButtonPages {
@@ -77,9 +77,9 @@ class LookupButtonPages extends ButtonPages {
       .setMinValues(1)
       .setMaxValues(1)
       .addOptions(
-        this.pageDataChunks[this.index].map(({ character, series, wishlist }) =>
+        this.pageDataChunks[this.index].map(({ character, series, wishCount }) =>
           new StringSelectMenuOptionBuilder()
-            .setEmoji(getWishlistEmoji(wishlist))
+            .setEmoji(getWishListEmoji(wishCount))
             .setLabel(client.characterNameMap[character])
             .setValue(`${JSON.stringify({ character: character, series: series })}`)
         )

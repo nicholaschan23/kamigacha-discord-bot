@@ -1,10 +1,10 @@
 const LookupButtonPages = require("./LookupButtonPages");
-const WishlistModel = require("../../database/mongodb/models/user/wishlist");
+const WishModel = require("../../database/mongodb/models/user/wish");
 const CharacterModel = require("../../database/mongodb/models/global/character");
 const config = require("../../config");
 const client = require("../../../bot");
 
-class WishlistAddButtonPages extends LookupButtonPages {
+class WishListAddButtonPages extends LookupButtonPages {
   constructor(interaction, pageData) {
     super(interaction, pageData);
   }
@@ -15,14 +15,14 @@ class WishlistAddButtonPages extends LookupButtonPages {
 
     // Save document
     const characterToAdd = { character: data.character, series: data.series };
-    const wishlistDocument = await WishlistModel().findOneAndUpdate(
+    const wishDocument = await WishModel().findOneAndUpdate(
       {
         userId: interaction.user.id,
-        wishlist: { $not: { $elemMatch: characterToAdd } },
+        wishList: { $not: { $elemMatch: characterToAdd } },
       }, // Filter
       {
         $push: {
-          wishlist: {
+          wishList: {
             $each: characterToAdd,
             $sort: { series: 1, character: 1 },
           },
@@ -31,20 +31,20 @@ class WishlistAddButtonPages extends LookupButtonPages {
       { new: true }
     );
 
-    // Prevent duplicate wishlist entries
-    if (!wishlistDocument) {
+    // Prevent duplicate wish list entries
+    if (!wishDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: `**${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} is already on your wishlist.` });
+      return await interaction.followUp({ content: `**${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} is already on your wish list.` });
     }
 
-    // Add wishlist amount from character
+    // Add wish count to character
     const characterDocument = await CharacterModel().findOneAndUpdate(
       {
         character: data.character,
         series: data.series,
       }, // Filter
-      { $inc: { wishlist: 1 } },
+      { $inc: { wishCount: 1 } },
       { new: true } // Options
     );
 
@@ -52,12 +52,12 @@ class WishlistAddButtonPages extends LookupButtonPages {
     if (!characterDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: "There was an issue adding to your wishlist. Please try again." });
+      return await interaction.followUp({ content: "There was an issue adding to your wish list. Please try again." });
     }
     embed.setColor(config.embedColor.green);
     this.collector.stop();
-    return await interaction.followUp({ content: `Successfully added **${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} to your wishlist!` });
+    return await interaction.followUp({ content: `Successfully added **${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} to your wish list!` });
   }
 }
 
-module.exports = WishlistAddButtonPages;
+module.exports = WishListAddButtonPages;

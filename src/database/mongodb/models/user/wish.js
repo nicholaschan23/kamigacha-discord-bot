@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const wishlistSchema = new mongoose.Schema({
+const wishSchema = new mongoose.Schema({
   userId: {
     type: String,
     unique: true,
@@ -13,12 +13,12 @@ const wishlistSchema = new mongoose.Schema({
     default: false,
   },
 
-  wishlistLimit: {
+  wishListLimit: {
     type: Number,
     default: 10,
   },
 
-  wishlist: [
+  wishList: [
     {
       character: String,
       series: String,
@@ -29,5 +29,5 @@ const wishlistSchema = new mongoose.Schema({
 
 module.exports = () => {
   const client = require("../../../../../bot");
-  return client.userDB.model("wishlist", wishlistSchema);
+  return client.userDB.model("wish", wishSchema);
 };

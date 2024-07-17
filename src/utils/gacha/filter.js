@@ -21,6 +21,7 @@ const validKeys = [
   "w",
   "wl",
   "wishlist",
+  "wish",
 
   // Sorting
   "o",
@@ -114,7 +115,8 @@ function applyFilters(cardList, filters, userId, guildId) {
           case "w":
           case "wl":
           case "wishlist":
-            display.add("wishlist");
+          case "wish":
+            display.add("wish");
           default: {
             return true;
           }
@@ -194,15 +196,16 @@ function applyFilters(cardList, filters, userId, guildId) {
           }
           break;
         }
-        // Wishlist and sets can only be numbers
+        // Wish count and sets can only be numbers
         case "w":
         case "wl":
         case "wishlist":
+        case "wish":
           if (isNaN(value)) {
             return true;
           }
-          cardValue = card["wishlist"];
-          display.add("wishlist");
+          cardValue = card["wishCount"];
+          display.add("wish");
           break;
         case "set": {
           if (isNaN(value)) {
@@ -245,9 +248,10 @@ function applyFilters(cardList, filters, userId, guildId) {
       break;
     case "w":
     case "wl":
-      sortField = "wishlist";
     case "wishlist":
-      display.add("wishlist");
+      sortField = "wish";
+    case "wish":
+      display.add("wish");
       break;
     default: {
       sortField = "modified";

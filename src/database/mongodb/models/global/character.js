@@ -25,8 +25,8 @@ const characterSchema = new mongoose.Schema({
     required: true,
   },
 
-  // Number of players who have this character on their wishlist
-  wishlist: {
+  // Number of players who have this character on their wishList
+  wishCount: {
     type: Number,
     default: 0,
   },

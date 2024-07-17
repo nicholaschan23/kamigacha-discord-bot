@@ -9,14 +9,12 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
-    const testCases = [
-      "t=trade o=w",
-    ];
+    const testCases = ["t=trade o=w"];
 
     // const testCases = [
-    //   "bad order=date wishlist<> wishlist>100 wrong fake  rarity>= false junk",
+    //   "bad order=date wish<> wish>100 wrong fake  rarity>= false junk",
     //   'series="attack on titan" series="character" character=goku score>=90',
-    //   'series  = "    dragon         ball "     wishlist   <> character=           "black   goku"',
+    //   'series  = "    dragon         ball "     wish   <> character=           "black   goku"',
     // ];
 
     const output = [];

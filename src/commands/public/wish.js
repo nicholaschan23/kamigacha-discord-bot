@@ -1,22 +1,27 @@
 const { SlashCommandBuilder } = require("discord.js");
-const wishlistsAdd = require("./wishlists/wishlists-add");
-const wishlistsRemove = require("./wishlists/wishlists-remove");
+const wishAdd = require("./wish/wish-add");
+const wishRemove = require("./wish/wish-remove");
+const wishList = require("./wish/wish-list");
 const Logger = require("../../utils/Logger");
-const logger = new Logger("Wishlists command");
+const logger = new Logger("Wish command");
 
 module.exports = {
   category: "public",
-  data: new SlashCommandBuilder().setName("wishlists").setDescription("Wishlists main command.").addSubcommand(wishlistsAdd.data).addSubcommand(wishlistsRemove.data),
+  data: new SlashCommandBuilder().setName("wish").setDescription("Wish main command.").addSubcommand(wishAdd.data).addSubcommand(wishRemove.data).addSubcommand(wishList.data),
 
   async execute(client, interaction) {
     const subcommand = interaction.options.getSubcommand();
     switch (subcommand) {
       case "add": {
-        await wishlistsAdd.execute(client, interaction);
+        await wishAdd.execute(client, interaction);
         break;
       }
       case "remove": {
-        await wishlistsRemove.execute(client, interaction);
+        await wishRemove.execute(client, interaction);
+        break;
+      }
+      case "list": {
+        await wishList.execute(client, interaction);
         break;
       }
       default: {
