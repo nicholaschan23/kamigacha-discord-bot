@@ -6,40 +6,72 @@ const config = require("../../../config");
 const { ensureDirExists } = require("../../../utils/fileSystem");
 const CharacterModel = require("../../mongodb/models/global/character");
 
+/**
+ * Generate all possible search results given the character and series name.
+ * Results are sorted by wish count, series name, and character name.
+ *
+ * @param {Object} characterModel - Parsed character.json object.
+ * @param {Array<String>} characterKeys - Array of series.
+ * @param {Object} existingModel - Parsed searches.json object.
+ * @returns {Object} Search model to save as JSON.
+ */
 async function createModel(characterModel, characterKeys, existingModel = {}) {
+  logger.info("Fetching wish count for each character...");
+
   const searchModel = { ...existingModel };
+
+  // Prepare an array of promises for fetching updated wish counts
+  const promises = [];
 
   for (const character of characterKeys) {
     for (const series of Object.keys(characterModel[character])) {
       const characterWords = character.split("-");
       const seriesWords = series.split("-");
       const allWords = new Set([...characterWords, ...seriesWords]);
-      // const updatedWishCount = await CharacterModel().findOne({ character: character, series: series }).select("wishCount").lean().exec();
-      const updatedWishCount = 1;
 
-      allWords.forEach((word) => {
-        if (!searchModel[word]) {
-          searchModel[word] = [];
-        }
+      promises.push(
+        CharacterModel()
+          .findOne({ character: character, series: series })
+          .select("wishCount")
+          .lean()
+          .exec()
+          .then((result) => {
+            const updatedWishCount = result ? result.wishCount : 0;
+            return { character, series, allWords, updatedWishCount };
+          })
+      );
+    }
+  }
 
-        const index = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
-        if (index === -1) {
-          searchModel[word].push({ character: character, series: series, wishCount: updatedWishCount });
+  const results = await Promise.all(promises);
+
+  results.forEach(({ character, series, allWords, updatedWishCount }) => {
+    allWords.forEach((word) => {
+      if (!searchModel[word]) {
+        searchModel[word] = [];
+      }
+
+      const index = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
+      if (index === -1) {
+        searchModel[word].push({
+          character: character,
+          series: series,
+          wishCount: updatedWishCount,
+        });
+        searchModel[word].sort((a, b) => {
+          return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+        });
+      } else {
+        // Update wish count from database and sort result
+        if (searchModel[word][index].wishCount !== updatedWishCount) {
+          searchModel[word][index].wishCount = updatedWishCount;
           searchModel[word].sort((a, b) => {
             return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
           });
-        } else {
-          // Update wishCount from database
-          if (searchModel[word][index].wishCount !== updatedWishCount) {
-            searchModel[word][index].wishCount = updatedWishCount;
-            searchModel[word].sort((a, b) => {
-              return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
-            });
-          }
         }
-      });
-    }
-  }
+      }
+    });
+  });
 
   return searchModel;
 }

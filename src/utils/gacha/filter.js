@@ -52,8 +52,8 @@ const validOperators = ["=", "<", ">", "<=", ">=", "!=", "<>"];
  *   { key: "series", operator: "=", value: "noragami" }
  * ]
  *
- * @param {string} filterString - The filter string to parse. Should be in lowercase and have no commas.
- * @returns {Array<Object>} - An array of filter objects with keys: key, operator, and value.
+ * @param {String} filterString - The filter string to parse. Should be in lowercase and have no commas.
+ * @returns {Array<Object>} An array of filter objects with keys: key, operator, and value.
  */
 function parseFilterString(filterString) {
   const regex = new RegExp(`\\b(${validKeys.join("|")})\\b\\s*(<>|!=|<=|>=|=|<|>)\\s*(?:"([^"]*)"|([^,\\s]+))`, "g");

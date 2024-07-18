@@ -4,6 +4,16 @@ const Logger = require("../Logger");
 const logger = new Logger("Command register");
 
 module.exports = async (client, commands) => {
+  /**
+   * Filters commands by category.
+   *
+   * @param {String} category - The category to filter by.
+   * @returns {Array} Filtered command data.
+   */
+  function filterCommands(category) {
+    return commands.filter((command) => command.category == category).map((command) => command.data);
+  }
+
   // Check if there are any commands to register
   if (!commands || commands.length == 0) return logger.warn("No commands to register");
 
@@ -29,15 +39,5 @@ module.exports = async (client, commands) => {
     logger.success(`Successfully registered ${developer_data.length} developer application (/) command${developer_data.length > 1 ? "s" : ""}`);
   } catch (error) {
     logger.error(error);
-  }
-
-  /**
-   * Filters commands by category and returns their data.
-   *
-   * @param {string} category - The category to filter by.
-   * @returns {Array} - An array of filtered command data.
-   */
-  function filterCommands(category) {
-    return commands.filter((command) => command.category == category).map((command) => command.data);
   }
 };

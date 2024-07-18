@@ -1,8 +1,8 @@
+const { getJsFiles } = require("../fileSystem");
 const fs = require("fs");
 const path = require("path");
 const Logger = require("../Logger");
 const logger = new Logger("Interaction loader");
-const { getJsFiles } = require("../fileSystem");
 
 module.exports = (client) => {
   registerAutocompleteInteractions();

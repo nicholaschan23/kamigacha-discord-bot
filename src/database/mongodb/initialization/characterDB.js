@@ -5,43 +5,38 @@ const CharacterModel = require("../models/global/character");
 /**
  * Adds characters associated with new cards.
  * Initializes character wish count and circulation for card versions.
- * @param {Client} client
- * @param {Parsed JSON} characterModel
- * @param {Array<String>} characterKeys
+ *
+ * @param {Object} client - The client object containing character data.
+ * @param {Object} client.jsonCharacters - The character model containing card information.
+ * @param {Array<String>} client.jsonCharacterKeys - The array of character keys.
  */
 async function initCharacterDB(client) {
   const characterModel = client.jsonCharacters;
   const characterKeys = client.jsonCharacterKeys;
 
-  // for (const character of characterKeys) {
-  //   // Get series name
-  //   const series = Object.keys(characterModel[character])[0];
+  // Count number of characters in database
+  const totalDB = await CharacterModel().countDocuments({});
+  logger.info(`${totalDB} characters in database`);
 
-  //   // Get array of sets
-  //   const setsArr = Object.keys(characterModel[character][series]);
+  // Count number of characters parsed in JSON
+  let totalParsed = 0;
+  for (const character of characterKeys) {
+    totalParsed += Object.keys(characterModel[character]).length;
+  }
+  logger.info(`${totalParsed} characters parsed`);
 
-  //   const imageUrls = [];
-  //   for (const set in setsArr) {
-  //     for (const rarity in characterModel[character][series][set]) {
-  //       imageUrls.push([character, series, set, `${rarity.toLowerCase()}.jpg`].join("-"));
-  //     }
-  //   }
+  // No new characters to initialize
+  if (totalDB === totalParsed) {
+    logger.info("No new characters to initialize");
+    return;
+  }
 
-  //   await upsertCharacter(client, { character: character, series: series }, imageUrls)
-  // }
-
-  // const total = await CharacterModel().countDocuments({});
-  // logger.info(`${total} characters in database`);
-  // logger.info(`${characterKeys.length} characters parsed`);
-  // if (total === characterKeys.length) {
-  //   logger.info("No new characters to initialize");
-  //   return;
-  // }
-
-  logger.info("Initializing characters...");
+  // Mismatched, add new characters to database
+  logger.info("Initializing new characters...");
+  let totalCharacters = 0;
   let totalCards = 0;
   const promises = [];
-  
+
   for (const character of characterKeys) {
     // Get series names
     for (const series of Object.keys(characterModel[character])) {
@@ -54,6 +49,8 @@ async function initCharacterDB(client) {
           imageKeys.push([character, series, set, `${rarity.toLowerCase()}`].join("-"));
         }
       }
+
+      totalCharacters++;
       totalCards += imageKeys.length;
 
       // Push the promise to the array
@@ -62,15 +59,14 @@ async function initCharacterDB(client) {
   }
 
   await Promise.all(promises);
-  logger.success(`${characterKeys.length} characters and ${totalCards.toLocaleString()} total cards have been initialized`);
+  logger.success(`${totalCharacters} characters and ${totalCards.toLocaleString()} total cards have been initialized`);
 }
 
 /**
  * Helper function to update Character Models in database.
  *
- * @param {Object} query
- * @param {Array<String>} keys
- * @returns
+ * @param {Object} query - Character and series field.
+ * @param {Array<String>} keys - Array of image ids in the format "character-series".
  */
 async function upsertCharacter(query, imageKeys) {
   // Convert imageUrls to a Map with default values

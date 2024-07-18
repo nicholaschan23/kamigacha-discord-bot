@@ -5,8 +5,8 @@ const path = require("path");
 /**
  * Retrieves all JavaScript files from a specified directory.
  *
- * @param {string} directory - The directory to search for JavaScript files.
- * @returns {string[]} - An array of JavaScript file names.
+ * @param {String} directory - The directory to search for JavaScript files.
+ * @returns {String[]} An array of JavaScript file names.
  */
 function getJsFiles(directory) {
   return fs.readdirSync(directory).filter((file) => file.endsWith(".js"));
@@ -15,8 +15,8 @@ function getJsFiles(directory) {
 /**
  * Abbreviates a directory path by removing the prefix up to and including the specified key.
  *
- * @param {string} directory - The full directory path to abbreviate.
- * @returns {string} - The abbreviated directory path.
+ * @param {String} directory - The full directory path to abbreviate.
+ * @returns {String} The abbreviated directory path.
  */
 function abbrevCmdPath(directory) {
   const key = "commands/";

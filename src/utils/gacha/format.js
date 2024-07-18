@@ -26,7 +26,7 @@ function formatCardInfoPage(dataList, showTags = true) {
  * Formats the tag information from a Map into a specific structure.
  *
  * @param {Map} tagList - A Map where keys are tag names and values are objects with emoji and quantity properties.
- * @returns {string} - Formatted tag info for display.
+ * @returns {String} Formatted tag info for display.
  */
 function formatTagListPage(tagList) {
   const formattedTags = [];
@@ -80,8 +80,8 @@ function isValidFilter(input) {
 /**
  * Check if string containing only letters, numbers, and spaces.
  *
- * @param {string} input - Filter label.
- * @returns {string} Formatted filter label.
+ * @param {String} input - Filter label.
+ * @returns {String} Formatted filter label.
  */
 function isValidFilterLabel(input) {
   const regex = /^[a-zA-Z0-9\s]+$/;
@@ -92,10 +92,10 @@ function isValidFilterLabel(input) {
  * Formats the filter into a string output for an embed page.
  *
  * @param {Array<Object>} filterList - The array of filter property objects.
- * @param {string} filterList[].emoji - The filter emoji.
- * @param {string} filterList[].label - The filter label.
- * @param {string} filterList[].filter - The filter string.
- * @returns {string} Formatted filter info for display.
+ * @param {String} filterList[].emoji - The filter emoji.
+ * @param {String} filterList[].label - The filter label.
+ * @param {String} filterList[].filter - The filter string.
+ * @returns {String} Formatted filter info for display.
  */
 function formatFilterListPage(filterList) {
   const formattedFilters = [];
@@ -111,8 +111,8 @@ function formatFilterListPage(filterList) {
 /**
  * Associate wish amount with an emoji.
  *
- * @param {number} wish - The character's wish amount.
- * @returns {string} Emoji.
+ * @param {Number} wish - The character's wish amount.
+ * @returns {String} Emoji.
  */
 function getWishListEmoji(wish) {
   if (wish >= 5000) {
@@ -132,10 +132,10 @@ function getWishListEmoji(wish) {
  * Formats the lookup results into a string output for an embed page.
  *
  * @param {Array<Object>} results - The array of lookup result objects.
- * @param {number} results[].wishCount - The character's wish count.
- * @param {string} results[].series - The name of the series the character belongs to.
- * @param {string} results[].character - The name of the character.
- * @returns {string} The formatted string output.
+ * @param {Number} results[].wishCount - The character's wish count.
+ * @param {String} results[].series - The name of the series the character belongs to.
+ * @param {String} results[].character - The name of the character.
+ * @returns {String} The formatted string output.
  */
 function formatLookupPage(results) {
   const output = [];
@@ -149,9 +149,9 @@ function formatLookupPage(results) {
  * Formats the wish list into a string output for an embed page.
  *
  * @param {Array<Object>} wishList - The array of wish list objects.
- * @param {string} wishList[].series - The name of the series the character belongs to.
- * @param {string} wishList[].character - The name of the character.
- * @returns {string} The formatted string output.
+ * @param {String} wishList[].series - The name of the series the character belongs to.
+ * @param {String} wishList[].character - The name of the character.
+ * @returns {String} The formatted string output.
  */
 function formatWishListPage(wishList) {
   const output = [];
