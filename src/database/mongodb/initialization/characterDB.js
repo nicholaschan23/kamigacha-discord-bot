@@ -14,27 +14,30 @@ async function initCharacterDB(client) {
   const characterModel = client.jsonCharacters;
   const characterKeys = client.jsonCharacterKeys;
 
-  // Count number of characters in database
-  const totalDB = await CharacterModel().countDocuments({});
-  logger.info(`${totalDB} characters in database`);
-
-  // Count number of characters parsed in JSON
-  let totalParsed = 0;
+  // Count number of characters and card images parsed in JSON
+  let totalCharacters = 0;
+  let totalCards = 0;
   for (const character of characterKeys) {
-    totalParsed += Object.keys(characterModel[character]).length;
+    totalCharacters += Object.keys(characterModel[character]).length;
+    for (const series of Object.keys(characterModel[character])) {
+      for (const set of Object.keys(characterModel[character][series])) {
+        totalCards += Object.keys(characterModel[character][series][set]).length;
+      }
+    }
   }
-  logger.info(`${totalParsed} characters parsed`);
+  logger.info(`${totalCharacters} characters parsed`);
+  logger.info(`${totalCards} cards parsed`);
 
   // No new characters to initialize
-  if (totalDB === totalParsed) {
+  if (await sumCharactersDB() === totalCharacters && await sumCardsDB() === totalCards) {
     logger.info("No new characters to initialize");
     return;
   }
 
   // Mismatched, add new characters to database
   logger.info("Initializing new characters...");
-  let totalCharacters = 0;
-  let totalCards = 0;
+  let characterCount = 0;
+  let cardCount = 0;
   const promises = [];
 
   for (const character of characterKeys) {
@@ -43,65 +46,97 @@ async function initCharacterDB(client) {
       // Get array of sets
       const setsArr = Object.keys(characterModel[character][series]);
 
-      const imageKeys = [];
       for (const set of setsArr) {
+        const rarities = [];
         for (const rarity of characterModel[character][series][set]) {
-          imageKeys.push([character, series, set, `${rarity.toLowerCase()}`].join("-"));
+          rarities.push(`${rarity.toLowerCase()}`);
         }
+
+        // Update total unique card arts
+        cardCount += rarities.length;
+
+        // Initialize the circulation stats for each set and rarity pair
+        promises.push(upsertCharacter({ character: character, series: series }, set, rarities));
       }
 
-      totalCharacters++;
-      totalCards += imageKeys.length;
-
-      // Push the promise to the array
-      promises.push(upsertCharacter({ character: character, series: series }, imageKeys));
+      // All cards added for 1 character
+      characterCount++;
     }
   }
 
   await Promise.all(promises);
-  logger.success(`${totalCharacters} characters and ${totalCards.toLocaleString()} total cards have been initialized`);
+  logger.success(`${characterCount.toLocaleString()} characters and ${cardCount.toLocaleString()} total cards have been initialized`);
+}
+
+// Count number of characters in database
+async function sumCharactersDB() {
+  const totalCharacters = await CharacterModel().countDocuments({});
+  console.log("chars", totalCharacters)
+  return totalCharacters;
+}
+
+// Count number of cards in database
+async function sumCardsDB() {
+  const characters = await CharacterModel().find({});
+  let totalCards = 0;
+  
+  // Iterate through each character document
+  characters.forEach((character) => {
+    // Iterate through each set in the circulation array
+    character.circulation.forEach((set) => {
+      // Add the length of rarities map to the total
+      totalCards += set.rarities.size;
+    });
+  });
+  console.log("cards", totalCards)
+  return totalCards;
 }
 
 /**
  * Helper function to update Character Models in database.
  *
  * @param {Object} query - Character and series field.
- * @param {Array<String>} keys - Array of image ids in the format "character-series".
+ * @param {Number} set - Set number the rarities are associated with.
+ * @param {Array<String>} rarities - Array of rarities for a given set.
  */
-async function upsertCharacter(query, imageKeys) {
+async function upsertCharacter(query, set, rarities) {
   // Convert imageUrls to a Map with default values
-  const circulationData = {};
-  imageKeys.forEach((url) => {
-    circulationData[url] = { destroyed: 0, generated: 0 };
-  });
+  // const circulationData = {};
+  // rarities.forEach((rarity) => {
+  //   circulationData[set][rarity] = { destroyed: 0, generated: 0 };
+  // });
 
   const character = await CharacterModel().findOneAndUpdate(
     query, // Filter
     {
       $setOnInsert: {
         ...query,
-        circulation: circulationData,
       },
     }, // Update
     { new: true, upsert: true } // Options
   );
 
-  if (character) {
-    let modified = false;
-    for (const key of Object.entries(imageKeys)) {
-      if (!character.circulation.has(key)) {
-        character.circulation[key] = { destroyed: 0, generated: 0 };
-        modified = true;
-      }
+  // Ensure the circulation array has the necessary index
+  if (character.circulation.length < set) {
+    // Initialize missing indices with empty maps if they do not exist
+    while (character.circulation.length < set) {
+      character.circulation.push({ rarities: new Map() });
     }
-
-    if (modified) {
-      await character.save();
-    }
-
-    return true;
   }
-  return null;
+
+  let modified = false;
+  for (const rarity of rarities) {
+    if (!character.circulation[set - 1].rarities.get(rarity)) {
+      character.circulation[set - 1].rarities.set(rarity, { destroyed: 0, generated: 0 });
+      modified = true;
+    }
+  }
+
+  if (modified) {
+    await character.save();
+  }
+
+  return true;
 }
 
 module.exports = { initCharacterDB };

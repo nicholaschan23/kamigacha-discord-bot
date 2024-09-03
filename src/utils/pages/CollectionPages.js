@@ -6,7 +6,7 @@ const { getCardBorder } = require("../graphics/getCardBorder");
 const { createCardGrid } = require("../graphics/createCardGrid");
 const { v4: uuidv4 } = require("uuid");
 
-class CollectionButtonPages extends ButtonPages {
+class CollectionPages extends ButtonPages {
   constructor(interaction, collectionDocument, filterString, filterMenu) {
     super(interaction, [], collectionDocument.isPrivate);
     this.collectionDocument = collectionDocument;
@@ -216,4 +216,4 @@ class CollectionButtonPages extends ButtonPages {
   }
 }
 
-module.exports = CollectionButtonPages;
+module.exports = CollectionPages;

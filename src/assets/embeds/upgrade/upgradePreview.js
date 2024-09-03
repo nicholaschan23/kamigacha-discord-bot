@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 const { formatCardInfoPage } = require("../../../utils/gacha/format");
 const config = require("../../../config");
+const client = require("../../../../bot");
 
 module.exports = (queriedCards, seriesSetFreq, rarityFreq) => {
   // Format text for series chances
@@ -8,7 +9,7 @@ module.exports = (queriedCards, seriesSetFreq, rarityFreq) => {
   for (const series in seriesSetFreq) {
     for (const set in seriesSetFreq[series]) {
       const freq = seriesSetFreq[series][set];
-      seriesChances.push([`${freq * 10}%`, `◈${set}`, `${series}`].join(" · "));
+      seriesChances.push([`${freq * 10}%`, `◈${set}`, `${client.seriesNameMap[series]}`].join(" · "));
     }
   }
 

@@ -1,12 +1,12 @@
 const { EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } = require("discord.js");
-const LookupButtonPages = require("./LookupButtonPages");
+const LookupPages = require("./LookupPages");
 const { formatWishListPage } = require("../gacha/format");
 const WishModel = require("../../database/mongodb/models/user/wish");
 const CharacterModel = require("../../database/mongodb/models/global/character");
 const config = require("../../config");
 const client = require("../../../bot");
 
-class WishListRemoveButtonPages extends LookupButtonPages {
+class WishListRemoveButtonPages extends LookupPages {
   constructor(interaction, wishDocument) {
     super(interaction, wishDocument.wishList);
     this.user = interaction.user;
@@ -68,7 +68,7 @@ class WishListRemoveButtonPages extends LookupButtonPages {
     if (!wishDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: `**${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} is not on your wish list.` });
+      return await interaction.followUp({ content: `**${client.characterNameMap[data.character]}** · ${client.seriesNameMap[data.series]} is not on your wish list.` });
     }
 
     // Remove wish count from character
@@ -89,7 +89,7 @@ class WishListRemoveButtonPages extends LookupButtonPages {
     }
     embed.setColor(config.embedColor.green);
     this.collector.stop();
-    return await interaction.followUp({ content: `Successfully removed **${client.characterNameMap[data.character]}** from ${client.seriesNameMap[data.series]} to your wish list!` });
+    return await interaction.followUp({ content: `Successfully removed **${client.characterNameMap[data.character]}** · ${client.seriesNameMap[data.series]} from your wish list!` });
   }
 }
 

@@ -10,6 +10,7 @@ module.exports = {
     await interaction.deferReply();
     const settingsDocument = await SettingsModel().findOneAndUpdate(
       { userId: interaction.user.id }, // Filter
+      { $setOnInsert: { userId: interaction.user.id } }, // Update operation
       { new: true, upsert: true }
     );
     interaction.editReply({ embeds: [viewCooldownEmbed(settingsDocument)] });

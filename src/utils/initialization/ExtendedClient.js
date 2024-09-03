@@ -59,11 +59,11 @@ class ExtendedClient extends Client {
     // Connect to MongoDB
     await mongooseConnect(this);
 
+    await initCharacterDB(this);
+
     // Preprocess card search
     const { model: jsonSearches } = await getSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
     this.jsonSearches = jsonSearches;
-
-    await initCharacterDB(this);
 
     // Initialize caches
     this.blacklistCache = new BlacklistCache(this);

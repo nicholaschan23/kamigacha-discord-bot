@@ -1,15 +1,18 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
-const { formatLookupPage, getWishListEmoji, chunkArray } = require("../gacha/format");
 const client = require("../../../bot");
 
-class LookupButtonPages extends ButtonPages {
-  constructor(interaction, pageData) {
+class LookupCharacterPage extends ButtonPages {
+  constructor(interaction, value, pages, index) {
     super(interaction);
-    this.pageData = pageData;
 
-    // Split the list of cards into chunks of 10
-    this.pageDataChunks = chunkArray(this.pageData, 10);
+    const selection = JSON.parse(value);
+    this.character = selection.character;
+    this.series = selection.series;
+
+    // Save last lookup instance for "back" button
+    this.lookupPages = pages; // List of page embeds
+    this.lookupIndex = index; // Page number user was last
   }
 
   /**
@@ -22,9 +25,20 @@ class LookupButtonPages extends ButtonPages {
 
     for (let i = 0; i < pageDataChunks.length; i++) {
       const embed = new EmbedBuilder()
-        .setTitle(`Character Results`)
-        .setDescription(formatLookupPage(pageDataChunks[i]))
-        .setFooter({ text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
+        .setTitle(`Character Lookup`)
+        .setDescription(
+          `Character: ${client.characterNameMap(this.character)}\n` +
+            `Series: ${client.seriesNameMap(this.series)}\n` +
+            `Set: \n` +
+            `Rarity: \n` +
+            `\n` +
+            `Wish count: \n` +
+            `Total generated: \n` +
+            `Total destroyed: \n` +
+            `Circulation: \n` +
+            `Retention Rate: `
+        )
+        .setFooter({ text: `This character is in ${0 > 1 ? `0 sets` : `1 set`}` });
       pages.push(embed);
     }
 
@@ -55,25 +69,31 @@ class LookupButtonPages extends ButtonPages {
   }
 
   addComponents() {
-    // Button row
+    // Initialize components
+    const back = new ButtonBuilder().setCustomId("backToLookup").setLabel("Back").setStyle(ButtonStyle.Danger);
     const ends = new ButtonBuilder().setCustomId("toggleEnds").setEmoji("↔️").setStyle(ButtonStyle.Secondary);
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
+    const zoomStats = new ButtonBuilder().setCustomId("zoom").setEmoji("🔎").setStyle(ButtonStyle.Secondary);
+    this.components["backToLookup"] = back;
     this.components["toggleEnds"] = ends;
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
+    this.components["toggleZoomStats"] = zoomStats;
     this.toggleComponents();
-    const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next);
+
+    // Button row
+    const buttonRow = new ActionRowBuilder().addComponents(back, ends, prev, next, zoomStats);
     this.messageComponents.push(buttonRow);
 
     // Select menu row
-    this.updateSelectMenu();
+    this.addSelectMenu();
   }
 
-  updateSelectMenu() {
+  addSelectMenu() {
     const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId("characterSelect")
-      .setPlaceholder("Select a character")
+      .setCustomId("setSelect")
+      .setPlaceholder("Select a set")
       .setMinValues(1)
       .setMaxValues(1)
       .addOptions(
@@ -128,31 +148,4 @@ class LookupButtonPages extends ButtonPages {
 
     this.collector.resetTimer();
   }
-
-  updatePageButtons(i) {
-    this.toggleComponents();
-
-    this.messageComponents.pop();
-    this.updateSelectMenu();
-
-    // Update message
-    if (this.ephemeral) {
-      this.interaction.editReply({
-        embeds: [this.pages[this.index]],
-        components: this.messageComponents,
-        fetchReply: true,
-      });
-    } else {
-      i.message.edit({
-        embeds: [this.pages[this.index]],
-        components: this.messageComponents,
-      });
-    }
-  }
-
-  async handleSelect(interaction, value) {
-    return;
-  }
 }
-
-module.exports = LookupButtonPages;

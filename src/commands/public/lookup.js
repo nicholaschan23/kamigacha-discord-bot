@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { lookup } = require("../../utils/gacha/lookupCharacter");
-const LookupButtonPages = require("../../utils/pages/LookupButtonPages");
+const LookupPages = require("../../utils/pages/LookupPages");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
 
 module.exports = {
@@ -21,13 +21,13 @@ module.exports = {
         return interaction.reply("That character could not be found. It may not exist, or you may have misspelled their name.");
       }
 
-      const bp = new LookupButtonPages(interaction, results);
+      const bp = new LookupPages(interaction, results);
       bp.createPages();
       bp.publishPages();
     } else {
       await interaction.deferReply();
 
-      // Retrieve latest card in collection
+      // TODO: Retrieve latest card in collection and lookup
       try {
         const collectionDocument = await CollectionModel().findOne(
           { userId: interaction.user.id },

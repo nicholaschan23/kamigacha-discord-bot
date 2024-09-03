@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
-const CollectionButtonPages = require("../../utils/pages/CollectionButtonPages");
+const CollectionPages = require("../../utils/pages/CollectionPages");
 const FilterModel = require("../../database/mongodb/models/user/filter");
 
 module.exports = {
@@ -36,7 +36,7 @@ module.exports = {
         return interaction.reply({ content: "An error occurred while fetching that player's collection filters.", ephemeral: true });
       }
 
-      const bp = new CollectionButtonPages(interaction, collectionDocument, filters, filterDocument.filterList);
+      const bp = new CollectionPages(interaction, collectionDocument, filters, filterDocument.filterList);
       bp.publishPages();
     } catch (error) {
       console.error("Error fetching user card codes:", error);
