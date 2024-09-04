@@ -6,10 +6,26 @@ const client = require("../../../bot");
 class LookupPages extends ButtonPages {
   constructor(interaction, pageData) {
     super(interaction);
-    this.pageData = pageData;
+    this.totalCharacters = pageData.length;
 
     // Split the list of cards into chunks of 10
-    this.pageDataChunks = chunkArray(this.pageData, 10);
+    this.pageDataChunks = chunkArray(pageData, 10);
+  }
+
+  saveState() {
+    return {
+      pages: this.pages,
+      index: this.index,
+      totalCharacters: this.totalCharacters,
+      pageDataChunks: this.pageDataChunks
+    }
+  }
+
+  loadState(prevState) {
+    this.pages = prevState.pages;
+    this.index = prevState.index;
+    this.totalCharacters = prevState.totalCharacters;
+    this.pageDataChunks = prevState.pageDataChunks;
   }
 
   /**
@@ -24,7 +40,7 @@ class LookupPages extends ButtonPages {
       const embed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
         .setDescription(formatLookupPage(pageDataChunks[i]))
-        .setFooter({ text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
+        .setFooter({ text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.totalCharacters.toLocaleString()} total)` });
       pages.push(embed);
     }
 
@@ -136,29 +152,25 @@ class LookupPages extends ButtonPages {
     this.addSelectMenu();
 
     // Update message
-    if (this.ephemeral) {
-      this.interaction.editReply({
-        embeds: [this.pages[this.index]],
-        components: this.messageComponents,
-        fetchReply: true,
-      });
-    } else {
-      i.message.edit({
-        embeds: [this.pages[this.index]],
-        components: this.messageComponents,
-      });
-    }
+    i.message.edit({
+      embeds: [this.pages[this.index]],
+      components: this.messageComponents,
+    });
   }
 
   // View character lookup
   async handleSelect(i, value) {
+    // Create and show character pages
+    const LookupCharacterPages = require("./LookupCharacterPages");
+    const bp = new LookupCharacterPages(i, value, this.saveState());
+    await bp.init();
+    await bp.createPages();
+
     // Stop current button pages
     this.collector.stop();
 
-    // Create and show character pages
-    const bp = new LookupCharacterPages(i, value, this.pages, this.index);
-    bp.createPages();
-    bp.publishPages();
+    // Publish new button pages
+    bp.publishPages(true);
     return;
   }
 }

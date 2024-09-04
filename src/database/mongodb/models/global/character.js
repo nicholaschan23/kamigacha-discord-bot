@@ -15,43 +15,53 @@ const circulationSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Define the schema for each rarity, each with individual circulation stats
-const raritySchema = new mongoose.Schema(
+// Define the schema for each set with a timestamp
+const setSchema = new mongoose.Schema(
   {
     rarities: {
       type: Map,
       of: circulationSchema,
       default: () => new Map(),
     },
+
+    // When the set was added to the character
+    timestamp: {
+      type: Number,
+      default: () => Math.floor(Date.now() / 1000), // Defaults to current Unix timestamp
+    },
   },
   { _id: false }
 );
 
 // Define the schema for a unique character
-const characterSchema = new mongoose.Schema({
-  character: {
-    type: String,
-    required: true,
-  },
+const characterSchema = new mongoose.Schema(
+  {
+    character: {
+      type: String,
+      required: true,
+    },
 
-  series: {
-    type: String,
-    required: true,
-  },
+    series: {
+      type: String,
+      required: true,
+    },
 
-  // Number of players who have this character on their wish list
-  wishCount: {
-    type: Number,
-    default: 0,
-  },
+    // Number of players who have this character on their wish list
+    wishCount: {
+      type: Number,
+      default: 0,
+    },
 
-  // Index represents set number
-  // Set 1 is at index 0 in this case
-  circulation: {
-    type: [raritySchema],
-    default: () => [],
+    // Top map: key is set number
+    // Nested map: key is rarity letter
+    circulation: {
+      type: Map,
+      of: setSchema,
+      default: () => new Map(),
+    },
   },
-});
+  { _id: false }
+);
 
 module.exports = () => {
   const client = require("../../../../../bot");

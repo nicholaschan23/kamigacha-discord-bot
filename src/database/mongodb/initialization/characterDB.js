@@ -14,22 +14,27 @@ async function initCharacterDB(client) {
   const characterModel = client.jsonCharacters;
   const characterKeys = client.jsonCharacterKeys;
 
-  // Count number of characters and card images parsed in JSON
-  let totalCharacters = 0;
-  let totalCards = 0;
+  // Sum JSON characters stats (from S3 Bucket)
+  let sumCharacterJson = 0;
+  let sumCardJson = 0;
   for (const character of characterKeys) {
-    totalCharacters += Object.keys(characterModel[character]).length;
+    sumCharacterJson += Object.keys(characterModel[character]).length;
     for (const series of Object.keys(characterModel[character])) {
       for (const set of Object.keys(characterModel[character][series])) {
-        totalCards += Object.keys(characterModel[character][series][set]).length;
+        sumCardJson += Object.keys(characterModel[character][series][set]).length;
       }
     }
   }
-  logger.info(`${totalCharacters} characters parsed`);
-  logger.info(`${totalCards} cards parsed`);
+
+  // Sum database character stats
+  const sumCharacterDB = await sumCharactersDB();
+  const sumCardDB = await sumCardsDB();
+
+  logger.warn(`${sumCharacterDB}/${sumCharacterJson} characters in database`);
+  logger.warn(`${sumCardDB}/${sumCardJson} cards in database`);
 
   // No new characters to initialize
-  if (await sumCharactersDB() === totalCharacters && await sumCardsDB() === totalCards) {
+  if (sumCharacterDB === sumCharacterJson && sumCardDB === sumCardJson) {
     logger.info("No new characters to initialize");
     return;
   }
@@ -49,7 +54,7 @@ async function initCharacterDB(client) {
       for (const set of setsArr) {
         const rarities = [];
         for (const rarity of characterModel[character][series][set]) {
-          rarities.push(`${rarity.toLowerCase()}`);
+          rarities.push(rarity);
         }
 
         // Update total unique card arts
@@ -71,7 +76,6 @@ async function initCharacterDB(client) {
 // Count number of characters in database
 async function sumCharactersDB() {
   const totalCharacters = await CharacterModel().countDocuments({});
-  console.log("chars", totalCharacters)
   return totalCharacters;
 }
 
@@ -79,7 +83,7 @@ async function sumCharactersDB() {
 async function sumCardsDB() {
   const characters = await CharacterModel().find({});
   let totalCards = 0;
-  
+
   // Iterate through each character document
   characters.forEach((character) => {
     // Iterate through each set in the circulation array
@@ -88,7 +92,6 @@ async function sumCardsDB() {
       totalCards += set.rarities.size;
     });
   });
-  console.log("cards", totalCards)
   return totalCards;
 }
 
@@ -100,13 +103,8 @@ async function sumCardsDB() {
  * @param {Array<String>} rarities - Array of rarities for a given set.
  */
 async function upsertCharacter(query, set, rarities) {
-  // Convert imageUrls to a Map with default values
-  // const circulationData = {};
-  // rarities.forEach((rarity) => {
-  //   circulationData[set][rarity] = { destroyed: 0, generated: 0 };
-  // });
-
-  const character = await CharacterModel().findOneAndUpdate(
+  // Fetch character document
+  const characterDocument = await CharacterModel().findOneAndUpdate(
     query, // Filter
     {
       $setOnInsert: {
@@ -116,24 +114,24 @@ async function upsertCharacter(query, set, rarities) {
     { new: true, upsert: true } // Options
   );
 
-  // Ensure the circulation array has the necessary index
-  if (character.circulation.length < set) {
-    // Initialize missing indices with empty maps if they do not exist
-    while (character.circulation.length < set) {
-      character.circulation.push({ rarities: new Map() });
-    }
+  // Ensure the circulation map has the necessary set
+  if (!characterDocument.circulation.get(set)) {
+    characterDocument.circulation.set(set, new Map());
   }
-
+  
+  // Initialize destroyed and generated counters
   let modified = false;
+  const setMap = characterDocument.circulation.get(set);
   for (const rarity of rarities) {
-    if (!character.circulation[set - 1].rarities.get(rarity)) {
-      character.circulation[set - 1].rarities.set(rarity, { destroyed: 0, generated: 0 });
+    if (!setMap.rarities.get(rarity)) {
+      setMap.rarities.set(rarity, { destroyed: 0, generated: 0 });
       modified = true;
     }
   }
 
+  // Save modified document to database
   if (modified) {
-    await character.save();
+    await characterDocument.save();
   }
 
   return true;

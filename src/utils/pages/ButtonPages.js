@@ -17,8 +17,10 @@ class ButtonPages {
     this.collector;
   }
 
-  async publishPages() {
-    await this.interaction.deferReply({ ephemeral: this.ephemeral });
+  async publishPages(isDeferred = false) {
+    if (!isDeferred) {
+      await this.interaction.deferReply({ ephemeral: this.ephemeral });
+    }
 
     // 1 page, no buttons
     // if (this.pages.length === 1) {
