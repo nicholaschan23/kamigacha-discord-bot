@@ -4,8 +4,8 @@ const CharacterModel = require("../../database/mongodb/models/global/character")
 const client = require("../../../bot");
 const config = require("../../config");
 
-class LookupCharacterPage extends ButtonPages {
-  constructor(interaction, value, prevState) {
+class LookupCharacterPages extends ButtonPages {
+  constructor(interaction, value, prevState = null) {
     super(interaction);
 
     const selection = JSON.parse(value);
@@ -80,25 +80,26 @@ class LookupCharacterPage extends ButtonPages {
       const statEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
         .setDescription(
-          `Character: ${client.characterNameMap[this.character]}\n` +
-            `Series: ${client.seriesNameMap[this.series]}\n` +
-            `Set: ${this.set}\n` +
-            `Rarity: ${rarity}\n` +
+          `Character: **${client.characterNameMap[this.character]}**\n` +
+            `Series: **${client.seriesNameMap[this.series]}**\n` +
+            `Set: **${this.set}**\n` +
+            `Rarity: **${rarity}**\n` +
             `\n` +
-            `Wish count: ${this.wishCount.toLocaleString()}\n` +
+            `Wish count: **${this.wishCount.toLocaleString()}**\n` +
             `\n` +
-            `Total generated: ${stats.generated.toLocaleString()}\n` +
-            `Total destroyed: ${stats.destroyed.toLocaleString()}\n` +
-            `Circulation: ${circulation.toLocaleString()}\n` +
-            `Retention Rate: ${Math.round(retention)}%`
+            `Total generated: **${stats.generated.toLocaleString()}**\n` +
+            `Total destroyed: **${stats.destroyed.toLocaleString()}**\n` +
+            `In circulation: **${circulation.toLocaleString()}**\n` +
+            `Retention rate: **${Math.round(retention)}%**`
         )
         .setThumbnail(url)
-        .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total))` });
+        .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });
 
       const zoomEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
+        .setDescription(`Character: **${client.characterNameMap[this.character]}**\n` + `Series: **${client.seriesNameMap[this.series]}**\n` + `Set: **${this.set}**\n` + `Rarity: **${rarity}**`)
         .setImage(url)
-        .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total))` });
+        .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });
 
       statsPages.push(statEmbed);
       zoomPages.push(zoomEmbed);
@@ -116,7 +117,14 @@ class LookupCharacterPage extends ButtonPages {
   }
 
   // Update disabled states of page buttons
-  updateArrowComponents() {
+  updateComponents() {
+    const back = this.components["backToLookup"];
+    if (this.prevState === null) {
+      back.setDisabled(true);
+    } else {
+      back.setDisabled(false);
+    }
+
     const ends = this.components["toggleEnds"];
     if (this.index === 0 && this.index === this.pages.length - 1) {
       ends.setDisabled(true);
@@ -137,16 +145,14 @@ class LookupCharacterPage extends ButtonPages {
     } else {
       next.setDisabled(false);
     }
-  }
 
-  updateZoomStatsComponent() {
-    const tzs = this.components["toggleZoomStats"];
+    const zoomStats = this.components["toggleZoomStats"];
     if (this.onStats) {
       this.pages = this.statsPages;
-      tzs.setEmoji("🔎"); // Set to zoom emoji
+      zoomStats.setEmoji("🔎"); // Set to zoom emoji
     } else {
       this.pages = this.zoomPages;
-      tzs.setEmoji("📊"); // Set to stats emoji
+      zoomStats.setEmoji("📊"); // Set to stats emoji
     }
   }
 
@@ -162,7 +168,7 @@ class LookupCharacterPage extends ButtonPages {
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
     this.components["toggleZoomStats"] = zoomStats;
-    this.updateArrowComponents();
+    this.updateComponents();
 
     // Button row
     const buttonRow = new ActionRowBuilder().addComponents(back, ends, prev, next, zoomStats);
@@ -214,27 +220,27 @@ class LookupCharacterPage extends ButtonPages {
         return;
       }
       case "toggleEnds": {
-        if (!this.isEnd) {
-          this.index = this.pages.length - 1;
+        const last = this.pages.length - 1;
+        if (this.index === 0 || this.index < last / 2) {
+          this.index = last;
         } else {
           this.index = 0;
         }
-        this.isEnd = !this.isEnd;
-        this.updateArrowComponents();
+        this.updateComponents();
         break;
       }
       case "viewPrev": {
         if (this.index > 0) {
           this.index--;
         }
-        this.updateArrowComponents();
+        this.updateComponents();
         break;
       }
       case "viewNext": {
         if (this.index < this.pages.length - 1) {
           this.index++;
         }
-        this.updateArrowComponents();
+        this.updateComponents();
         break;
       }
       case "toggleZoomStats": {
@@ -243,7 +249,7 @@ class LookupCharacterPage extends ButtonPages {
         } else {
           this.onStats = true;
         }
-        this.updateZoomStatsComponent();
+        this.updateComponents();
         break;
       }
       case "setSelect": {
@@ -266,4 +272,4 @@ class LookupCharacterPage extends ButtonPages {
   }
 }
 
-module.exports = LookupCharacterPage;
+module.exports = LookupCharacterPages;

@@ -13,7 +13,6 @@ class CollectionPages extends ButtonPages {
     this.filterString = filterString;
     this.filterMenu = filterMenu;
 
-    this.isEnd = false;
     this.cardList = [...collectionDocument.cardsOwned].reverse();
     this.updatePages(parseFilterString(filterString));
 
@@ -93,12 +92,12 @@ class CollectionPages extends ButtonPages {
 
     switch (i.customId) {
       case "toggleEnds": {
-        if (!this.isEnd) {
-          this.index = this.pages.length - 1;
+        const last = this.pages.length - 1;
+        if (this.index === 0 || this.index < last / 2) {
+          this.index = last;
         } else {
           this.index = 0;
         }
-        this.isEnd = !this.isEnd;
         this.updatePageButtons(i);
         break;
       }

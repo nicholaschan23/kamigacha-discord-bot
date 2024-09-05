@@ -3,7 +3,7 @@ const { replaceAccents } = require("../stringUtils");
 function lookup(query, searchMap) {
   const queryWords = replaceAccents(query)
     .toLowerCase()
-    .replace(/[^a-z0-9]+/gi, "")
+    .replace(/[^a-z0-9\s]+/gi, "")
     .split(/[\s,]+/);
 
   let maxCount = 0;

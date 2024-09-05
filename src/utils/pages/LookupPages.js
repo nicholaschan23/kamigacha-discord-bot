@@ -17,8 +17,8 @@ class LookupPages extends ButtonPages {
       pages: this.pages,
       index: this.index,
       totalCharacters: this.totalCharacters,
-      pageDataChunks: this.pageDataChunks
-    }
+      pageDataChunks: this.pageDataChunks,
+    };
   }
 
   loadState(prevState) {
@@ -110,12 +110,12 @@ class LookupPages extends ButtonPages {
 
     switch (i.customId) {
       case "toggleEnds": {
-        if (!this.isEnd) {
-          this.index = this.pages.length - 1;
+        const last = this.pages.length - 1;
+        if (this.index === 0 || this.index < last / 2) {
+          this.index = last;
         } else {
           this.index = 0;
         }
-        this.isEnd = !this.isEnd;
         this.updatePageButtons(i);
         break;
       }
