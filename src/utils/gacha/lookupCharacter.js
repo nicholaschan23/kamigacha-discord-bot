@@ -1,39 +1,51 @@
 const { replaceAccents } = require("../stringUtils");
 
 function lookup(query, searchMap) {
-  const queryWords = replaceAccents(query)
+  // Replace special characters
+  const filteredQuery = replaceAccents(query)
     .toLowerCase()
     .replace(/[^a-z0-9\s]+/gi, "")
     .split(/[\s,]+/);
 
-  let maxCount = 0;
-  const matchedCharacters = [];
-  queryWords.forEach((word) => {
+  let maxCount = 0; // Keep track of top search results
+  const resultsMap = new Map();
+
+  // Store unique results
+  filteredQuery.forEach((word) => {
     if (searchMap[word]) {
       searchMap[word].forEach(({ character, series, wishCount }) => {
-        let i = matchedCharacters.findIndex((entry) => entry.character === character && entry.series === series);
+        const key = `${character}-${series}`;
+        let result = resultsMap.get(key);
 
-        if (i === -1) {
-          matchedCharacters.push({
+        // Repeat result, update count
+        if (result) {
+          result.count++;
+        }
+        // New result, add new map entry
+        else {
+          result = {
             character: character,
             series: series,
             wishCount: wishCount,
             count: 1,
-          });
-          i = matchedCharacters.length - 1;
-        } else {
-          matchedCharacters[i].count++;
+          };
+          resultsMap.set(key, result);
         }
 
-        if (matchedCharacters[i].count > maxCount) {
-          maxCount = matchedCharacters[i].count;
+        // Update max count
+        if (result.count > maxCount) {
+          maxCount = result.count;
         }
       });
     }
   });
 
-  return matchedCharacters
-    .filter((characters) => characters.count === maxCount)
+  // Convert map to array
+  const resultsArray = [...resultsMap.values()];
+
+  // Filter and sort top results
+  return resultsArray
+    .filter((results) => results.count === maxCount)
     .sort((a, b) => {
       return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
     });

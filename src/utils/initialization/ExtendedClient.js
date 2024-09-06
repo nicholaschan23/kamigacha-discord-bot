@@ -40,6 +40,10 @@ class ExtendedClient extends Client {
   }
 
   async init() {
+    // IPC listeners
+    this.initShutdownListener();
+    this.initRedisListener();
+    
     await downloadFiles("customisations/boarders", config.IMAGES_PATH);
 
     // Fetch all cards from S3 Bucket
@@ -75,19 +79,21 @@ class ExtendedClient extends Client {
     // Load interaction handlers
     registerInteractions(this);
 
+    // Register commands when client is ready
     const commands = findCommands(this);
-
     this.once(Events.ClientReady, async (client) => {
       await registerCommands(client, commands);
       logger.info(`Bot is ready on cluster ${client.cluster.id}`);
     });
 
     await this.login(process.env.DISCORD_BOT_TOKEN);
+  }
 
+  initShutdownListener() {
     // Handle shutdown
     const shutdown = async () => {
       try {
-        // Closing MongoDB connections
+        // Close MongoDB connections
         await this.userDB.close();
         await this.guildDB.close();
         await this.globalDB.close();
@@ -109,6 +115,21 @@ class ExtendedClient extends Client {
     process.on("SIGTERM", async () => {
       logger.info("Received SIGTERM. Initiating shutdown...");
       await shutdown();
+    });
+  }
+
+  initRedisListener() {
+    process.on("message", (message) => {
+      if (message.type === "VERIFY_REDIS") {
+        // Access the Redis client that was created in the Discord cluster
+        // this.redisClient = this.cluster.redisClient;
+
+        if (!this.cluster.redisClient) {
+          logger.error(`[Cluster ${this.cluster.id}] [Shard ${this.shard.ids[0]}] Redis client reference is not available`);
+        } else {
+          logger.info(`[Cluster ${this.cluster.id}] [Shard ${this.shard.ids[0]}] Connected to Redis`);
+        }
+      }
     });
   }
 }

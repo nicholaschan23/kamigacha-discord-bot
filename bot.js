@@ -20,17 +20,6 @@ const client = new ExtendedClient({
   shardCount: getInfo().TOTAL_SHARDS,
 });
 
-// const clientReady = new Promise((resolve, reject) => {
-//   client.cluster.on("ready", async () => {
-//     try {
-//       await client.init();
-//       resolve(client);
-//     } catch (error) {
-//       reject(error);
-//     }
-//   });
-// });
-
 client.cluster.on("ready", async () => {
   await client.init();
 });
