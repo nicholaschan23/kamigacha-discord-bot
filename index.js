@@ -1,3 +1,4 @@
+const { registerShutdownTask, shutdown } = require("./src/utils/initialization/shutdown");
 const { ClusterManager } = require("discord-hybrid-sharding");
 const { createRedisClient } = require("./src/database/redis/createRedisClient");
 const assert = require("assert");
@@ -5,75 +6,56 @@ const path = require("path");
 const Logger = require("./src/utils/Logger");
 const logger = new Logger("Cluster manager");
 
-require("./src/database/redis/createRedisCluster");
-
+// Load environment variables
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
 
-// IPC listeners
+// Track shutdown state for cluster respawning
 let isShuttingDown = false;
 process.on("SIGINT", async () => {
   isShuttingDown = true;
-  logger.info("Received SIGINT. Initiating shutdown...");
-  process.exit(0);
+  await shutdown("SIGINT");
 });
 process.on("SIGTERM", async () => {
   isShuttingDown = true;
-  logger.info("Received SIGTERM. Initiating shutdown...");
-  process.exit(0);
+  await shutdown("SIGTERM");
 });
 
+// Initialize ClusterManager
 const manager = new ClusterManager("./bot.js", {
   totalShards: "auto",
   shardsPerClusters: 2,
   mode: "process",
   token: process.env.DISCORD_BOT_TOKEN,
+  respawn: false, // Ensure clusters do not respawn automatically
 });
 
-manager.on("clusterCreate", (cluster) => {
-  logger.info(`Launched cluster ${cluster.id}`);
+// Handle cluster creation
+manager.on("clusterCreate", async (cluster) => {
+  if (isShuttingDown) return; // Skip creation if shutting down
 
-  // Create a Redis client per Discord cluster
+  // Create and add reference for the cluster's Redis client
   const redisClient = createRedisClient(cluster.id);
-
-  // Save Redis client reference for Discord client to use
+  await redisClient.connect();
   cluster.redisClient = redisClient;
 
-  // Check Redis client reference can be accessed by Discord client
-  cluster.send({ type: "VERIFY_REDIS" });
+  // Handle shutdown of Redis clients
+  registerShutdownTask(async () => {
+    await redisClient.quit();
+  });
+  // cluster.send({ type: "VERIFY_REDIS" });
 });
 
-manager.on("clusterDeath", (cluster) => {
+// Handle unexpected cluster death
+manager.on("clusterDeath", async (cluster) => {
   if (isShuttingDown) {
     logger.info(`Cluster ${cluster.id} has exited during shutdown`);
   } else {
+    // Respawn cluster if not shutting down
     logger.info(`Cluster ${cluster.id} died unexpectedly. Respawning...`);
-    // manager.respawn({ cluster });
-  }
-
-  logger.info(`Cluster ${cluster.id} has died. Closing Redis client...`);
-
-  // Close the Redis client when the cluster dies
-  if (cluster.redisClient) {
-    cluster.redisClient.quit((err) => {
-      if (err) {
-        logger.error(`Error closing Redis client (Cluster ${cluster.id}):`, err);
-      } else {
-        logger.info(`Redis client closed (Cluster ${cluster.id})`);
-      }
-    });
+    manager.respawn({ cluster });
   }
 });
 
-manager.on("shardCreate", (shard) => {
-  logger.log(`Launched shard ${shard.id}`);
-
-  /**
-   * Sends an Inter-Process Communication (IPC) message from the cluster manager to the shard.
-   * This is how you pass data, like configuration information or other instructions,
-   * between the parent process (the cluster manager) and the child processes (the shards).
-   */
-  // shard.send({ type: "INIT_REDIS", redisConfig: { url: process.env.REDIS_URL } });
-});
-
+// Setup signal handlers and spawn clusters
 manager.spawn({ timeout: -1 });

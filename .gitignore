@@ -10,5 +10,9 @@ node_modules/
 # AWS
 src/database/aws/models/
 
-# Card images
+# Redis
+appendonly.aof
+node-6379.conf
+
+# Images
 images/

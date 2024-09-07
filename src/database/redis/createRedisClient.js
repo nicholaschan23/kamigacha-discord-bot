@@ -18,11 +18,19 @@ function createRedisClient(clusterId) {
   const client = redis.createClient({ url: process.env.REDIS_CLUSTER_URL });
 
   client.on("error", (err) => {
-    logger.error(`[Cluster ${clusterId})]`, err);
+    logger.error(`Redis connection error (cluster ${clusterId}):`, err);
   });
 
   client.on("connect", () => {
-    logger.log(`[Cluster ${clusterId})] Connected to Redis`);
+    logger.info(`Connected to Redis (cluster ${clusterId})`);
+  });
+
+  client.on("reconnecting", () => {
+    logger.info(`Reconnecting to Redis (cluster ${clusterId})...`);
+  });
+
+  client.on("end", () => {
+    logger.info(`Redis connection closed (cluster ${clusterId})`);
   });
 
   return client;

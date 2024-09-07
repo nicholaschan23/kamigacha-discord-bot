@@ -1,5 +1,5 @@
-const { Client, Collection, Events } = require("discord.js");
-const { ClusterClient } = require("discord-hybrid-sharding");
+const { registerShutdownTask } = require("./shutdown");
+const { Client, Collection } = require("discord.js");
 
 // Database
 const mongooseConnect = require("../../database/mongodb/mongooseConnect");
@@ -13,8 +13,6 @@ const { getSearchModel } = require("../../database/aws/preprocessing/searchModel
 // Initialization helpers
 const findEvents = require("./findEvents");
 const registerInteractions = require("./registerInteractions");
-const findCommands = require("./findCommands");
-const registerCommands = require("./registerCommands");
 
 // Util
 const Logger = require("../Logger");
@@ -34,16 +32,9 @@ class ExtendedClient extends Client {
     this.buttonInteractions = new Collection();
     this.modalInteractions = new Collection();
     this.selectMenuInteractions = new Collection();
-
-    // Attach the ClusterClient
-    this.cluster = new ClusterClient(this);
   }
 
   async init() {
-    // IPC listeners
-    this.initShutdownListener();
-    this.initRedisListener();
-    
     await downloadFiles("customisations/boarders", config.IMAGES_PATH);
 
     // Fetch all cards from S3 Bucket
@@ -69,69 +60,36 @@ class ExtendedClient extends Client {
     const { model: jsonSearches } = await getSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
     this.jsonSearches = jsonSearches;
 
+    // TODO: fix with Redis
     // Initialize caches
     this.blacklistCache = new BlacklistCache(this);
     this.inviteCache = new InviteCache(this);
 
-    // Load event listeners
-    findEvents(this);
+    findEvents(this); // Load event listeners
+    registerInteractions(this); // Load interaction handlers
 
-    // Load interaction handlers
-    registerInteractions(this);
-
-    // Register commands when client is ready
-    const commands = findCommands(this);
-    this.once(Events.ClientReady, async (client) => {
-      await registerCommands(client, commands);
-      logger.info(`Bot is ready on cluster ${client.cluster.id}`);
+    registerShutdownTask(async () => {
+      await this.destroy();
+      logger.info("Discord client closed");
     });
 
     await this.login(process.env.DISCORD_BOT_TOKEN);
   }
 
-  initShutdownListener() {
-    // Handle shutdown
-    const shutdown = async () => {
-      try {
-        // Close MongoDB connections
-        await this.userDB.close();
-        await this.guildDB.close();
-        await this.globalDB.close();
-        await this.cardDB.close();
+  // initRedisListener() {
+  //   process.on("message", (message) => {
+  //     if (message.type === "VERIFY_REDIS") {
+  //       // Access the Redis client that was created in the Discord cluster
+  //       // this.redisClient = this.cluster.redisClient;
 
-        await this.destroy();
-        process.exit(0);
-      } catch (err) {
-        logger.error("Error during shutdown:", err);
-        process.exit(1);
-      }
-    };
-
-    process.on("SIGINT", async () => {
-      logger.info("Received SIGINT. Initiating shutdown...");
-      await shutdown();
-    });
-
-    process.on("SIGTERM", async () => {
-      logger.info("Received SIGTERM. Initiating shutdown...");
-      await shutdown();
-    });
-  }
-
-  initRedisListener() {
-    process.on("message", (message) => {
-      if (message.type === "VERIFY_REDIS") {
-        // Access the Redis client that was created in the Discord cluster
-        // this.redisClient = this.cluster.redisClient;
-
-        if (!this.cluster.redisClient) {
-          logger.error(`[Cluster ${this.cluster.id}] [Shard ${this.shard.ids[0]}] Redis client reference is not available`);
-        } else {
-          logger.info(`[Cluster ${this.cluster.id}] [Shard ${this.shard.ids[0]}] Connected to Redis`);
-        }
-      }
-    });
-  }
+  //       if (!this.cluster.redisClient) {
+  //         logger.error(`[Cluster ${this.cluster.id}] [Shard ${this.shard.ids[0]}] Redis client reference is not available`);
+  //       } else {
+  //         logger.info(`[Cluster ${this.cluster.id}] [Shard ${this.shard.ids[0]}] Connected to Redis`);
+  //       }
+  //     }
+  //   });
+  // }
 }
 
 module.exports = ExtendedClient;

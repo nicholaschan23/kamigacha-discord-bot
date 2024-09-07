@@ -1,3 +1,4 @@
+const { registerShutdownTask } = require("../../utils/initialization/shutdown");
 const mongoose = require("mongoose");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("MongoDB");
@@ -23,11 +24,8 @@ module.exports = async (client) => {
   };
 
   try {
-    // Create and wait for database connections with a timeout
-    const userConnection = await createConnection(mongoURI, "user");
-    const guildConnection = await createConnection(mongoURI, "guild");
-    const globalConnection = await createConnection(mongoURI, "global");
-    const cardConnection = await createConnection(mongoURI, "card");
+    // Create and wait for all database connections concurrently
+    const [userConnection, guildConnection, globalConnection, cardConnection] = await Promise.all([createConnection(mongoURI, "user"), createConnection(mongoURI, "guild"), createConnection(mongoURI, "global"), createConnection(mongoURI, "card")]);
 
     // Assign connections to the client object
     client.userDB = userConnection;
@@ -45,4 +43,11 @@ module.exports = async (client) => {
     logger.error("Failed to register models", error.stack);
     throw error;
   }
+
+  registerShutdownTask(async () => {
+    // Close MongoDB connections concurrently
+    await Promise.all([client.userDB.close(), client.guildDB.close(), client.globalDB.close(), client.cardDB.close()]);
+    await mongoose.disconnect();
+    logger.info("Database connections closed");
+  });
 };

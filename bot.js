@@ -1,5 +1,5 @@
 const { GatewayIntentBits, Partials } = require("discord.js");
-const { getInfo } = require("discord-hybrid-sharding");
+const { ClusterClient, getInfo } = require("discord-hybrid-sharding");
 const ExtendedClient = require("./src/utils/initialization/ExtendedClient");
 
 const client = new ExtendedClient({
@@ -20,6 +20,7 @@ const client = new ExtendedClient({
   shardCount: getInfo().TOTAL_SHARDS,
 });
 
+client.cluster = new ClusterClient(client);
 client.cluster.on("ready", async () => {
   await client.init();
 });
