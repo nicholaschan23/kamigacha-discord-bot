@@ -57,7 +57,7 @@ class InventoryPages extends ButtonPages {
 
     // Filter sorted inventory
     let filteredInventory = [...this.sortedInventory];
-    if (itemType.length > 0) {
+    if (itemType.length > 0 && itemType.length < this.itemTypes.length) {
       filteredInventory = filteredInventory.filter(([key, item]) => {
         return itemType.includes(item.type);
       });
@@ -93,9 +93,9 @@ class InventoryPages extends ButtonPages {
     // Select menu row
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("inventoryFilters")
-      .setPlaceholder("Select a filter")
+      .setPlaceholder("Select filters")
       .setMinValues(1)
-      // .setMaxValues(1)
+      .setMaxValues(this.itemTypes.length)
       .addOptions(
         this.itemTypes.map((type) => {
           const emoji = config.itemTypes[type].icon;

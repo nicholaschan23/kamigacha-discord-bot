@@ -73,10 +73,11 @@ class LookupCharacterPages extends ButtonPages {
       const rarity = this.rarityArray[i];
       const stats = this.circulation.get(this.set).rarities.get(rarity);
       const circulation = stats.generated - stats.destroyed;
-      const retention = stats.generated === 0 ? 0 : circulation / stats.generated;
+      const retention = stats.generated === 0 ? 0 : Math.round(100 * (circulation / stats.generated));
       const jpg = [this.character, this.series, this.set, `${rarity.toLowerCase()}.jpg`].join("-");
       const url = [process.env.CLOUDFRONT_URL, "cards", this.series, this.set, rarity, jpg].join("/");
 
+      // Create character page
       const statEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
         .setDescription(
@@ -90,7 +91,7 @@ class LookupCharacterPages extends ButtonPages {
             `Total generated: **${stats.generated.toLocaleString()}**\n` +
             `Total destroyed: **${stats.destroyed.toLocaleString()}**\n` +
             `In circulation: **${circulation.toLocaleString()}**\n` +
-            `Retention rate: **${Math.round(retention)}%**`
+            `Retention rate: **${retention}%**`
         )
         .setThumbnail(url)
         .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });

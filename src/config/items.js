@@ -14,7 +14,7 @@ const itemTypes = {
   },
   event: {
     icon: "",
-  }
+  },
 };
 
 const items = {
@@ -23,14 +23,32 @@ const items = {
     icon: "🏵️",
     name: "Gold",
   },
-  gem: {
+  "premium-currency": {
     icon: "💎",
-    name: "Gems",
+    name: "Premium Currency",
   },
-  "ssr-key": {
+
+  // Material
+  "c-material": {
     icon: "🔑",
-    name: "SSR Key (★★★★★)",
-  }
+    name: "C Material (★☆☆☆☆)",
+  },
+  "r-material": {
+    icon: "🔑",
+    name: "R Material (★★☆☆☆)",
+  },
+  "ur-material": {
+    icon: "🔑",
+    name: "UR Material (★★★☆☆)",
+  },
+  "sr-material": {
+    icon: "🔑",
+    name: "SR Material (★★★★☆)",
+  },
+  "ssr-material": {
+    icon: "🔑",
+    name: "SSR Material (★★★★★)",
+  },
 };
 
 module.exports = {

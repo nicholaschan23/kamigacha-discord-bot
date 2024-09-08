@@ -5,6 +5,7 @@ const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
 const PityModel = require("../../database/mongodb/models/user/pity");
 const StatsModel = require("../../database/mongodb/models/user/stats");
+const CharacterModel = require("../../database/mongodb/models/global/character");
 
 class CardGenerator {
   constructor(client, userId, guildId, rates) {
@@ -35,6 +36,7 @@ class CardGenerator {
       // Select a random character
       const characters = jsonCards[series][set][rarity];
       const characterJpg = characters[crypto.randomInt(0, characters.length)];
+      const character = characterJpg.split(`-${series}-`)[0];
 
       // Generate card code
       const code = await this.cg.getNewCode();
@@ -42,10 +44,10 @@ class CardGenerator {
       // Create card data
       const card = {
         code: code,
+        character: character,
         series: series,
         set: set,
         rarity: rarity,
-        character: characterJpg.split(`-${series}-`)[0],
         ownerId: this.userId,
         pulledId: this.userId,
         guildId: this.guildId,
@@ -61,6 +63,7 @@ class CardGenerator {
       // Update pity
       this.updatePity(rarity);
     }
+
     await this.saveChanges();
   }
 
@@ -109,7 +112,7 @@ class CardGenerator {
     return { series, set };
   }
 
-  // Function to get a random index with increasing probability (1-indexed)
+  // Function to get a random set with increasing probability for recent sets (1-indexed)
   getSet(setKeys) {
     if (setKeys.length > 1) {
       // Convert array to numbers
@@ -226,6 +229,15 @@ class CardGenerator {
       { $addToSet: { cardsOwned: { $each: cardObjectIds } } },
       { upsert: true }
     );
+
+    // Update character cards generated in parallel
+    const updatePromises = this.cardData.map((card) => {
+      return CharacterModel().updateOne(
+        { character: card.character, series: card.series }, // Match the single document based on the query
+        { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.generated`]: 1 } } // Increment the generated field
+      );
+    });
+    await Promise.all(updatePromises);
   }
 }
 

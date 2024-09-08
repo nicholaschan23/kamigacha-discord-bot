@@ -13,10 +13,6 @@ module.exports = {
       { new: true, upsert: true }
     );
 
-    inventoryDocument.inventory.set("gold", {quantity: 1000, type: "currency"})
-    inventoryDocument.inventory.set("gem", {quantity: 1000, type: "currency"})
-    inventoryDocument.inventory.set("ssr-key", {quantity: 1000, type: "material"})
-
     if (inventoryDocument.inventory.size === 0) {
       return interaction.reply({ content: "Your inventory is empty.", ephemeral: true });
     } else {
