@@ -54,12 +54,12 @@ module.exports = {
     }
 
     // Verify all cards have an upgrade rarity
-    const noUpgradeCodes = queriedCards.filter((card) => {
-      const nextRarity = config.getNextRarity(card.rarity);
-      if (!client.jsonCards[card.series][card.set][nextRarity]) {
-        return card.code;
-      }
-    });
+    const noUpgradeCodes = queriedCards
+      .filter((card) => {
+        const nextRarity = config.getNextRarity(card.rarity);
+        return !client.jsonCards[card.series][card.set][nextRarity];
+      })
+      .map((card) => card.code);
     if (noUpgradeCodes.length > 0) {
       const formattedCodes = noUpgradeCodes.map((code) => `\`${code}\``).join(", ");
       return interaction.editReply({ content: `The following cards are the highest rarity in their set and cannot be further upgraded: ${formattedCodes}` });

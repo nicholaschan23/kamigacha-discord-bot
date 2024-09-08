@@ -12,7 +12,13 @@ class CodeGenerator {
   }
 
   async getNextSequenceValue() {
-    const sequenceDocument = await CounterModel().findByIdAndUpdate(this.sequenceName, { $inc: { sequenceValue: 1 } }, { new: true, upsert: true });
+    const sequenceDocument = await CounterModel().findByIdAndUpdate(
+      this.sequenceName,
+      {
+        $inc: { sequenceValue: 1 },
+      },
+      { new: true, upsert: true }
+    );
     return sequenceDocument.sequenceValue;
   }
 

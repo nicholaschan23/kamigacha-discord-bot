@@ -29,7 +29,7 @@ module.exports = {
 
       const filterDocument = await FilterModel().findOneAndUpdate(
         { userId: user.id }, // Filter
-        {}, // Update
+        { userId: user.id }, // Update
         { new: true, upsert: true }
       );
       if (!filterDocument.filterList) {

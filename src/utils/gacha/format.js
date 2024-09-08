@@ -1,5 +1,6 @@
 const emojiRegex = require("emoji-regex");
 const client = require("../../../bot");
+const config = require("../../config");
 
 function formatCardInfo(data) {
   return [`\`${data.code}\``, `\`${data.rarity}\``, `\`◈${data.set}\``, `${client.seriesNameMap[data.series]}`, `**${client.characterNameMap[data.character]}**`].join(" · ");
@@ -161,6 +162,17 @@ function formatWishListPage(wishList) {
   return output.join("\n");
 }
 
+function formatInventoryPage(itemList) {
+  const output = [];
+  for (const [key, item] of itemList) {
+    const icon = config.items[key].icon;
+    const quantity = item.quantity;
+    const name = key.replace("-", " ");
+    output.push([`${icon} **${quantity}**`, `\`${name}\``, `${config.items[key].name}`].join(" · "));
+  }
+  return output.join("\n");
+}
+
 module.exports = {
   formatCardInfo,
   formatCardInfoPage,
@@ -178,4 +190,6 @@ module.exports = {
   getWishListEmoji,
   formatLookupPage,
   formatWishListPage,
+
+  formatInventoryPage,
 };

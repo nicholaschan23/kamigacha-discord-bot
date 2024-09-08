@@ -6,10 +6,11 @@ module.exports = {
 
   // Debug mode for console log
   debug: true,
-  // Date prefix in each console log message
+
+  // Date prefix in each Logger message
   logDate: false,
 
-  // Commands
+  // Default global command cooldown
   cooldown: {
     default: 5,
   },

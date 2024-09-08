@@ -1,9 +1,11 @@
 const client = require("./client");
 const gacha = require("./gacha");
-const paths = require("./paths")
+const items = require("./items");
+const paths = require("./paths");
 
 module.exports = {
   ...client,
   ...gacha,
+  ...items,
   ...paths,
 };

@@ -1,22 +1,16 @@
 const mongoose = require("mongoose");
 
-// Define a schema for storing an item
+// Define a schema for an item
 const itemSchema = new mongoose.Schema(
   {
-    // Item name
-    name: {
-      type: String,
-      required: true,
-    },
-
     // Item quantity
     quantity: {
       type: Number,
       required: true,
     },
 
-    // Item icon as a Discord emoji
-    icon: {
+    // Item type to lookup icon
+    type: {
       type: String,
       require: true,
     },
@@ -37,11 +31,11 @@ const inventorySchema = new mongoose.Schema({
     default: false,
   },
 
-  // Collection
+  // Items user holds, with item name as the key
   inventory: {
     type: Map,
     of: itemSchema,
-    default: {},
+    default: new Map(),
   },
 });
 
