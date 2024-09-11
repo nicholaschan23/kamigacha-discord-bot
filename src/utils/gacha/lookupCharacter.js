@@ -1,4 +1,5 @@
-const { replaceAccents } = require("../stringUtils");
+const CharacterResult = require("../../models/CharacterResult");
+const { replaceAccents } = require("../string/format");
 
 function lookup(query, searchMap) {
   // Replace special characters
@@ -15,7 +16,7 @@ function lookup(query, searchMap) {
     if (searchMap[word]) {
       searchMap[word].forEach(({ character, series, wishCount }) => {
         const key = `${character}-${series}`;
-        let result = resultsMap.get(key);
+        const result = resultsMap.get(key);
 
         // Repeat result, update count
         if (result) {
@@ -23,13 +24,7 @@ function lookup(query, searchMap) {
         }
         // New result, add new map entry
         else {
-          result = {
-            character: character,
-            series: series,
-            wishCount: wishCount,
-            count: 1,
-          };
-          resultsMap.set(key, result);
+          resultsMap.set(key, new CharacterResult(character, series, wishCount, 1));
         }
 
         // Update max count

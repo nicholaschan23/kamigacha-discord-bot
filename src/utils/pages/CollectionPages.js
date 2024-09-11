@@ -1,6 +1,6 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
-const { formatCardInfoPage, chunkArray } = require("../gacha/format");
+const { chunkArray, formatCardInfoPage } = require("../string/formatPage");
 const { parseFilterString, applyFilters } = require("../gacha/filter");
 const { getCardBorder } = require("../graphics/getCardBorder");
 const { createCardGrid } = require("../graphics/createCardGrid");

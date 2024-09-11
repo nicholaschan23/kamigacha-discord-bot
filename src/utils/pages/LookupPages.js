@@ -1,6 +1,6 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
-const { formatLookupPage, getWishListEmoji, chunkArray } = require("../gacha/format");
+const { chunkArray, formatLookupPage, getWishListEmoji } = require("../string/formatPage");
 const client = require("../../../bot");
 
 class LookupPages extends ButtonPages {

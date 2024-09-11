@@ -1,6 +1,6 @@
 const { EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } = require("discord.js");
+const { formatWishListPage } = require("../string/formatPage");
 const LookupPages = require("./LookupPages");
-const { formatWishListPage } = require("../gacha/format");
 const WishModel = require("../../database/mongodb/models/user/wish");
 const CharacterModel = require("../../database/mongodb/models/global/character");
 const config = require("../../config");

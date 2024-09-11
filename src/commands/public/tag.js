@@ -1,8 +1,8 @@
 const { SlashCommandBuilder } = require("discord.js");
+const { isValidTag } = require("../../utils/string/validation");
 const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
 const TagModel = require("../../database/mongodb/models/user/tag");
-const { isValidTag } = require("../../utils/gacha/format");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("Tag command");
 

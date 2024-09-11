@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require("discord.js");
-const { formatCardInfoPage } = require("../../../utils/gacha/format");
+const { formatCardInfoPage } = require("../../../utils/string/formatPage");
 const config = require("../../../config");
 const client = require("../../../../bot");
 

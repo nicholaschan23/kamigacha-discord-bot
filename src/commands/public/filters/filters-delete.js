@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidFilterLabel } = require("../../../utils/gacha/format");
-const { capitalizeFirstLetter } = require("../../../utils/stringUtils");
+const { isValidFilterLabel } = require("../../../utils/string/validation");
+const { capitalizeFirstLetter } = require("../../../utils/string/format");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters delete command");

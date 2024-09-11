@@ -1,5 +1,27 @@
+const client = require("../../../bot");
+
 /**
- * Replaces all accented chars with regular ones
+ * Capitalize first letter of a string.
+ * @param {String} str Input string.
+ * @returns Formatted string.
+ */
+function capitalizeFirstLetter(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Format Card data into a readable string.
+ * @param {Card} card An object with card data.
+ * @returns The formatted string.
+ */
+function formatCardInfo(card) {
+  return [`\`${card.code}\``, `\`${card.rarity}\``, `\`◈${card.set}\``, `${client.seriesNameMap[card.series]}`, `**${client.characterNameMap[card.character]}**`].join(" · ");
+}
+
+/**
+ * Replaces all accented chars with regular ones.
+ * @param {String} str The input string.
+ * @returns Formatted string.
  */
 function replaceAccents(str) {
   // Verifies if the string has accents and replace them
@@ -27,18 +49,11 @@ function replaceAccents(str) {
       .replace(/[\xFE]/g, "p")
       .replace(/[\xFD\xFF]/g, "y");
   }
-
   return str;
 }
 
-/**
- * Capitalizes first letter
- */
-function capitalizeFirstLetter(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
 module.exports = {
-  replaceAccents,
   capitalizeFirstLetter,
+  formatCardInfo,
+  replaceAccents,
 };

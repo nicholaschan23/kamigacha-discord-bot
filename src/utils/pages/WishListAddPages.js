@@ -1,4 +1,5 @@
 const LookupPages = require("./LookupPages");
+const Wish = require("../../models/Wish");
 const WishModel = require("../../database/mongodb/models/user/wish");
 const CharacterModel = require("../../database/mongodb/models/global/character");
 const config = require("../../config");
@@ -14,16 +15,16 @@ class WishListAddButtonPages extends LookupPages {
     const data = JSON.parse(value);
 
     // Save document
-    const characterToAdd = { character: data.character, series: data.series };
+    const wish = new Wish(data.character, data.series);
     const wishDocument = await WishModel().findOneAndUpdate(
       {
         userId: interaction.user.id,
-        wishList: { $not: { $elemMatch: characterToAdd } },
+        wishList: { $not: { $elemMatch: wish } },
       }, // Filter
       {
         $push: {
           wishList: {
-            $each: [characterToAdd],
+            $each: [wish],
             $sort: { series: 1, character: 1 },
           },
         },

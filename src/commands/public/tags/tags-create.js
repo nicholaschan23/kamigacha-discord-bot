@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidTag, containsExactlyOneEmoji } = require("../../../utils/gacha/format");
+const { isOneEmoji, isValidTag } = require("../../../utils/string/validation");
 const TagModel = require("../../../database/mongodb/models/user/tag");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Tags create command");
@@ -21,7 +21,7 @@ module.exports = {
     }
 
     const emoji = interaction.options.getString("emoji");
-    if (!containsExactlyOneEmoji(emoji)) {
+    if (!isOneEmoji(emoji)) {
       return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
     }
 

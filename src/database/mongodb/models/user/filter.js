@@ -1,4 +1,21 @@
 const mongoose = require("mongoose");
+const CollectionFilter = require("../../../../models/CollectionFilter");
+
+/**
+ * Schema for individual filter.
+ * @typedef {Object} CollectionFilter
+ * @property {string} emoji - The emoji representing the filter.
+ * @property {string} label - The label or name for the filter.
+ * @property {string} filter - The filter string used to apply the filter.
+ */
+const FilterSchema = new mongoose.Schema(
+  {
+    emoji: { type: String, required: true },
+    label: { type: String, required: true },
+    filter: { type: String, required: true },
+  },
+  { _id: false }
+);
 
 const collectionFilterSchema = new mongoose.Schema({
   userId: {
@@ -15,23 +32,16 @@ const collectionFilterSchema = new mongoose.Schema({
 
   /**
    * Collection filters list.
-   * @type {Array<{emoji: string, label: string, filter: string}>}
+   * @type {CollectionFilter[]}
    */
   filterList: {
-    type: [
-      {
-        emoji: { type: String, required: true },
-        label: { type: String, required: true },
-        filter: { type: String, required: true },
-      },
-      { _id: false },
-    ],
+    type: [FilterSchema],
     default: () => [
-      { emoji: "🗓️", label: "Date", filter: "order=date" },
-      // { emoji: ":heart:", label: "Show Wish", filter: "wish<>" },
-      // { emoji: ":heart:", label: "Wish", filter: "order=wish" },
-      { emoji: "🏷️", label: "Tagged", filter: "tag!=none" },
-      { emoji: "▪️", label: "Untagged", filter: "tag=none" },
+      new CollectionFilter("🗓️", "Date", "order=date"),
+      new CollectionFilter("🏷️", "Tagged", "tag!=none"),
+      new CollectionFilter("▪️", "Untagged", "tag=none"),
+      // new CollectionFilter(":heart:", "Wish", "order=wish"),
+      // new CollectionFilter(":heart:", "Show Wish", "order=wish<>"),
     ],
   },
 });

@@ -1,4 +1,14 @@
 const mongoose = require("mongoose");
+const CollectionTag = require("../../../../models/CollectionTag")
+
+const TagSchema = new mongoose.Schema(
+  {
+    tag: { type: String, required: true },
+    emoji: { type: String, required: true },
+    quantity: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
 
 const collectionTagSchema = new mongoose.Schema({
   userId: {
@@ -20,17 +30,9 @@ const collectionTagSchema = new mongoose.Schema({
 
   /**
    * Collection tags list.
-   * @type {Array<{tag: string, emoji: string, quantity: number}>}
-   * @default {}
+   * @type {CollectionTag[]}
    */
-  tagList: [
-    {
-      tag: { type: String, required: true },
-      emoji: { type: String, required: true },
-      quantity: { type: Number, default: 0 },
-    },
-    { _id: false },
-  ],
+  tagList: [TagSchema],
 });
 
 module.exports = () => {

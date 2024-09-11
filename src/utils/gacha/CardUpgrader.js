@@ -1,8 +1,9 @@
 const config = require("../../config");
 const crypto = require("crypto");
-const CodeGenerator = require("./CodeGenerator");
+const {generateCode} = require("./generateCode");
 const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
+const CharacterModel = require("../../database/mongodb/models/global/character");
 
 class CardUpgrader {
   constructor(client, guildId, queriedCards, seriesSetFreq, rarityFreq) {
@@ -25,27 +26,43 @@ class CardUpgrader {
       throw new Error("You no longer own all 10 specified cards. Make sure they stay in your collection during the upgrade process.");
     }
 
-    // Remove card references from the user's collection
-    const cardObjectIds = this.queriedCards.map((card) => card._id);
-    await CollectionModel().updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardObjectIds } } });
-
-    // Delete the cards from existence
-    await CardModel().deleteMany({ code: { $in: cardCodes } });
-
-    // Determine success of upgrade
-    if (!this.getSuccess) {
-      return false;
-    }
-
-    // Implement your logic to determine the new card to create
-    const cardData = await this.generateUpgradedCard();
+    const cardDocumentIds = this.queriedCards.map((card) => card._id);
 
     // Create the new card
+    const cardData = await this.generateUpgradedCard();
     const cardInstance = new (CardModel())(cardData);
     const createdCard = await CardModel().create(cardInstance);
 
-    // Add the new card to the user's collection
-    await CollectionModel().updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } });
+    await Promise.all([
+      // Remove card references from the user's collection
+      CollectionModel().updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardDocumentIds } } }),
+
+      // Delete the cards from existence
+      CardModel().deleteMany({ code: { $in: cardCodes } }),
+
+      // Update character card destroyed stats
+      ...this.queriedCards.map((card) => {
+        return CharacterModel().updateOne(
+          { character: card.character, series: card.series }, // Query
+          { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.destroyed`]: 1 } } // Increment the destroyed field
+        );
+      }),
+
+      // Add the new card to the user's collection
+      CollectionModel().updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } }),
+
+      // Update character card generated stats
+      CharacterModel().updateOne(
+        { character: cardData.character, series: cardData.series }, // Query
+        { $inc: { [`circulation.${cardData.set}.rarities.${cardData.rarity}.generated`]: 1 } } // Increment the generated field
+      ),
+    ]);
+
+    // Determine success of upgrade
+    // if (!this.getSuccess) {
+    //   return false;
+    // }
+
     return cardData;
   }
 
@@ -62,8 +79,7 @@ class CardUpgrader {
     const characters = jsonCards[series][set][rarity];
     const character = characters[crypto.randomInt(0, characters.length)];
 
-    const cg = new CodeGenerator(this.client);
-    const code = await cg.getNewCode();
+    const code = await generateCode();
 
     const card = {
       code: code,

@@ -73,7 +73,7 @@ class LookupCharacterPages extends ButtonPages {
       const rarity = this.rarityArray[i];
       const stats = this.circulation.get(this.set).rarities.get(rarity);
       const circulation = stats.generated - stats.destroyed;
-      const retention = stats.generated === 0 ? 0 : Math.round(100 * (circulation / stats.generated));
+      const retention = stats.generated === 0 ? 0 : ((circulation / stats.generated) * 100).toFixed(2);
       const jpg = [this.character, this.series, this.set, `${rarity.toLowerCase()}.jpg`].join("-");
       const url = [process.env.CLOUDFRONT_URL, "cards", this.series, this.set, rarity, jpg].join("/");
 
@@ -88,10 +88,10 @@ class LookupCharacterPages extends ButtonPages {
             `\n` +
             `Wish count: **${this.wishCount.toLocaleString()}**\n` +
             `\n` +
-            `Total generated: **${stats.generated.toLocaleString()}**\n` +
-            `Total destroyed: **${stats.destroyed.toLocaleString()}**\n` +
+            `Retention rate: **${retention}%**\n` +
             `In circulation: **${circulation.toLocaleString()}**\n` +
-            `Retention rate: **${retention}%**`
+            `Total generated: **${stats.generated.toLocaleString()}**`
+            // `Total destroyed: **${stats.destroyed.toLocaleString()}**\n` +
         )
         .setThumbnail(url)
         .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });

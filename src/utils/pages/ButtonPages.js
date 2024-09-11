@@ -56,12 +56,23 @@ class ButtonPages {
   }
 
   addComponents() {
-    const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
+    const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const row = new ActionRowBuilder().addComponents(prev, next);
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
     this.messageComponents.push(row);
+    this.updateComponents();
+  }
+
+  updateComponents() {
+    const prev = this.components["viewPrev"];
+    if (this.index === 0) prev.setDisabled(true);
+    else prev.setDisabled(false);
+
+    const next = this.components["viewNext"];
+    if (this.index === this.pages.length - 1) next.setDisabled(true);
+    else next.setDisabled(false);
   }
 
   async handleCollect(i) {
@@ -70,14 +81,7 @@ class ButtonPages {
 
     await i.deferUpdate();
 
-    const prev = this.components["viewPrev"];
-    const next = this.components["viewNext"];
-
-    if (this.index === 0) prev.setDisabled(true);
-    else prev.setDisabled(false);
-
-    if (this.index === this.pages.length - 1) next.setDisabled(true);
-    else next.setDisabled(false);
+    this.updateComponents();
 
     if (this.ephemeral) {
       await this.interaction.editReply({

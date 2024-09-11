@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
-const { formatFilterListPage, chunkArray } = require("../../../utils/gacha/format");
+const { chunkArray, formatFilterListPage } = require("../../../utils/string/formatPage");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const ButtonPages = require("../../../utils/pages/ButtonPages");
 const Logger = require("../../../utils/Logger");
@@ -29,15 +29,19 @@ module.exports = {
       }
 
       // Split the list of cards into chunks of 10
-      const cardChunks = chunkArray([...filterDocument.filterList], 10);
+      const chunkSize = 10;
+      const cardChunks = chunkArray([...filterDocument.filterList], chunkSize);
 
       // Create page embeds
-      let pages = [];
+      const total = filterDocument.filterList.length;
+      const pages = [];
       for (let i = 0; i < cardChunks.length; i++) {
+        const start = (i * chunkSize + 1).toLocaleString();
+        const end = (i * chunkSize + cardChunks[i].length).toLocaleString();
         const embed = new EmbedBuilder()
           .setTitle(`Collection Filters`)
           .setDescription(`Filters created by ${user}\n\n` + formatFilterListPage(cardChunks[i]))
-          .setFooter({ text: `Page ${i + 1}` });
+          .setFooter({ text: `Showing filters ${start}-${end} (${total} total)` });
         pages.push(embed);
       }
 

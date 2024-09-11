@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidFilterLabel, isValidFilter } = require("../../../utils/gacha/format");
+const { isValidFilterLabel, isValidFilter } = require("../../../utils/string/validation");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters emoji command");

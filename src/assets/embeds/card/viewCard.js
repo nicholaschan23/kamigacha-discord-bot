@@ -1,5 +1,5 @@
 const { EmbedBuilder, AttachmentBuilder } = require("discord.js");
-const { formatCardInfo } = require("../../../utils/gacha/format");
+const { formatCardInfo } = require("../../../utils/string/format");
 const { getCardBorder } = require("../../../utils/graphics/getCardBorder");
 const { createCard } = require("../../../utils/graphics/createCard");
 const { v4: uuidv4 } = require("uuid");

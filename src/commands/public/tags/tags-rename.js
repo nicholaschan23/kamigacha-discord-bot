@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidTag } = require("../../../utils/gacha/format");
+const { isValidTag } = require("../../../utils/string/validation");
 const CardModel = require("../../../database/mongodb/models/card/card");
 const TagModel = require("../../../database/mongodb/models/user/tag");
 const Logger = require("../../../utils/Logger");

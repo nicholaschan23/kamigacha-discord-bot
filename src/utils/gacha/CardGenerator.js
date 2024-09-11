@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const config = require("../../config");
-const CodeGenerator = require("./CodeGenerator");
+const { generateCode } = require("./generateCode");
 const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
 const PityModel = require("../../database/mongodb/models/user/pity");
@@ -13,7 +13,6 @@ class CardGenerator {
     this.userId = userId;
     this.guildId = guildId;
     this.rates = rates;
-    this.cg = new CodeGenerator(client);
 
     // Information to save to database
     this.pity = { UR: 0, SR: 0, SSR: 0 };
@@ -39,7 +38,7 @@ class CardGenerator {
       const character = characterJpg.split(`-${series}-`)[0];
 
       // Generate card code
-      const code = await this.cg.getNewCode();
+      const code = await generateCode();
 
       // Create card data
       const card = {
@@ -231,13 +230,13 @@ class CardGenerator {
     );
 
     // Update character cards generated in parallel
-    const updatePromises = this.cardData.map((card) => {
+    const updateCirculation = this.cardData.map((card) => {
       return CharacterModel().updateOne(
         { character: card.character, series: card.series }, // Match the single document based on the query
         { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.generated`]: 1 } } // Increment the generated field
       );
     });
-    await Promise.all(updatePromises);
+    await Promise.all(updateCirculation);
   }
 }
 

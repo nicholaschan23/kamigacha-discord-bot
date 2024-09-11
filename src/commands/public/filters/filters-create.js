@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidFilter, isValidFilterLabel, containsExactlyOneEmoji } = require("../../../utils/gacha/format");
-const { capitalizeFirstLetter } = require("../../../utils/stringUtils");
+const { isOneEmoji, isValidFilter, isValidFilterLabel } = require("../../../utils/string/validation");
+const { capitalizeFirstLetter } = require("../../../utils/string/format");
 const FilterModel = require("../../../database/mongodb/models/user/filter");
 const Logger = require("../../../utils/Logger");
 const logger = new Logger("Filters create command");
@@ -28,7 +28,7 @@ module.exports = {
     }
 
     const emoji = interaction.options.getString("emoji");
-    if (!containsExactlyOneEmoji(emoji)) {
+    if (!isOneEmoji(emoji)) {
       return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
     }
 

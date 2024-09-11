@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
-const { formatTagListPage, chunkArray } = require("../../../utils/gacha/format");
+const { chunkArray, formatTagListPage } = require("../../../utils/string/formatPage");
 const TagModel = require("../../../database/mongodb/models/user/tag");
 const ButtonPages = require("../../../utils/pages/ButtonPages");
 const Logger = require("../../../utils/Logger");
@@ -29,15 +29,19 @@ module.exports = {
       }
 
       // Split the list of cards into chunks of 10
-      const cardChunks = chunkArray([...tagDocument.tagList], 10);
-
+      const chunkSize = 10;
+      const cardChunks = chunkArray([...tagDocument.tagList], chunkSize);
+      
       // Create page embeds
-      let pages = [];
+      const total = tagDocument.tagList.length;
+      const pages = [];
       for (let i = 0; i < cardChunks.length; i++) {
+        const start = (i * chunkSize + 1).toLocaleString();
+        const end = (i * chunkSize + cardChunks[i].length).toLocaleString();
         const embed = new EmbedBuilder()
           .setTitle(`Collection Tags`)
           .setDescription(`Tags created by ${user}\n\n` + formatTagListPage(cardChunks[i]))
-          .setFooter({ text: `Page ${i + 1}` });
+          .setFooter({ text: `Showing tags ${start}-${end} (${total} total)` });
         pages.push(embed);
       }
 

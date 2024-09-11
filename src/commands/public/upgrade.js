@@ -4,6 +4,7 @@ const CardUpgrader = require("../../utils/gacha/CardUpgrader");
 const upgradePreviewEmbed = require("../../assets/embeds/upgrade/upgradePreview");
 const viewUpgradeEmbed = require("../../assets/embeds/upgrade/viewUpgrade");
 const config = require("../../config");
+const { isValidCode } = require("../../utils/string/validation");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("Upgrade command");
 
@@ -26,6 +27,13 @@ module.exports = {
       return interaction.editReply({ content: `Please enter exactly 10 cards separated with spaces or commas (entered ${inputCardCodes.length}).` });
     }
 
+    // Identify invalid card codes
+    const invalidCodes = inputCardCodes.filter((code) => !isValidCode(code));
+    if (invalidCodes.length > 0) {
+      const formattedCodes = invalidCodes.map((code) => `\`${code}\``).join(", ");
+      return interaction.editReply({ content: `The following card codes are invalid: ${formattedCodes}` });
+    }
+
     // Fetch the cards from the database based on the provided card codes
     const queriedCards = await CardModel().find({
       code: { $in: inputCardCodes },
@@ -33,9 +41,9 @@ module.exports = {
 
     // Identify invalid or missing card codes
     const queriedCodes = queriedCards.map((card) => card.code);
-    const invalidCodes = inputCardCodes.filter((code) => !queriedCodes.includes(code));
-    if (invalidCodes.length > 0) {
-      const formattedCodes = invalidCodes.map((code) => `\`${code}\``).join(", ");
+    const invalidMissingCodes = inputCardCodes.filter((code) => !queriedCodes.includes(code));
+    if (invalidMissingCodes.length > 0) {
+      const formattedCodes = invalidMissingCodes.map((code) => `\`${code}\``).join(", ");
       return interaction.editReply({ content: `The following card codes are invalid or do not exist: ${formattedCodes}` });
     }
 
