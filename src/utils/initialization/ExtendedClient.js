@@ -12,7 +12,6 @@ const { getSearchModel } = require("../../database/aws/preprocessing/searchModel
 
 // Initialization helpers
 const findEvents = require("./findEvents");
-const registerInteractions = require("./registerInteractions");
 
 // Util
 const Logger = require("../Logger");
@@ -66,7 +65,6 @@ class ExtendedClient extends Client {
     this.inviteCache = new InviteCache(this);
 
     findEvents(this); // Load event listeners
-    registerInteractions(this); // Load interaction handlers
 
     registerShutdownTask(async () => {
       await this.destroy();

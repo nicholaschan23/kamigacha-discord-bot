@@ -23,29 +23,29 @@ const items = {
     icon: "🏵️",
     name: "Gold",
   },
-  "premium-currency": {
+  "premium currency": {
     icon: "💎",
     name: "Premium Currency",
   },
 
   // Material
-  "c-material": {
+  "c material": {
     icon: "🔑",
     name: "C Material (★☆☆☆☆)",
   },
-  "r-material": {
+  "r material": {
     icon: "🔑",
     name: "R Material (★★☆☆☆)",
   },
-  "ur-material": {
+  "ur material": {
     icon: "🔑",
     name: "UR Material (★★★☆☆)",
   },
-  "sr-material": {
+  "sr material": {
     icon: "🔑",
     name: "SR Material (★★★★☆)",
   },
-  "ssr-material": {
+  "ssr material": {
     icon: "🔑",
     name: "SSR Material (★★★★★)",
   },

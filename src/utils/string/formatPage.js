@@ -1,6 +1,7 @@
 const Card = require("../../models/Card");
 const CharacterResult = require("../../models/CharacterResult");
 const Filter = require("../../models/CollectionFilter");
+const Item = require("../../models/Item");
 const Tag = require("../../models/CollectionTag");
 const Wish = require("../../models/Wish");
 const client = require("../../../bot");
@@ -83,24 +84,22 @@ function formatLookupPage(resultList) {
 
 /**
  * Formats the inventory into a string output for an embed page.
- * @param {Map<String, Object>} itemList - A Map where keys are item names and values are item objects.
+ * @param {Item[]} itemList - The array of Item objects.
  * @returns {String} The formatted inventory string output.
  */
 function formatInventoryPage(itemList) {
-  const output = [];
-  for (const [key, item] of itemList) {
-    const icon = config.items[key].icon;
-    const quantity = item.quantity;
-    const nameId = key.replace("-", " ");
-    const name = config.items[key].name;
-    output.push([`${icon} **${quantity}**`, `\`${nameId}\``, `${name}`].join(" · "));
-  }
-  return output.join("\n");
+  return itemList
+    .map(({ name, quantity, type }) => {
+      const icon = config.items[name].icon;
+      const nameFormatted = config.items[name].name;
+      return [`${icon} **${quantity}**`, `\`${name}\``, `${nameFormatted}`].join(" · ");
+    })
+    .join("\n");
 }
 
 /**
  * Formats the wish list into a string output for an embed page.
- * @param {Wish[]} wishList - The array of wishes.
+ * @param {Wish[]} wishList - The array of Wish objects.
  * @returns {String} The formatted wish list string output.
  */
 function formatWishListPage(wishList) {
