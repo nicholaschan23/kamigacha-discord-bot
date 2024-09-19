@@ -9,6 +9,7 @@ class InventoryPages extends ButtonPages {
     super(interaction, [], inventoryDocument.isPrivate);
     this.inventoryDocument = inventoryDocument;
     this.inventory = inventoryDocument.inventory;
+
     this.init();
     this.pages = this.createPages();
   }
@@ -17,35 +18,9 @@ class InventoryPages extends ButtonPages {
     // Initialize an empty set to store parsed item types
     const parsedTypes = new Set();
 
-    // Only 1 item, add to set
-    if (this.inventory.size === 1) {
-      const [key, item] = this.inventory.entries().next().value;
-      parsedTypes.add(item.type);
+    for (let i = 0; i < this.inventory.length; i++) {
+      parsedTypes.add(this.inventory[i].type);
     }
-
-    this.sortedInventory = [...this.inventory.entries()].sort((a, b) => {
-      // Key is item name
-      const [keyA, itemA] = a;
-      const [keyB, itemB] = b;
-
-      // Update item type set
-      parsedTypes.add(itemA.type);
-
-      // Compare by the index of type in the predefined order
-      const typeComparison = Object.keys(config.itemTypes).indexOf(itemA.type) - Object.keys(config.itemTypes).indexOf(itemB.type);
-      if (typeComparison !== 0) {
-        return typeComparison;
-      }
-
-      // Break ties by quantity (descending order)
-      const quantityComparison = itemB.quantity - itemA.quantity; // Higher quantity first
-      if (quantityComparison !== 0) {
-        return quantityComparison;
-      }
-
-      // Break ties by name (ascending order)
-      return keyA.localeCompare(keyB);
-    });
 
     // Filter item types to only those present in the inventory
     this.itemTypes = Object.keys(config.itemTypes).filter((type) => parsedTypes.has(type));
@@ -56,10 +31,10 @@ class InventoryPages extends ButtonPages {
     this.index = 0;
 
     // Filter sorted inventory
-    let filteredInventory = [...this.sortedInventory];
+    let filteredInventory = [...this.inventory];
     if (itemType.length > 0 && itemType.length < this.itemTypes.length) {
-      filteredInventory = filteredInventory.filter(([key, item]) => {
-        return itemType.includes(item.type);
+      filteredInventory = filteredInventory.filter(({ name, quantity, type }) => {
+        return itemType.includes(type);
       });
     }
 
@@ -68,17 +43,35 @@ class InventoryPages extends ButtonPages {
 
     // Create embed
     const pages = [];
-    for (let i = 0; i < dataChunks.length; i++) {
+    if (filteredInventory.length === 0) {
       const embed = new EmbedBuilder()
         .setTitle(`Inventory`)
-        .setDescription(`Items carried by <@${this.inventoryDocument.userId}>\n\n` + formatInventoryPage(dataChunks[i]))
-        .setFooter({ text: `Showing items ${(i * 10 + 1).toLocaleString()}-${(i * 10 + dataChunks[i].length).toLocaleString()} (${filteredInventory.length.toLocaleString()} total)` });
+        .setDescription(`Items carried by <@${this.inventoryDocument.userId}>\n\n`)
+        .setFooter({
+          text: `Showing items 0-0 (0 total)`,
+        });
       pages.push(embed);
+    } else {
+      for (let i = 0; i < dataChunks.length; i++) {
+        const embed = new EmbedBuilder()
+          .setTitle(`Inventory`)
+          .setDescription(`Items carried by <@${this.inventoryDocument.userId}>\n\n` + formatInventoryPage(dataChunks[i]))
+          .setFooter({
+            text: `Showing items ${(i * 10 + 1).toLocaleString()}-${(
+              i * 10 +
+              dataChunks[i].length
+            ).toLocaleString()} (${filteredInventory.length.toLocaleString()} total)`,
+          });
+        pages.push(embed);
+      }
     }
     return pages;
   }
 
   addComponents() {
+    // Add no components if only 1 page
+    if (this.pages.length === 1) return;
+
     // Button row
     const ends = new ButtonBuilder().setCustomId("toggleEnds").setEmoji("↔️").setStyle(ButtonStyle.Secondary);
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);

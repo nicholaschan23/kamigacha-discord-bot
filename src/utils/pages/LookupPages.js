@@ -96,7 +96,7 @@ class LookupPages extends ButtonPages {
         this.pageDataChunks[this.index].map(({ character, series, wishCount }) =>
           new StringSelectMenuOptionBuilder()
             .setEmoji(getWishListEmoji(wishCount))
-            .setLabel(client.characterNameMap[character])
+            .setLabel(client.characterNameMap.get(character))
             .setValue(`${JSON.stringify({ character: character, series: series })}`)
         )
       );

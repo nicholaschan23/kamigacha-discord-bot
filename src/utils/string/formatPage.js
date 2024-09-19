@@ -38,7 +38,13 @@ function formatCardInfoPage(cardList, showTags = true) {
       const paddedCode = card.code.padEnd(maxCodeLength, " ");
       const paddedRarity = card.rarity.padEnd(maxRarityLength, " ");
       const paddedSet = `${card.set}`.padEnd(maxSetLength, " ");
-      return [`${showTags ? `${card.emoji} ` : ""}\`${paddedCode}\``, `\`${paddedRarity}\``, `\`◈${paddedSet}\``, `${client.seriesNameMap[data.series]}`, `**${client.characterNameMap[data.character]}**`].join(" · ");
+      return [
+        `${showTags ? `${card.emoji} ` : ""}\`${paddedCode}\``,
+        `\`${paddedRarity}\``,
+        `\`◈${paddedSet}\``,
+        `${client.seriesNameMap.get(card.series)}`,
+        `**${client.characterNameMap.get(card.character)}**`,
+      ].join(" · ");
     })
     .join("\n");
 }
@@ -77,7 +83,11 @@ function formatFilterListPage(filterList) {
 function formatLookupPage(resultList) {
   return resultList
     .map((result) => {
-      [`${getWishListEmoji(result.wishCount)} \`❤${result.wishCount}\``, `${client.seriesNameMap[result.series]}`, `**${client.characterNameMap[result.character]}**`].join(" · ");
+      [
+        `${getWishListEmoji(result.wishCount)} \`❤${result.wishCount}\``,
+        `${client.seriesNameMap.get(result.series)}`,
+        `**${client.characterNameMap.get(result.character)}**`,
+      ].join(" · ");
     })
     .join("\n");
 }
@@ -90,8 +100,8 @@ function formatLookupPage(resultList) {
 function formatInventoryPage(itemList) {
   return itemList
     .map(({ name, quantity, type }) => {
-      const icon = config.items[name].icon;
-      const nameFormatted = config.items[name].name;
+      const icon = config.itemsMap.get(name).icon;
+      const nameFormatted = config.itemsMap.get(name).name;
       return [`${icon} **${quantity}**`, `\`${name}\``, `${nameFormatted}`].join(" · ");
     })
     .join("\n");
@@ -105,7 +115,7 @@ function formatInventoryPage(itemList) {
 function formatWishListPage(wishList) {
   return wishList
     .map((wish) => {
-      return [`- ${client.seriesNameMap[wish.series]}`, `**${client.characterNameMap[wish.character]}**`].join(" · ");
+      return [`- ${client.seriesNameMap.get(wish.series)}`, `**${client.characterNameMap.get(wish.character)}**`].join(" · ");
     })
     .join("\n");
 }

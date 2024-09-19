@@ -1,6 +1,8 @@
 const CardModel = require("../database/mongodb/models/card/card");
 const CollectionModel = require("../database/mongodb/models/card/collection");
 const InventoryModel = require("../database/mongodb/models/user/inventory");
+const { isValidCode } = require("../utils/string/validation");
+const config = require("../config");
 
 class TradeProfile {
   constructor(user) {
@@ -38,6 +40,95 @@ class TradeProfile {
     ]);
     this.cardCollection = collection.cardsOwned;
     this.itemInventory = inventory.inventory;
+  }
+
+  // await modal.followUp({ content: "Trade offer submitted!", components: [] });
+  async processOffer(modal) {
+    // Save the offer input as an array
+    this.offerInput = modal.fields
+      .getTextInputValue("offerInput")
+      .split(",")
+      .map((item) => item.trim());
+
+    // Output errors for player feedback
+    const errorCards = new Set();
+    const errorItems = new Map();
+
+    /**
+     * If the token has no spaces, it's a card code.
+     * Else, split the token by spaces and check if the first token is a number.
+     * If the first token is a number, it's a quantity followed by an item.
+     * If the first token is not a number, it's default a quantity of 1.
+     */
+    this.validCards = new Set();
+    this.validItems = new Map();
+    for (const token of this.offerInput) {
+      const tokenArray = token.split(" ");
+
+      if (tokenArray.length === 1) {
+        const code = tokenArray[0];
+
+        // Check if code is valid
+        if (!isValidCode(code)) {
+          errorCards.add(code);
+          continue;
+        }
+
+        // Check if card is owned by player
+        const cardOwned = this.cardCollection.some((card) => card.code === code);
+        if (!cardOwned) {
+          errorCards.add(code);
+          continue;
+        }
+
+        // Add the offer to the trade
+        this.validCards.add(code);
+      } else {
+        let quantity = tokenArray[0];
+        let itemName;
+
+        // Parse quantity and item name
+        if (isNaN(quantity)) {
+          quantity = 1; // Default quantity
+          itemName = tokenArray.join(" ");
+        } else {
+          quantity = Math.abs(parseInt(quantity));
+          itemName = tokenArray.slice(1).join(" ");
+        }
+
+        // Check if item exists
+        const itemExists = config.itemsMap.has(itemName);
+        if (!itemExists) {
+          errorItems.set(itemName, errorItems.get(itemName) || 0 + quantity);
+          continue;
+        }
+
+        // Check if player has the item and available quantity
+        const hasItem = this.itemInventory.some((item) => item.name === itemName && item.quantity >= quantity);
+        if (!hasItem) {
+          errorItems.set(itemName, errorItems.get(itemName) || 0 + quantity);
+          continue;
+        }
+
+        // Add the offer to the trade
+        this.validItems.set(itemName, this.validItems.get(itemName) || 0 + quantity);
+      }
+    }
+
+    // Check for errors and send feedback
+    if (errorCards.size > 0 || errorItems.size > 0) {
+      const cards = Array.from(errorCards);
+      const items = Array.from(errorItems.entries()).map(([key, value]) => `${value} ${key}`);
+      const content = 
+        `❌ Invalid code or insufficient balance: ${[
+          cards.map((code) => `\`${code}\``).join(", "),
+          items.map((item) => `\`${item}\``).join(", "),
+        ].filter(Boolean).join(", ")}`
+      ;
+      await modal.reply({ content: content, ephemeral: true });
+    } else {
+      await modal.reply({ content: "✅ Trade offer submitted successfully!", ephemeral: true });
+    }
   }
 
   /**

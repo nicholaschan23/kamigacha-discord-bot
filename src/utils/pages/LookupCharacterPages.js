@@ -81,8 +81,8 @@ class LookupCharacterPages extends ButtonPages {
       const statEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
         .setDescription(
-          `Character: **${client.characterNameMap[this.character]}**\n` +
-            `Series: **${client.seriesNameMap[this.series]}**\n` +
+          `Character: **${client.characterNameMap.get(this.character)}**\n` +
+            `Series: **${client.seriesNameMap.get(this.series)}**\n` +
             `Set: **${this.set}**\n` +
             `Rarity: **${rarity}**\n` +
             `\n` +
@@ -98,7 +98,7 @@ class LookupCharacterPages extends ButtonPages {
 
       const zoomEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
-        .setDescription(`Character: **${client.characterNameMap[this.character]}**\n` + `Series: **${client.seriesNameMap[this.series]}**\n` + `Set: **${this.set}**\n` + `Rarity: **${rarity}**`)
+        .setDescription(`Character: **${client.characterNameMap.get(this.character)}**\n` + `Series: **${client.seriesNameMap.get(this.series)}**\n` + `Set: **${this.set}**\n` + `Rarity: **${rarity}**`)
         .setImage(url)
         .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });
 

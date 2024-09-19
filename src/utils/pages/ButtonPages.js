@@ -22,17 +22,6 @@ class ButtonPages {
       await this.interaction.deferReply({ ephemeral: this.ephemeral });
     }
 
-    // 1 page, no buttons
-    // if (this.pages.length === 1) {
-    //   const page = await this.interaction.editReply({
-    //     embeds: this.pages,
-    //     components: [],
-    //     fetchReply: true,
-    //   });
-    //   return page;
-    // }
-
-    // Multiple pages, with buttons
     this.addComponents();
 
     const currentPage = await this.interaction.editReply({
@@ -41,18 +30,18 @@ class ButtonPages {
       fetchReply: true,
     });
 
-    // Get all valid customIds from the map
-    const validCustomIds = Object.keys(this.components);
+    // No components to listen to
+    if (this.messageComponents.length === 0) return;
 
+    // Initialize collectors
     this.collector = await currentPage.createMessageComponentCollector({
-      filter: (i) => i.user.id === this.interaction.user.id && validCustomIds.includes(i.customId),
+      filter: (i) => i.user.id === this.interaction.user.id,
       time: 60_000,
     });
-
     this.collector.on("collect", this.handleCollect.bind(this));
     this.collector.on("end", this.handleEnd.bind(this, currentPage));
 
-    return currentPage;
+    return;
   }
 
   addComponents() {

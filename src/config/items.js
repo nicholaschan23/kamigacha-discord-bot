@@ -17,41 +17,23 @@ const itemTypes = {
   },
 };
 
-const items = {
+const itemsArray = [
   // Currency
-  gold: {
-    icon: "🏵️",
-    name: "Gold",
-  },
-  "premium currency": {
-    icon: "💎",
-    name: "Premium Currency",
-  },
+  ["gold", { icon: "🏵️", name: "Gold" }],
+  ["premium currency", { icon: "💎", name: "Premium Currency" }],
 
   // Material
-  "c material": {
-    icon: "🔑",
-    name: "C Material (★☆☆☆☆)",
-  },
-  "r material": {
-    icon: "🔑",
-    name: "R Material (★★☆☆☆)",
-  },
-  "ur material": {
-    icon: "🔑",
-    name: "UR Material (★★★☆☆)",
-  },
-  "sr material": {
-    icon: "🔑",
-    name: "SR Material (★★★★☆)",
-  },
-  "ssr material": {
-    icon: "🔑",
-    name: "SSR Material (★★★★★)",
-  },
-};
+  ["c material", { icon: "🔑", name: "C Material (★☆☆☆☆)" }],
+  ["r material", { icon: "🔑", name: "R Material (★★☆☆☆)" }],
+  ["ur material", { icon: "🔑", name: "UR Material (★★★☆☆)" }],
+  ["sr material", { icon: "🔑", name: "SR Material (★★★★☆)" }],
+  ["ssr material", { icon: "🔑", name: "SSR Material (★★★★★)" }],
+];
+
+const itemsMap = new Map(itemsArray);
 
 module.exports = {
   itemTypes,
-  items,
+  itemsArray,
+  itemsMap,
 };

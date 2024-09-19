@@ -46,7 +46,8 @@ async function getFormattedNames(keys, filePath) {
   const existingModel = await loadModel(filePath);
   const updatedModel = createModel(keys, existingModel);
   await saveModel(updatedModel, filePath);
-  return await loadModel(filePath);
+
+  return new Map(Object.entries(updatedModel));
 }
 
 module.exports = { getFormattedNames };

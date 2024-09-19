@@ -2,10 +2,7 @@ const { Events } = require("discord.js");
 const Logger = require("../utils/Logger");
 const logger = new Logger("Interaction Create");
 const autocomplete = require("./interactionCreate/autocomplete");
-const button = require("./interactionCreate/button");
 const command = require("./interactionCreate/command");
-const modal = require("./interactionCreate/modal");
-const selectMenu = require("./interactionCreate/selectMenu");
 
 module.exports = {
   event: Events.InteractionCreate,
@@ -22,17 +19,11 @@ module.exports = {
     }
 
     // Determine interaction type and call the appropriate handler
-      if (interaction.isAutocomplete()) {
-        await autocomplete.call(client, interaction);
-      } else if (interaction.isButton()) {
-        await button.call(client, interaction);
-      } else if (interaction.isChatInputCommand()) {
+      if (interaction.isChatInputCommand()) {
         await command.call(client, interaction);
-      } else if (interaction.isModalSubmit()) {
-        await modal.call(client, interaction);
-      } else if (interaction.isStringSelectMenu()) {
-        await selectMenu.call(client, interaction);
-      }
+      } else if (interaction.isAutocomplete()) {
+        await autocomplete.call(client, interaction);
+      } 
     } catch (error) {
       logger.error(error);
       return interaction.reply({

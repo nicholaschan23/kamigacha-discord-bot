@@ -39,7 +39,7 @@ class WishListRemoveButtonPages extends LookupPages {
       .setPlaceholder("Select a character")
       .setMinValues(1)
       .setMaxValues(1)
-      .addOptions(this.pageDataChunks[this.index].map(({ character, series }) => new StringSelectMenuOptionBuilder().setLabel(client.characterNameMap[character]).setValue(`${JSON.stringify({ character: character, series: series })}`)));
+      .addOptions(this.pageDataChunks[this.index].map(({ character, series }) => new StringSelectMenuOptionBuilder().setLabel(client.characterNameMap.get(character)).setValue(`${JSON.stringify({ character: character, series: series })}`)));
     this.components["characterSelect"] = selectMenu;
     const selectRow = new ActionRowBuilder().addComponents(selectMenu);
     this.messageComponents.push(selectRow);
@@ -68,7 +68,7 @@ class WishListRemoveButtonPages extends LookupPages {
     if (!wishDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: `**${client.characterNameMap[data.character]}** · ${client.seriesNameMap[data.series]} is not on your wish list.` });
+      return await interaction.followUp({ content: `**${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} is not on your wish list.` });
     }
 
     // Remove wish count from character
@@ -89,7 +89,7 @@ class WishListRemoveButtonPages extends LookupPages {
     }
     embed.setColor(config.embedColor.green);
     this.collector.stop();
-    return await interaction.followUp({ content: `Successfully removed **${client.characterNameMap[data.character]}** · ${client.seriesNameMap[data.series]} from your wish list!` });
+    return await interaction.followUp({ content: `Successfully removed **${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} from your wish list!` });
   }
 }
 

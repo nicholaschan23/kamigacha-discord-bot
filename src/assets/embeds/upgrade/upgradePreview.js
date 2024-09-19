@@ -9,7 +9,7 @@ module.exports = (queriedCards, seriesSetFreq, rarityFreq) => {
   for (const series in seriesSetFreq) {
     for (const set in seriesSetFreq[series]) {
       const freq = seriesSetFreq[series][set];
-      seriesChances.push([`${freq * 10}%`, `◈${set}`, `${client.seriesNameMap[series]}`].join(" · "));
+      seriesChances.push([`${freq * 10}%`, `◈${set}`, `${client.seriesNameMap.get(series)}`].join(" · "));
     }
   }
 

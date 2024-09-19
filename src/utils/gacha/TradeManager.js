@@ -1,5 +1,4 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
-const { isValidCode } = require("../../utils/string/validation");
 const TradeProfile = require("../../models/TradeProfile");
 const config = require("../../config");
 
@@ -28,6 +27,9 @@ class TradeManager {
     // Trade status
     this.isLocked = new Set();
     this.isConfirmed = new Set();
+
+    // Set when the trade request is accepted
+    this.expirationUnix; // Unix time in seconds
 
     this.initButtons();
   }
@@ -70,7 +72,7 @@ class TradeManager {
       time: 60_000,
     });
     this.collector.on("collect", this.handleCollect.bind(this));
-    this.collector.on("end", this.handleEnd.bind(this, message));
+    this.collector.on("end", (collected, reason) => this.handleEnd(message, reason));
   }
 
   async publishTradeEmbeds() {
@@ -92,28 +94,36 @@ class TradeManager {
     const recEmbed = createEmbed(rec.user, recLockStatus, rec.offer);
 
     await this.updateMessage({
-      content: `Press the 📝 to enter/edit your trade. Both players must lock in to complete the trade.`,
+      content:
+        `Press the 📝 to enter/edit your trade, a list of \`card-code\` or \`quantity item-code\`, separated by commas.\n` +
+        `**Both players must lock in and confirm to complete the trade.**\n` +
+        `*Trade session expires <t:${this.expirationUnix}:R>.*`,
       embeds: [reqEmbed, recEmbed],
       components: this.actionRows,
     });
   }
 
   async handleCollect(i) {
-    await i.deferUpdate();
-
     switch (i.customId) {
       case "cancel":
+        await i.deferUpdate();
         // At any point during the trade, either player can cancel the trade
         this.state = "TRADE_CANCELLED";
         this.collector.stop();
         break;
       case "accept": {
+        await i.deferUpdate();
         if (this.state !== "AWAITING_REQUEST") break;
 
         // Receiver accepted trade request
         if (i.user.id === this.receiver.user.id) {
           this.state = "AWAITING_LOCK";
-          this.collector.resetTimer({ time: 3 * 60_000 }); // Set timeout to 3 minutes
+
+          // Set timeout to 3 minutes
+          const timeoutDuration = 3 * 60 * 1000; // 3 minutes in milliseconds
+          this.expirationUnix = Math.floor((Date.now() + timeoutDuration) / 1000);
+          this.collector.resetTimer({ time: timeoutDuration });
+
           this.updateComponents();
           await Promise.all([this.requester.fetchDocuments(), this.receiver.fetchDocuments()]);
           await this.publishTradeEmbeds();
@@ -121,23 +131,29 @@ class TradeManager {
         break;
       }
       case "offer": {
-        if (this.state !== "AWAITING_LOCK") break;
-
-        // That player is already locked in and cannot edit their offer
-        if (this.isLocked.has(i.user.id)) {
-          i.followUp({ content: "You cannot edit your offer after locking in.", ephemeral: true });
+        if (this.state !== "AWAITING_LOCK") {
+          await i.deferUpdate();
           break;
         }
 
+        // That player is already locked in and cannot edit their offer
+        if (this.isLocked.has(i.user.id)) {
+          await i.deferUpdate();
+          i.followUp({ content: "🔒 You cannot edit your offer after locking in.", ephemeral: true });
+          break;
+        }
+
+        // Modal cannot be replied or deferred prior to the interaction
         await this.showOfferModal(i);
         break;
       }
       case "lock": {
+        await i.deferUpdate();
         if (this.state !== "AWAITING_LOCK") break;
 
         // That player is already locked in
         if (this.isLocked.has(i.user.id)) {
-          i.followUp({ content: "You are already locked in.", ephemeral: true });
+          i.followUp({ content: "🔒 You are already locked in.", ephemeral: true });
           break;
         }
 
@@ -157,11 +173,12 @@ class TradeManager {
         break;
       }
       case "confirm": {
+        await i.deferUpdate();
         if (this.state !== "AWAITING_CONFIRM") break;
 
         // That player is already confirmed
         if (this.isConfirmed.has(i.user.id)) {
-          i.followUp({ content: "You are already confirmed.", ephemeral: true });
+          i.followUp({ content: "✅ You are already confirmed.", ephemeral: true });
           break;
         }
 
@@ -185,128 +202,25 @@ class TradeManager {
   async showOfferModal(interaction) {
     const profile = this.getTradeProfile(interaction.user.id);
 
+    // Create modal
     const offerInput = new TextInputBuilder()
       .setCustomId("offerInput")
       .setLabel("Enter your trade offer")
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder(
-        "Type a quantity (if multiple items) followed by the code to add items or cards to the trade. Separate entries with commas. Click submit when finished. Both sides must lock in before proceeding to the next step."
-      )
+      .setPlaceholder(`Enter a list of "card-code" or "quantity item-code", separated by commas.`)
       .setValue(profile.offerInput.join(", "));
-
     const actionRow = new ActionRowBuilder().addComponents(offerInput);
     const modal = new ModalBuilder().setCustomId("tradeOfferModal").setTitle("Submit Trade Offer").addComponents(actionRow);
 
+    // Show and collect modal
     await interaction.showModal(modal);
-
     const submitted = await interaction.awaitModalSubmit({
       filter: (i) => i.customId === "tradeOfferModal",
       time: 60_000,
     });
 
-    await this.processOffer(profile, submitted);
-    await this.updateTradeEmbeds();
-  }
-
-  // await modal.followUp({ content: "Trade offer submitted!", components: [] });
-  async processOffer(profile, modal) {
-    // Save the offer input as an array
-    profile.offerInput = modal.fields
-      .getTextInputValue("offerInput")
-      .split(",")
-      .map((item) => item.trim());
-
-    // Output errors for player feedback
-    const errors = {
-      invalidCode: [],
-      notOwnedCode: [],
-      invalidItem: [],
-      notOwnedItem: [],
-    };
-
-    /**
-     * If the token has no spaces, it's a card code.
-     * Else, split the token by spaces and check if the first token is a number.
-     * If the first token is a number, it's a quantity followed by an item.
-     * If the first token is not a number, it's default a quantity of 1.
-     */
-    const offerCards = [];
-    const offerInventory = [];
-    for (const token of profile.offerInput) {
-      const tokenArray = token.split(" ");
-
-      if (tokenArray.length === 1) {
-        const code = tokenArray[0];
-
-        // Check if code is valid
-        if (!isValidCode(code)) {
-          errors.invalidCode.push(code);
-          continue;
-        }
-
-        // Check if card is owned by player
-        const collection = this[`collection${userId}`];
-        const cardOwned = collection.cardsOwned.some((card) => card.code === code);
-        if (!cardOwned) {
-          errors.notOwnedCode.push(code);
-          continue;
-        }
-
-        // Add the offer to the trade
-        offerCards.push(code);
-      } else {
-        let quantity = tokenArray[0];
-        let itemName;
-
-        // Parse quantity and item name
-        if (isNaN(quantity)) {
-          quantity = 1; // Default quantity
-          itemName = tokenArray.join(" ");
-        } else {
-          quantity = Math.abs(parseInt(quantity));
-          itemName = tokenArray.slice(1).join(" ");
-        }
-
-        // Check if item exists
-        const itemExists = config.items.includes(itemName);
-        if (!itemExists) {
-          errors.invalidItem.push(itemName);
-          continue;
-        }
-
-        // Check if player has the item and available quantity
-        const inventory = this[`inventory${userId}`];
-        const hasItem = inventory.items.some((item) => item.name === itemName && item.quantity >= quantity);
-        if (!hasItem) {
-          errors.notOwnedItem.push({ quantity, itemName });
-          continue;
-        }
-
-        // Add the offer to the trade
-        offerInventory.push({ quantity, itemName });
-      }
-    }
-
-    // Check for errors and send feedback
-    const errorMessages = [];
-    if (errors.invalidCode.length > 0) {
-      errorMessages.push(`Invalid card code: ${errors.invalidCode.map((code) => `\`${code}\``).join(", ")}`);
-    }
-    if (errors.notOwnedCode.length > 0) {
-      errorMessages.push(`You do not own these cards: ${errors.notOwnedCode.map((code) => `\`${code}\``).join(", ")}`);
-    }
-    if (errors.invalidItem.length > 0) {
-      errorMessages.push(`Invalid item: ${errors.invalidItem.map((item) => `\`${item}\``).join(", ")}`);
-    }
-    if (errors.notOwnedItem.length > 0) {
-      errorMessages.push(`You do not own these items: ${errors.notOwnedItem.map((item) => `\`${item.quantity} ${item.itemName}\``).join(", ")}`);
-    }
-
-    if (errorMessages.length > 0) {
-      await modal.followUp({ content: `${errorMessages.join("\n")}`, ephemeral: true });
-    } else {
-      await modal.followUp({ content: "Trade offer submitted successfully!", ephemeral: true });
-    }
+    await profile.processOffer(submitted);
+    await this.publishTradeEmbeds();
   }
 
   async processTrade() {
@@ -375,12 +289,9 @@ class TradeManager {
         this.actionRows = [new ActionRowBuilder().addComponents(this.components["cancel"], this.components["offer"], this.components["lock"])];
         break;
       case "AWAITING_CONFIRM":
-        this.actionRows = [new ActionRowBuilder().addComponents(
-          this.components["cancel"],
-          this.components["offer"],
-          this.components["lock"],
-          this.components["confirm"]
-        )];
+        this.actionRows = [
+          new ActionRowBuilder().addComponents(this.components["cancel"], this.components["offer"], this.components["lock"], this.components["confirm"]),
+        ];
         break;
       case "TRADE_COMPLETE":
       case "TRADE_EXPIRED":

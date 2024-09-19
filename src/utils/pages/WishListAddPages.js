@@ -36,7 +36,7 @@ class WishListAddButtonPages extends LookupPages {
     if (!wishDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: `**${client.characterNameMap[data.character]}** · ${client.seriesNameMap[data.series]} is already on your wish list.` });
+      return await interaction.followUp({ content: `**${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} is already on your wish list.` });
     }
 
     // Add wish count to character
@@ -57,7 +57,7 @@ class WishListAddButtonPages extends LookupPages {
     }
     embed.setColor(config.embedColor.green);
     this.collector.stop();
-    return await interaction.followUp({ content: `Successfully added **${client.characterNameMap[data.character]}** · ${client.seriesNameMap[data.series]} to your wish list!` });
+    return await interaction.followUp({ content: `Successfully added **${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} to your wish list!` });
   }
 }
 

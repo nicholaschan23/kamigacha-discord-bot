@@ -15,7 +15,7 @@ function capitalizeFirstLetter(str) {
  * @returns The formatted string.
  */
 function formatCardInfo(card) {
-  return [`\`${card.code}\``, `\`${card.rarity}\``, `\`◈${card.set}\``, `${client.seriesNameMap[card.series]}`, `**${client.characterNameMap[card.character]}**`].join(" · ");
+  return [`\`${card.code}\``, `\`${card.rarity}\``, `\`◈${card.set}\``, `${client.seriesNameMap.get(card.series)}`, `**${client.characterNameMap.get(card.character)}**`].join(" · ");
 }
 
 /**
