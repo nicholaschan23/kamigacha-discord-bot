@@ -35,14 +35,14 @@ manager.on("clusterCreate", async (cluster) => {
   if (isShuttingDown) return; // Skip creation if shutting down
 
   // Create and add reference for the cluster's Redis client
-  const redisClient = createRedisClient(cluster.id);
-  await redisClient.connect();
-  cluster.redisClient = redisClient;
+  // const redisClient = createRedisClient(cluster.id);
+  // await redisClient.connect();
+  // cluster.redisClient = redisClient;
 
   // Handle shutdown of Redis clients
-  registerShutdownTask(async () => {
-    await redisClient.quit();
-  });
+  // registerShutdownTask(async () => {
+  //   await redisClient.quit();
+  // });
   // cluster.send({ type: "VERIFY_REDIS" });
 });
 
