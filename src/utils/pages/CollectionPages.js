@@ -45,7 +45,7 @@ class CollectionPages extends ButtonPages {
     if (cardDataChunks.length == 0) {
       const embed = new EmbedBuilder()
         .setTitle(`Card Collection`)
-        .setDescription(`Cards owned by <@${this.collectionDocument.userId}>\n\n` + "No cards found with that filter.")
+        .setDescription(`Cards owned by <@${this.collectionDocument.userId}>`)
         .setFooter({ text: `Showing cards 0-0 (${this.cardList.length.toLocaleString()} total)` });
       pages.push(embed);
     }

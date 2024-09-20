@@ -3,11 +3,6 @@ const mongoose = require("mongoose");
 // Define a schema for an item
 const itemSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-
     // Item quantity
     quantity: {
       type: Number,
@@ -38,8 +33,9 @@ const inventorySchema = new mongoose.Schema({
 
   // Items user holds, with item name as the key
   inventory: {
-    type: [itemSchema],
-    default: []
+    type: Map,
+    of: itemSchema,
+    default: new Map(),
   },
 });
 

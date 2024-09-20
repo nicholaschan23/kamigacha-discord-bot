@@ -10,8 +10,8 @@ class TradeProfile {
 
     // Trade offer
     this.offerInput = [];
-    this.validCards = new Set(); // { card code }
-    this.validItems = new Map(); // { item name: quantity }
+    this._validCards = new Set(); // { card code }
+    this._validItems = new Map(); // { item name: quantity }
 
     // Initialized by fetchDocuments()
     this.cardCollection;
@@ -42,11 +42,11 @@ class TradeProfile {
     this.itemInventory = inventory.inventory;
   }
 
-  // await modal.followUp({ content: "Trade offer submitted!", components: [] });
   async processOffer(modal) {
     // Save the offer input as an array
     this.offerInput = modal.fields
       .getTextInputValue("offerInput")
+      .toLowerCase()
       .split(",")
       .map((item) => item.trim());
 
@@ -60,8 +60,8 @@ class TradeProfile {
      * If the first token is a number, it's a quantity followed by an item.
      * If the first token is not a number, it's default a quantity of 1.
      */
-    this.validCards = new Set();
-    this.validItems = new Map();
+    this._validCards = new Set();
+    this._validItems = new Map();
     for (const token of this.offerInput) {
       const tokenArray = token.split(" ");
 
@@ -82,7 +82,7 @@ class TradeProfile {
         }
 
         // Add the offer to the trade
-        this.validCards.add(code);
+        this._validCards.add(code);
       } else {
         let quantity = tokenArray[0];
         let itemName;
@@ -111,7 +111,7 @@ class TradeProfile {
         }
 
         // Add the offer to the trade
-        this.validItems.set(itemName, this.validItems.get(itemName) || 0 + quantity);
+        this._validItems.set(itemName, this._validItems.get(itemName) || 0 + quantity);
       }
     }
 
@@ -119,12 +119,9 @@ class TradeProfile {
     if (errorCards.size > 0 || errorItems.size > 0) {
       const cards = Array.from(errorCards);
       const items = Array.from(errorItems.entries()).map(([key, value]) => `${value} ${key}`);
-      const content = 
-        `❌ Invalid code or insufficient balance: ${[
-          cards.map((code) => `\`${code}\``).join(", "),
-          items.map((item) => `\`${item}\``).join(", "),
-        ].filter(Boolean).join(", ")}`
-      ;
+      const content = `❌ Invalid code or insufficient balance: ${[cards.map((code) => `\`${code}\``).join(", "), items.map((item) => `\`${item}\``).join(", ")]
+        .filter(Boolean)
+        .join(", ")}`;
       await modal.reply({ content: content, ephemeral: true });
     } else {
       await modal.reply({ content: "✅ Trade offer submitted successfully!", ephemeral: true });
@@ -136,67 +133,39 @@ class TradeProfile {
    * @returns {String} The assembled string.
    */
   get offer() {
-    const cards = Array.from(this.validCards);
-    const items = Array.from(this.validItems.entries()).map(([key, value]) => `${value} ${key}`);
+    const cardsArr = this.validCards;
+    const itemsArr = this.validItems.map(([item, quantity]) => `${quantity} ${item}`);
     const offer = [];
-    if (cards.length > 0) offerParts.push(cards.join(", "));
-    if (items.length > 0) offerParts.push(items.join(", "));
-    if (offer.length === 0) return "No offer yet";
+    if (cardsArr.length > 0) offer.push(cardsArr.join(", "));
+    if (itemsArr.length > 0) offer.push(itemsArr.join(", "));
+    if (offer.length === 0) return "";
     return offer.join(", ");
   }
 
-  // async verifyOffer() {
-  //   // Check if the user has the cards and items in their collection and inventory
-  //   for (const card of this.validCards) {
-  //     if (!this.cardCollection.has(card)) return false;
-  //   }
-  //   for (const [item, quantity] of this.validItems.entries()) {
-  //     if (!this.itemInventory.has(item) || this.itemInventory.get(item) < quantity) return false;
-  //   }
-  //   return true;
-  // }
-
+  /**
+   * Fetches card document IDs of this profile's valid cards.
+   * @returns {mongoose.Types.ObjectId[]} An array of card document IDs.
+   */
   async getValidCardIds() {
-    // Query the database for all cards that match the cardCodes in validCards
-    const cards = await CardModel().find({ cardCode: { $in: Array.from(this.validCards) } });
-
-    // Extract the _id fields from the resulting documents
-    const cardIds = cards.map((card) => card._id);
-
-    return cardIds;
+    if (this.validCards.length === 0) return [];
+    const cards = await CardModel().find({ cardCode: { $in: this.validCards } }, "_id");
+    return cards.map((card) => card._id);
   }
 
-  async processTrade(cardIdsOffer, itemOffer) {
-    // Remove the cards and items from the user's collection and inventory
-    for (const card of this.validCards) {
-      this.cardCollection.delete(card);
-    }
-    for (const [item, quantity] of this.validItems.entries()) {
-      const newQuantity = this.itemInventory.get(item) - quantity;
-      if (newQuantity <= 0) {
-        this.itemInventory.delete(item);
-      } else {
-        this.itemInventory.set(item, newQuantity);
-      }
-    }
+  /**
+   * Returns an array of valid card codes.
+   * @returns {String[]} An array of valid card codes.
+   */
+  get validCards() {
+    return Array.from(this._validCards);
+  }
 
-    // Add the cards and items from the trade offer
-    for (const cardId of cardIdsOffer) {
-      this.cardCollection.add(cardId);
-    }
-    for (const item of itemOffer) {
-      this.itemInventory.set(item, (this.itemInventory.get(item) || 0) + 1);
-    }
-
-    // Save the updated collection and inventory only if they have been modified
-    const savePromises = [];
-    if (this.cardCollection.isModified()) {
-      savePromises.push(this.cardCollection.save());
-    }
-    if (this.itemInventory.isModified()) {
-      savePromises.push(this.itemInventory.save());
-    }
-    await Promise.all(savePromises);
+  /**
+   * Returns an array of valid items in the format {item, quantity}.
+   * @returns {String[]} An array of valid items.
+   */
+  get validItems() {
+    return Array.from(this._validItems.entries());
   }
 }
 

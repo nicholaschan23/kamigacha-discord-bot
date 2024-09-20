@@ -8,7 +8,7 @@ class InventoryPages extends ButtonPages {
   constructor(interaction, inventoryDocument) {
     super(interaction, [], inventoryDocument.isPrivate);
     this.inventoryDocument = inventoryDocument;
-    this.inventory = inventoryDocument.inventory;
+    this.inventory = this.convertInventoryMapToArray(inventoryDocument.inventory);
 
     this.init();
     this.pages = this.createPages();
@@ -44,12 +44,9 @@ class InventoryPages extends ButtonPages {
     // Create embed
     const pages = [];
     if (filteredInventory.length === 0) {
-      const embed = new EmbedBuilder()
-        .setTitle(`Inventory`)
-        .setDescription(`Items carried by <@${this.inventoryDocument.userId}>\n\n`)
-        .setFooter({
-          text: `Showing items 0-0 (0 total)`,
-        });
+      const embed = new EmbedBuilder().setTitle(`Inventory`).setDescription(`Items carried by <@${this.inventoryDocument.userId}>`).setFooter({
+        text: `Showing items 0-0 (0 total)`,
+      });
       pages.push(embed);
     } else {
       for (let i = 0; i < dataChunks.length; i++) {
@@ -175,6 +172,21 @@ class InventoryPages extends ButtonPages {
     } else {
       ends.setDisabled(false);
     }
+  }
+
+  /**
+   * Converts a Map of {item name, {quantity, type}} to an array of objects {item name, quantity, type}.
+   * @param {Map} inventoryMap - The inventory Map.
+   * @returns {Array} - The array of inventory objects.
+   */
+  convertInventoryMapToArray(inventoryMap) {
+    const inventoryArray = [];
+
+    for (const [itemName, { quantity, type }] of inventoryMap) {
+      inventoryArray.push({ itemName, quantity, type });
+    }
+
+    return inventoryArray;
   }
 }
 

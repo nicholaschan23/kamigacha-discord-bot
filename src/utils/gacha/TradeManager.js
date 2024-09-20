@@ -1,6 +1,11 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
+const mongoose = require("mongoose");
 const TradeProfile = require("../../models/TradeProfile");
+const CollectionModel = require("../../database/mongodb/models/card/collection");
+const InventoryModel = require("../../database/mongodb/models/user/inventory");
 const config = require("../../config");
+const Logger = require("../Logger");
+const logger = new Logger("Trade manager");
 
 /**
  * State machine:
@@ -10,6 +15,7 @@ const config = require("../../config");
  * - TRADE_COMPLETE: Trade is complete
  * - TRADE_EXPIRED: Trade request expired
  * - TRADE_CANCELLED: Trade was cancelled
+ * - TRANSFER_ERROR: Trade transaction failed
  */
 class TradeManager {
   constructor(interaction, receiver) {
@@ -34,6 +40,9 @@ class TradeManager {
     this.initButtons();
   }
 
+  /**
+   * Initializes the buttons for the trade manager.
+   */
   async initButtons() {
     const cancelButton = new ButtonBuilder().setCustomId("cancel").setEmoji("❌").setStyle(ButtonStyle.Secondary);
     const acceptButton = new ButtonBuilder().setCustomId("accept").setEmoji("☑️").setStyle(ButtonStyle.Secondary);
@@ -47,6 +56,9 @@ class TradeManager {
     this.components["confirm"] = confirmButton;
   }
 
+  /**
+   * Initiates the trade request.
+   */
   async initTrade() {
     this.state = "AWAITING_REQUEST";
 
@@ -75,34 +87,10 @@ class TradeManager {
     this.collector.on("end", (collected, reason) => this.handleEnd(message, reason));
   }
 
-  async publishTradeEmbeds() {
-    const createEmbed = (user, lockStatus, offer) => {
-      return new EmbedBuilder()
-        .setTitle(user.username)
-        .setDescription(`\`\`\`ansi\n${lockStatus}\n${offer}\`\`\``)
-        .setColor(config.embedColor.yellow)
-        .setThumbnail(user.displayAvatarURL());
-    };
-
-    const req = this.requester;
-    const rec = this.receiver;
-
-    const reqLockStatus = this.isLocked.has(req.user.id) ? "\u001b[1;32mLocked\u001b[0m" : "\u001b[1;31mNot Ready\u001b[0m";
-    const recLockStatus = this.isLocked.has(rec.user.id) ? "\u001b[1;32mLocked\u001b[0m" : "\u001b[1;31mNot Ready\u001b[0m";
-
-    const reqEmbed = createEmbed(req.user, reqLockStatus, req.offer);
-    const recEmbed = createEmbed(rec.user, recLockStatus, rec.offer);
-
-    await this.updateMessage({
-      content:
-        `Press the 📝 to enter/edit your trade, a list of \`card-code\` or \`quantity item-code\`, separated by commas.\n` +
-        `**Both players must lock in and confirm to complete the trade.**\n` +
-        `*Trade session expires <t:${this.expirationUnix}:R>.*`,
-      embeds: [reqEmbed, recEmbed],
-      components: this.actionRows,
-    });
-  }
-
+  /**
+   * Handles the button interactions for the trade manager.
+   * @param {Interaction} i - The interaction object from Discord.js.
+   */
   async handleCollect(i) {
     switch (i.customId) {
       case "cancel":
@@ -199,34 +187,12 @@ class TradeManager {
     }
   }
 
-  async showOfferModal(interaction) {
-    const profile = this.getTradeProfile(interaction.user.id);
-
-    // Create modal
-    const offerInput = new TextInputBuilder()
-      .setCustomId("offerInput")
-      .setLabel("Enter your trade offer")
-      .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder(`Enter a list of "card-code" or "quantity item-code", separated by commas.`)
-      .setValue(profile.offerInput.join(", "));
-    const actionRow = new ActionRowBuilder().addComponents(offerInput);
-    const modal = new ModalBuilder().setCustomId("tradeOfferModal").setTitle("Submit Trade Offer").addComponents(actionRow);
-
-    // Show and collect modal
-    await interaction.showModal(modal);
-    const submitted = await interaction.awaitModalSubmit({
-      filter: (i) => i.customId === "tradeOfferModal",
-      time: 60_000,
-    });
-
-    await profile.processOffer(submitted);
-    await this.publishTradeEmbeds();
-  }
-
-  async processTrade() {
-    // Re-verify all
-  }
-
+  /**
+   * Handles the end of the trade session.
+   * Updates message content, embed color, and removes action row.
+   * @param {Message} message - The Discord message object to be updated.
+   * @param {string} reason - The reason for ending the trade from the collector.
+   */
   async handleEnd(message, reason) {
     const msg = await message.fetch();
 
@@ -256,6 +222,13 @@ class TradeManager {
           components: [],
         });
         break;
+      case "TRANSFER_ERROR":
+        msg.edit({
+          content: `Error completing trade. (${this.requester.user} ${this.receiver.user})`,
+          embeds: this.setColorToEmbeds(msg.embeds, config.embedColor.red),
+          components: [],
+        });
+        break;
       default:
         msg.edit({
           embeds: this.setColorToEmbeds(msg.embeds, config.embedColor.red),
@@ -264,6 +237,192 @@ class TradeManager {
     }
   }
 
+  /**
+   * Publishes the trade embeds for both the requester and the receiver.
+   */
+  async publishTradeEmbeds() {
+    const createEmbed = (user, lockStatus, offer) => {
+      return new EmbedBuilder()
+        .setTitle(user.username)
+        .setDescription(`\`\`\`ansi\n${lockStatus}\n${offer}\`\`\``)
+        .setColor(config.embedColor.yellow)
+        .setThumbnail(user.displayAvatarURL());
+    };
+
+    const req = this.requester;
+    const rec = this.receiver;
+
+    const reqLockStatus = this.isLocked.has(req.user.id) ? "\u001b[1;32mLocked\u001b[0m" : "\u001b[1;31mNot Ready\u001b[0m";
+    const recLockStatus = this.isLocked.has(rec.user.id) ? "\u001b[1;32mLocked\u001b[0m" : "\u001b[1;31mNot Ready\u001b[0m";
+
+    const reqEmbed = createEmbed(req.user, reqLockStatus, req.offer);
+    const recEmbed = createEmbed(rec.user, recLockStatus, rec.offer);
+
+    await this.interaction.editReply({
+      content:
+        `Press the 📝 to enter/edit your trade, a list of \`card-code\` or \`quantity item-code\`, separated by commas.\n` +
+        `**Both players must lock in and confirm to complete the trade.**\n` +
+        `*Trade session expires <t:${this.expirationUnix}:R>.*`,
+      embeds: [reqEmbed, recEmbed],
+      components: this.actionRows,
+    });
+  }
+
+  /**
+   * Conducts trade transaction between the requester and the receiver.
+   */
+  async processTrade() {
+    const req = this.requester;
+    const rec = this.receiver;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Fetch both user collections and inventories
+      const [reqCollection, recCollection, reqInventory, recInventory] = await Promise.all([
+        CollectionModel().findOne({ userId: req.user.id }).session(session),
+        CollectionModel().findOne({ userId: rec.user.id }).session(session),
+        InventoryModel().findOne({ userId: req.user.id }).session(session),
+        InventoryModel().findOne({ userId: rec.user.id }).session(session),
+      ]);
+
+      if (!reqCollection || !recCollection || !reqInventory || !recInventory) {
+        throw new Error("One or both user collections or inventories not found.");
+      }
+
+      // Fetch card document IDs for the valid cards
+      const [reqCardIds, recCardIds] = await Promise.all([req.getValidCardIds(), rec.getValidCardIds()]);
+
+      // Remove card IDs from both user collections
+      reqCollection.cardsOwned = this.filterCardIds(reqCollection.cardsOwned, new Set(reqCardIds));
+      recCollection.cardsOwned = this.filterCardIds(recCollection.cardsOwned, new Set(recCardIds));
+
+      // Add card IDs to both user collections
+      reqCollection.cardsOwned.push(...recCardIds);
+      recCollection.cardsOwned.push(...reqCardIds);
+
+      // Transfer items between inventories
+      this.transferItems(reqInventory.inventory, recInventory.inventory, req.validItems);
+      this.transferItems(recInventory.inventory, reqInventory.inventory, rec.validItems);
+
+      // Save both collections and inventories
+      await Promise.all([reqCollection.save({ session }), recCollection.save({ session }), reqInventory.save({ session }), recInventory.save({ session })]);
+
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      this.state = "TRANSFER_ERROR";
+      this.collector.stop();
+      logger.error(error.stack);
+    }
+  }
+
+  /**
+   * Retrieves the trade profile for a given user ID.
+   * @param {String} userId - The ID of the user whose trade profile is to be retrieved.
+   * @returns {TradeProfile} Returns the trade profile object if the user is either the requester or the receiver, otherwise returns null.
+   */
+  getTradeProfile(userId) {
+    if (this.requester.user.id === userId) {
+      return this.requester;
+    } else if (this.receiver.user.id === userId) {
+      return this.receiver;
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Filters out card IDs from a collection and returns the updated collection.
+   * @param {Array} cardsOwned - The array of card IDs owned by the user.
+   * @param {Set} cardIdsToRemove - A set of card IDs to be removed.
+   * @returns {Array} The updated array of card IDs.
+   */
+  filterCardIds(cardsOwned, cardIdsToRemove) {
+    if (cardIdsToRemove.size === 0) return cardsOwned;
+
+    const newCardsOwned = [];
+    let removedCount = 0;
+
+    for (const cardId of cardsOwned) {
+      if (!cardIdsToRemove.has(cardId)) {
+        newCardsOwned.push(cardId);
+      } else {
+        removedCount++;
+        if (removedCount === cardIdsToRemove.size) {
+          // Add the remaining cards and break the loop
+          newCardsOwned.push(...cardsOwned.slice(cardsOwned.indexOf(cardId) + 1));
+          break;
+        }
+      }
+    }
+
+    return newCardsOwned;
+  }
+
+  /**
+   * Transfers items from one inventory to another.
+   * @param {Map} fromInventory - The inventory to transfer items from.
+   * @param {Map} toInventory - The inventory to transfer items to.
+   * @param {Array} items The array of items to transfer.
+   */
+  transferItems(fromInventory, toInventory, items) {
+    items.forEach(({ itemName, quantity }) => {
+      // Remove from the source inventory
+      const currentCount = fromInventory.get(itemName);
+      const newCount = currentCount - quantity;
+      if (newCount === 0) {
+        fromInventory.delete(itemName);
+      } else {
+        fromInventory.set(itemName, newCount);
+      }
+
+      // Add to the destination inventory
+      const otherCount = toInventory.get(itemName) || 0;
+      toInventory.set(itemName, otherCount + quantity);
+    });
+  }
+
+  /**
+   * Displays a modal for the user to enter their trade offer.
+   * @param {ButtonInteraction} interaction - The interaction object from Discord.js.
+   */
+  async showOfferModal(interaction) {
+    const profile = this.getTradeProfile(interaction.user.id);
+
+    // Create modal
+    const offerInput = new TextInputBuilder()
+      .setCustomId("offerInput")
+      .setLabel("Enter your trade offer")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder(`Enter a list of "card-code" or "quantity item-code", separated by commas.`)
+      .setValue(profile.offerInput.join(", "));
+    const actionRow = new ActionRowBuilder().addComponents(offerInput);
+    const modal = new ModalBuilder().setCustomId("tradeOfferModal").setTitle("Submit Trade Offer").addComponents(actionRow);
+
+    // Show and collect modal
+    await interaction.showModal(modal);
+    try {
+      const submitted = await interaction.awaitModalSubmit({
+        filter: (i) => i.customId === "tradeOfferModal",
+        time: 60_000,
+      });
+
+      await profile.processOffer(submitted);
+      await this.publishTradeEmbeds();
+    } catch (error) {
+      logger.error(error.stack);
+    }
+  }
+
+  /**
+   * Changes the color of the embeds.
+   * @param {Embed} embeds - Array of Embed.
+   * @param {String} color - HEX code for the color.
+   * @returns Array of Embed with the updated color.
+   */
   setColorToEmbeds(embeds, color) {
     return embeds.map((embed) => {
       const temp = new EmbedBuilder(embed);
@@ -272,14 +431,10 @@ class TradeManager {
     });
   }
 
-  async updateMessage({ content, embeds, components }) {
-    await this.interaction.editReply({
-      content,
-      embeds,
-      components,
-    });
-  }
-
+  /**
+   * Updates the action row components based on current state.
+   * Still need to publish the updated message.
+   */
   updateComponents() {
     switch (this.state) {
       case "AWAITING_REQUEST":
@@ -293,23 +448,8 @@ class TradeManager {
           new ActionRowBuilder().addComponents(this.components["cancel"], this.components["offer"], this.components["lock"], this.components["confirm"]),
         ];
         break;
-      case "TRADE_COMPLETE":
-      case "TRADE_EXPIRED":
-      case "TRADE_CANCELLED":
-        this.actionRows = []; // No components for these states
-        break;
       default:
-        this.actionRows = []; // Default empty action row
-    }
-  }
-
-  getTradeProfile(userId) {
-    if (this.requester.user.id === userId) {
-      return this.requester;
-    } else if (this.receiver.user.id === userId) {
-      return this.receiver;
-    } else {
-      return null;
+        this.actionRows = [];
     }
   }
 }
