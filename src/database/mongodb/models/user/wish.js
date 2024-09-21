@@ -27,7 +27,4 @@ const wishSchema = new mongoose.Schema({
   ],
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.userDB.model("wish", wishSchema);
-};
+module.exports = mongoose.model("wish", wishSchema);

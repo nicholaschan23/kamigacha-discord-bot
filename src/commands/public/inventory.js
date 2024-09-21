@@ -7,7 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder().setName("inventory").setDescription("View your inventory."),
 
   async execute(client, interaction) {
-    const inventoryDocument = await InventoryModel().findOneAndUpdate(
+    const inventoryDocument = await InventoryModel.findOneAndUpdate(
       { userId: interaction.user.id },
       { $setOnInsert: { userId: interaction.user.id } },
       { new: true, upsert: true }

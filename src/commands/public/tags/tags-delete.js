@@ -22,7 +22,7 @@ module.exports = {
 
     try {
       // Check if tag exists, if so delete it
-      const tagDocument = await TagModel().findOneAndUpdate(
+      const tagDocument = await TagModel.findOneAndUpdate(
         { userId: interaction.user.id, "tagList.tag": tag }, // Filter
         { $pull: { tagList: { tag: tag } } }, // Update
         { new: true }
@@ -32,7 +32,7 @@ module.exports = {
       }
 
       // Update cards with the associated tag with default untagged values
-      await CardModel().updateMany(
+      await CardModel.updateMany(
         { userId: interaction.user.id, tag: tag }, // Filter
         { $set: { tag: "untagged", emoji: "▪️" } } // Update
       );

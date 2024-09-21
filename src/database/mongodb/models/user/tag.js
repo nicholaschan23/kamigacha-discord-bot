@@ -35,7 +35,4 @@ const collectionTagSchema = new mongoose.Schema({
   tagList: [TagSchema],
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.userDB.model("collection tag", collectionTagSchema);
-};
+module.exports = mongoose.model("collection tag", collectionTagSchema);

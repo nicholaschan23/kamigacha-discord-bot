@@ -191,7 +191,7 @@ class TradeManager {
    * Handles the end of the trade session.
    * Updates message content, embed color, and removes action row.
    * @param {Message} message - The Discord message object to be updated.
-   * @param {string} reason - The reason for ending the trade from the collector.
+   * @param {String} reason - The reason for ending the trade from the collector.
    */
   async handleEnd(message, reason) {
     const msg = await message.fetch();
@@ -274,16 +274,20 @@ class TradeManager {
   async processTrade() {
     const req = this.requester;
     const rec = this.receiver;
+
     const session = await mongoose.startSession();
+    console.log("Session started");
+
     session.startTransaction();
+    console.log("Transaction started");
 
     try {
       // Fetch both user collections and inventories
       const [reqCollection, recCollection, reqInventory, recInventory] = await Promise.all([
-        CollectionModel().findOne({ userId: req.user.id }).session(session),
-        CollectionModel().findOne({ userId: rec.user.id }).session(session),
-        InventoryModel().findOne({ userId: req.user.id }).session(session),
-        InventoryModel().findOne({ userId: rec.user.id }).session(session),
+        CollectionModel.findOne({ userId: req.user.id }).session(session),
+        CollectionModel.findOne({ userId: rec.user.id }).session(session),
+        InventoryModel.findOne({ userId: req.user.id }).session(session),
+        InventoryModel.findOne({ userId: rec.user.id }).session(session),
       ]);
 
       if (!reqCollection || !recCollection || !reqInventory || !recInventory) {
@@ -293,29 +297,47 @@ class TradeManager {
       // Fetch card document IDs for the valid cards
       const [reqCardIds, recCardIds] = await Promise.all([req.getValidCardIds(), rec.getValidCardIds()]);
 
+      // Debugging: Log fetched card IDs
+      console.log("Requester Card IDs:", reqCardIds);
+      console.log("Receiver Card IDs:", recCardIds);
+
       // Remove card IDs from both user collections
       reqCollection.cardsOwned = this.filterCardIds(reqCollection.cardsOwned, new Set(reqCardIds));
       recCollection.cardsOwned = this.filterCardIds(recCollection.cardsOwned, new Set(recCardIds));
+
+      // Debugging: Log collections after removal
+      console.log("Requester Collection after removal:", reqCollection.cardsOwned);
+      console.log("Receiver Collection after removal:", recCollection.cardsOwned);
 
       // Add card IDs to both user collections
       reqCollection.cardsOwned.push(...recCardIds);
       recCollection.cardsOwned.push(...reqCardIds);
 
+      // Debugging: Log collections after addition
+      console.log("Requester Collection after addition:", reqCollection.cardsOwned);
+      console.log("Receiver Collection after addition:", recCollection.cardsOwned);
+
       // Transfer items between inventories
       this.transferItems(reqInventory.inventory, recInventory.inventory, req.validItems);
       this.transferItems(recInventory.inventory, reqInventory.inventory, rec.validItems);
+
+      // Debugging: Log inventories after transfer
+      console.log("Requester Inventory after transfer:", reqInventory.inventory);
+      console.log("Receiver Inventory after transfer:", recInventory.inventory);
 
       // Save both collections and inventories
       await Promise.all([reqCollection.save({ session }), recCollection.save({ session }), reqInventory.save({ session }), recInventory.save({ session })]);
 
       await session.commitTransaction();
-      session.endSession();
+      console.log("Transaction committed successfully.");
     } catch (error) {
       await session.abortTransaction();
-      session.endSession();
       this.state = "TRANSFER_ERROR";
       this.collector.stop();
+      console.error("Transaction aborted due to error:", error);
       logger.error(error.stack);
+    } finally {
+      session.endSession();
     }
   }
 

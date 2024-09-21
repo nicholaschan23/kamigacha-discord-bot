@@ -1,4 +1,11 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+} = require("discord.js");
 const ButtonPages = require("./ButtonPages");
 const CharacterModel = require("../../database/mongodb/models/global/character");
 const client = require("../../../bot");
@@ -20,7 +27,7 @@ class LookupCharacterPages extends ButtonPages {
   }
 
   async init() {
-    this.characterDocument = await CharacterModel().findOne({ character: this.character, series: this.series });
+    this.characterDocument = await CharacterModel.findOne({ character: this.character, series: this.series });
     this.wishCount = this.characterDocument.wishCount;
     this.circulation = this.characterDocument.circulation;
     this.setArray = this.getSetArray();
@@ -91,14 +98,19 @@ class LookupCharacterPages extends ButtonPages {
             `Retention rate: **${retention}%**\n` +
             `In circulation: **${circulation.toLocaleString()}**\n` +
             `Total generated: **${stats.generated.toLocaleString()}**`
-            // `Total destroyed: **${stats.destroyed.toLocaleString()}**\n` +
+          // `Total destroyed: **${stats.destroyed.toLocaleString()}**\n` +
         )
         .setThumbnail(url)
         .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });
 
       const zoomEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
-        .setDescription(`Character: **${client.characterNameMap.get(this.character)}**\n` + `Series: **${client.seriesNameMap.get(this.series)}**\n` + `Set: **${this.set}**\n` + `Rarity: **${rarity}**`)
+        .setDescription(
+          `Character: **${client.characterNameMap.get(this.character)}**\n` +
+            `Series: **${client.seriesNameMap.get(this.series)}**\n` +
+            `Set: **${this.set}**\n` +
+            `Rarity: **${rarity}**`
+        )
         .setImage(url)
         .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });
 

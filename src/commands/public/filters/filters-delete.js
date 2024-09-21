@@ -22,7 +22,7 @@ module.exports = {
 
     try {
       // Check if filter exists, if so delete it
-      const updatedDocument = await FilterModel().findOneAndUpdate(
+      const updatedDocument = await FilterModel.findOneAndUpdate(
         { userId: interaction.user.id, "filterList.label": label }, // Filter
         { $pull: { filterList: { label: label } } }, // Update
         { new: true }

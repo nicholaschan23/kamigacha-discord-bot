@@ -21,14 +21,14 @@ module.exports = {
     }
 
     // Check if the user is already a moderator
-    const userIsMod = await ModeratorModel().findOne({ userId: user.id });
+    const userIsMod = await ModeratorModel.findOne({ userId: user.id });
     if (userIsMod) {
       return await interaction.reply({ content: `This user is already a moderator.`, ephemeral: true });
     }
 
     // Promote the user to moderator
     try {
-      const newModerator = new (ModeratorModel())({ userId: user.id });
+      const newModerator = new ModeratorModel({ userId: user.id });
       await newModerator.save();
       return interaction.reply({ content: `${user} has been promoted to moderator.`, allowedMentions: { parse: [] } });
     } catch (error) {

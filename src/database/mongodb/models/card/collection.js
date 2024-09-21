@@ -25,7 +25,4 @@ const cardCollectionSchema = new mongoose.Schema({
   },
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.cardDB.model("collection", cardCollectionSchema);
-};
+module.exports = mongoose.model("collection", cardCollectionSchema);

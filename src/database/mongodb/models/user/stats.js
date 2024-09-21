@@ -64,7 +64,4 @@ const userStatsSchema = new mongoose.Schema({
   },
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.userDB.model("stats", userStatsSchema);
-};
+module.exports = mongoose.model("stats", userStatsSchema);

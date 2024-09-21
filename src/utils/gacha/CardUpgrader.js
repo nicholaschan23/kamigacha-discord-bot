@@ -1,6 +1,6 @@
 const config = require("../../config");
 const crypto = require("crypto");
-const {generateCode} = require("./generateCode");
+const { generateCode } = require("./generateCode");
 const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
 const CharacterModel = require("../../database/mongodb/models/global/character");
@@ -18,7 +18,7 @@ class CardUpgrader {
 
   async cardUpgrade(cardCodes = this.queriedCodes) {
     // Re-verify ownership of cards
-    const cards = await CardModel().find({
+    const cards = await CardModel.find({
       code: { $in: cardCodes },
       ownerId: this.userId,
     });
@@ -30,29 +30,29 @@ class CardUpgrader {
 
     // Create the new card
     const cardData = await this.generateUpgradedCard();
-    const cardInstance = new (CardModel())(cardData);
-    const createdCard = await CardModel().create(cardInstance);
+    const cardInstance = new CardModel(cardData);
+    const createdCard = await CardModel.create(cardInstance);
 
     await Promise.all([
       // Remove card references from the user's collection
-      CollectionModel().updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardDocumentIds } } }),
+      CollectionModel.updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardDocumentIds } } }),
 
       // Delete the cards from existence
-      CardModel().deleteMany({ code: { $in: cardCodes } }),
+      CardModel.deleteMany({ code: { $in: cardCodes } }),
 
       // Update character card destroyed stats
       ...this.queriedCards.map((card) => {
-        return CharacterModel().updateOne(
+        return CharacterModel.updateOne(
           { character: card.character, series: card.series }, // Query
           { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.destroyed`]: 1 } } // Increment the destroyed field
         );
       }),
 
       // Add the new card to the user's collection
-      CollectionModel().updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } }),
+      CollectionModel.updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } }),
 
       // Update character card generated stats
-      CharacterModel().updateOne(
+      CharacterModel.updateOne(
         { character: cardData.character, series: cardData.series }, // Query
         { $inc: { [`circulation.${cardData.set}.rarities.${cardData.rarity}.generated`]: 1 } } // Increment the generated field
       ),

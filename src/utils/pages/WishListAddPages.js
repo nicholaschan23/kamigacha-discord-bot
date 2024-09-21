@@ -16,7 +16,7 @@ class WishListAddButtonPages extends LookupPages {
 
     // Save document
     const wish = new Wish(data.character, data.series);
-    const wishDocument = await WishModel().findOneAndUpdate(
+    const wishDocument = await WishModel.findOneAndUpdate(
       {
         userId: interaction.user.id,
         wishList: { $not: { $elemMatch: wish } },
@@ -36,11 +36,13 @@ class WishListAddButtonPages extends LookupPages {
     if (!wishDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: `**${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} is already on your wish list.` });
+      return await interaction.followUp({
+        content: `**${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} is already on your wish list.`,
+      });
     }
 
     // Add wish count to character
-    const characterDocument = await CharacterModel().findOneAndUpdate(
+    const characterDocument = await CharacterModel.findOneAndUpdate(
       {
         character: data.character,
         series: data.series,
@@ -57,7 +59,9 @@ class WishListAddButtonPages extends LookupPages {
     }
     embed.setColor(config.embedColor.green);
     this.collector.stop();
-    return await interaction.followUp({ content: `Successfully added **${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} to your wish list!` });
+    return await interaction.followUp({
+      content: `Successfully added **${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} to your wish list!`,
+    });
   }
 }
 

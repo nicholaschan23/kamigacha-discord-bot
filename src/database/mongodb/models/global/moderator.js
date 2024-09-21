@@ -9,7 +9,4 @@ const moderatorSchema = new mongoose.Schema({
   },
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.globalDB.model("moderator", moderatorSchema);
-};
+module.exports = mongoose.model("moderator", moderatorSchema);

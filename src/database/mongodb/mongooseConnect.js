@@ -2,45 +2,24 @@ const { registerShutdownTask } = require("../../utils/initialization/shutdown");
 const mongoose = require("mongoose");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("MongoDB");
-const CardModel = require("./models/card/card");
+const path = require("path");
+const { getJsFiles } = require("../../utils/fileSystem");
 
 module.exports = async (client) => {
   const mongoURI = process.env.MONGODB_URI;
 
-  const createConnection = (uri, dbName) => {
-    return new Promise((resolve, reject) => {
-      const connection = mongoose.createConnection(uri, { dbName });
-
-      connection.on("error", (error) => {
-        logger.error(`${dbName} database connection error:`, error);
-        reject(error);
-      });
-
-      connection.once("open", () => {
-        logger.success(`Connected to ${dbName} database`);
-        resolve(connection);
-      });
+  try {
+    // Connect to MongoDB
+    await mongoose.connect(mongoURI, {
+      dbName: "global", // Specify the default database name
     });
-  };
+    logger.success("Connected to MongoDB");
 
-  try {
-    // Create and wait for all database connections concurrently
-    const [userConnection, guildConnection, globalConnection, cardConnection] = await Promise.all([createConnection(mongoURI, "user"), createConnection(mongoURI, "guild"), createConnection(mongoURI, "global"), createConnection(mongoURI, "card")]);
-
-    // Assign connections to the client object
-    client.userDB = userConnection;
-    client.guildDB = guildConnection;
-    client.globalDB = globalConnection;
-    client.cardDB = cardConnection;
+    // Register models
+    const modelsPath = path.join(__dirname, "models");
+    registerModels(modelsPath);
   } catch (error) {
-    logger.error(`Connection failed:`, error.stack);
-    throw error;
-  }
-
-  try {
-    client.cardDB.model("card", CardModel().schema);
-  } catch (error) {
-    logger.error("Failed to register models", error.stack);
+    logger.error("Connection failed:", error.stack);
     throw error;
   }
 
@@ -51,3 +30,18 @@ module.exports = async (client) => {
     logger.info("Database connections closed");
   });
 };
+
+/**
+ * Registers all Mongoose models found in the specified directory.
+ * @param {String} modelsPath - The path to the directory containing the model files.
+ */
+function registerModels(modelsPath) {
+  const jsFiles = getJsFiles(modelsPath);
+
+  jsFiles.forEach((file) => {
+    const filePath = path.join(modelsPath, file);
+    const model = require(filePath);
+    const modelName = path.basename(file, ".js");
+    mongoose.model(modelName, model.schema);
+  });
+}

@@ -16,7 +16,7 @@ module.exports = {
     const user = interaction.options.getUser("user") ?? interaction.user;
 
     try {
-      const filterDocument = await FilterModel().findOne(
+      const filterDocument = await FilterModel.findOne(
         { userId: user.id } // Filter
       );
       if (!filterDocument) {

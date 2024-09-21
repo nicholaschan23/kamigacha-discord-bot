@@ -88,7 +88,4 @@ const cardSchema = new mongoose.Schema({
   frame: String,
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.cardDB.model("card", cardSchema);
-};
+module.exports = mongoose.model("card", cardSchema);

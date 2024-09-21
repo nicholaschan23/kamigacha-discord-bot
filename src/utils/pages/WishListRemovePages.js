@@ -24,8 +24,17 @@ class WishListRemoveButtonPages extends LookupPages {
     for (let i = 0; i < pageDataChunks.length; i++) {
       const embed = new EmbedBuilder()
         .setTitle(`Wish List`)
-        .setDescription(`Owned by ${this.user}\n` + `Available slots: **${this.wishListLimit - this.pageData.length}**/${this.wishListLimit}\n\n` + `${formatWishListPage(pageDataChunks[i])}`)
-        .setFooter({ text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.pageData.length.toLocaleString()} total)` });
+        .setDescription(
+          `Owned by ${this.user}\n` +
+            `Available slots: **${this.wishListLimit - this.pageData.length}**/${this.wishListLimit}\n\n` +
+            `${formatWishListPage(pageDataChunks[i])}`
+        )
+        .setFooter({
+          text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(
+            i * 10 +
+            pageDataChunks[i].length
+          ).toLocaleString()} (${this.pageData.length.toLocaleString()} total)`,
+        });
       pages.push(embed);
     }
 
@@ -39,7 +48,13 @@ class WishListRemoveButtonPages extends LookupPages {
       .setPlaceholder("Select a character")
       .setMinValues(1)
       .setMaxValues(1)
-      .addOptions(this.pageDataChunks[this.index].map(({ character, series }) => new StringSelectMenuOptionBuilder().setLabel(client.characterNameMap.get(character)).setValue(`${JSON.stringify({ character: character, series: series })}`)));
+      .addOptions(
+        this.pageDataChunks[this.index].map(({ character, series }) =>
+          new StringSelectMenuOptionBuilder()
+            .setLabel(client.characterNameMap.get(character))
+            .setValue(`${JSON.stringify({ character: character, series: series })}`)
+        )
+      );
     this.components["characterSelect"] = selectMenu;
     const selectRow = new ActionRowBuilder().addComponents(selectMenu);
     this.messageComponents.push(selectRow);
@@ -51,7 +66,7 @@ class WishListRemoveButtonPages extends LookupPages {
 
     // Save document
     const characterToAdd = { character: data.character, series: data.series };
-    const wishDocument = await WishModel().findOneAndUpdate(
+    const wishDocument = await WishModel.findOneAndUpdate(
       {
         userId: interaction.user.id,
         wishList: { $elemMatch: characterToAdd },
@@ -68,11 +83,13 @@ class WishListRemoveButtonPages extends LookupPages {
     if (!wishDocument) {
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({ content: `**${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} is not on your wish list.` });
+      return await interaction.followUp({
+        content: `**${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} is not on your wish list.`,
+      });
     }
 
     // Remove wish count from character
-    const characterDocument = await CharacterModel().findOneAndUpdate(
+    const characterDocument = await CharacterModel.findOneAndUpdate(
       {
         character: data.character,
         series: data.series,
@@ -89,7 +106,9 @@ class WishListRemoveButtonPages extends LookupPages {
     }
     embed.setColor(config.embedColor.green);
     this.collector.stop();
-    return await interaction.followUp({ content: `Successfully removed **${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} from your wish list!` });
+    return await interaction.followUp({
+      content: `Successfully removed **${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} from your wish list!`,
+    });
   }
 }
 

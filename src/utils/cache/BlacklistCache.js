@@ -12,7 +12,7 @@ class BlacklistCache {
 
   // Initialize the blacklist cache from the database
   async initialize() {
-    const blacklistedUsers = await BlacklistModel().find({});
+    const blacklistedUsers = await BlacklistModel.find({});
     blacklistedUsers.forEach((user) => {
       this.blacklist.set(user.blacklistUserId, {
         moderatorUserId: user.moderatorUserId,
@@ -36,7 +36,7 @@ class BlacklistCache {
 
   // Add the blacklisted user to the database and cache then broadcast the update to all shards
   async addToBlacklist(userId, moderatorUserId, reason) {
-    const newUser = new (BlacklistModel())({
+    const newUser = new BlacklistModel({
       blacklistUserId: userId,
       moderatorUserId: moderatorUserId,
       reason: reason,
@@ -54,7 +54,7 @@ class BlacklistCache {
 
   // Remove a user from the blacklist and broadcast the update to all shards
   async removeFromBlacklist(userId) {
-    await BlacklistModel().deleteOne({ blacklistUserId: userId });
+    await BlacklistModel.deleteOne({ blacklistUserId: userId });
     this.blacklist.delete(userId);
 
     await this.broadcastUpdate("removeFromBlacklist", userId);

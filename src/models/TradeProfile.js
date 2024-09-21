@@ -21,16 +21,14 @@ class TradeProfile {
   async fetchDocuments() {
     // Populate user's card collection and inventory in parallel
     const [collection, inventory] = await Promise.all([
-      CollectionModel()
-        .findOneAndUpdate(
-          {
-            userId: this.user.id,
-          },
-          { $setOnInsert: { userId: this.user.id } },
-          { new: true, upsert: true }
-        )
-        .populate("cardsOwned"),
-      InventoryModel().findOneAndUpdate(
+      CollectionModel.findOneAndUpdate(
+        {
+          userId: this.user.id,
+        },
+        { $setOnInsert: { userId: this.user.id } },
+        { new: true, upsert: true }
+      ).populate("cardsOwned"),
+      InventoryModel.findOneAndUpdate(
         {
           userId: this.user.id,
         },
@@ -148,7 +146,7 @@ class TradeProfile {
    */
   async getValidCardIds() {
     if (this.validCards.length === 0) return [];
-    const cards = await CardModel().find({ cardCode: { $in: this.validCards } }, "_id");
+    const cards = await CardModel.find({ cardCode: { $in: this.validCards } }, "_id");
     return cards.map((card) => card._id);
   }
 

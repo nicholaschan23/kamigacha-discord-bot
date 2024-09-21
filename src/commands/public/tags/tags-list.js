@@ -16,7 +16,7 @@ module.exports = {
     const user = interaction.options.getUser("user") || interaction.user;
 
     try {
-      const tagDocument = await TagModel().findOne(
+      const tagDocument = await TagModel.findOne(
         { userId: user.id } // Filter
       );
       if (!tagDocument) {
@@ -31,7 +31,7 @@ module.exports = {
       // Split the list of cards into chunks of 10
       const chunkSize = 10;
       const cardChunks = chunkArray([...tagDocument.tagList], chunkSize);
-      
+
       // Create page embeds
       const total = tagDocument.tagList.length;
       const pages = [];

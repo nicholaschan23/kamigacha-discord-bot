@@ -39,7 +39,4 @@ const inventorySchema = new mongoose.Schema({
   },
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.userDB.model("inventory", inventorySchema);
-};
+module.exports = mongoose.model("inventory", inventorySchema);

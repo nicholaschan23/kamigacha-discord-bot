@@ -75,13 +75,13 @@ async function initCharacterDB(client) {
 
 // Count number of characters in database
 async function sumCharactersDB() {
-  const totalCharacters = await CharacterModel().countDocuments({});
+  const totalCharacters = await CharacterModel.countDocuments({});
   return totalCharacters;
 }
 
 // Count number of cards in database
 async function sumCardsDB() {
-  const characters = await CharacterModel().find({});
+  const characters = await CharacterModel.find({});
   let totalCards = 0;
 
   // Iterate through each character document
@@ -104,7 +104,7 @@ async function sumCardsDB() {
  */
 async function upsertCharacter(query, set, rarities) {
   // Fetch character document
-  const characterDocument = await CharacterModel().findOneAndUpdate(
+  const characterDocument = await CharacterModel.findOneAndUpdate(
     query, // Filter
     {
       $setOnInsert: {
@@ -118,7 +118,7 @@ async function upsertCharacter(query, set, rarities) {
   if (!characterDocument.circulation.get(set)) {
     characterDocument.circulation.set(set, new Map());
   }
-  
+
   // Initialize destroyed and generated counters
   let modified = false;
   const setMap = characterDocument.circulation.get(set);

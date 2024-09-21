@@ -35,7 +35,7 @@ module.exports = {
     }
 
     // Fetch the cards from the database based on the provided card codes
-    const queriedCards = await CardModel().find({
+    const queriedCards = await CardModel.find({
       code: { $in: inputCardCodes },
     });
 

@@ -34,7 +34,7 @@ module.exports = {
 
     try {
       // Find the filter document for the user
-      const filterDocument = await FilterModel().findOneAndUpdate(
+      const filterDocument = await FilterModel.findOneAndUpdate(
         { userId: interaction.user.id, "filterList.label": { $ne: label } }, // Filter
         { $setOnInsert: { userId: interaction.user.id } }, // Update
         { new: true, upsert: true }
@@ -51,7 +51,7 @@ module.exports = {
       }
 
       // Save document
-      await FilterModel().findOneAndUpdate(
+      await FilterModel.findOneAndUpdate(
         { userId: interaction.user.id }, // Filter
         {
           $push: {

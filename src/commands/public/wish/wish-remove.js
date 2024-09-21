@@ -12,7 +12,7 @@ module.exports = {
     let bp;
     try {
       // Find the wishList document for the user
-      const wishDocument = await WishModel().findOneAndUpdate(
+      const wishDocument = await WishModel.findOneAndUpdate(
         { userId: interaction.user.id }, // Filter
         { $setOnInsert: { userId: interaction.user.id } }, // Update
         { new: true, upsert: true }

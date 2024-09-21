@@ -12,7 +12,9 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("lookup")
     .setDescription("Find info on a character's available cards.")
-    .addStringOption((option) => option.setName("character").setDescription("Search by card code, character, or series name. Omit to lookup your latest card.")),
+    .addStringOption((option) =>
+      option.setName("character").setDescription("Search by card code, character, or series name. Omit to lookup your latest card.")
+    ),
 
   async execute(client, interaction) {
     const character = interaction.options.getString("character");
@@ -23,7 +25,7 @@ module.exports = {
       // No results
       if (results.length === 0) {
         // Check if input was a card code
-        const cardDocument = await CardModel().findOne({ code: character });
+        const cardDocument = await CardModel.findOne({ code: character });
 
         // Card code exists
         if (cardDocument) {
@@ -58,7 +60,7 @@ module.exports = {
 
       // Retrieve latest card in collection and perform lookup
       try {
-        const collectionDocument = await CollectionModel().findOne(
+        const collectionDocument = await CollectionModel.findOne(
           { userId: interaction.user.id },
           { cardsOwned: { $slice: -1 } } // Only retrieve the first element in the cardsOwned array
         );
@@ -68,7 +70,7 @@ module.exports = {
           return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
         }
 
-        const cardDocument = await CardModel().findById(cardId);
+        const cardDocument = await CardModel.findById(cardId);
         if (!cardDocument) {
           return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
         }
@@ -89,7 +91,7 @@ module.exports = {
  * @param {CardModel} cardDocument CardModel document from database
  * @param {Boolean} isDeferred If message was already deferred, edit it
  */
-async function LCPCardDocument(interaction, cardDocument, isDeferred=false) {
+async function LCPCardDocument(interaction, cardDocument, isDeferred = false) {
   // Create lookup character page
   const bp = new LookupCharacterPages(
     interaction,

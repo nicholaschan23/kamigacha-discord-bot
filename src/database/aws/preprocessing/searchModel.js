@@ -30,8 +30,7 @@ async function createModel(characterModel, characterKeys, existingModel = {}) {
       const allWords = new Set([...characterWords, ...seriesWords]);
 
       promises.push(
-        CharacterModel()
-          .findOne({ character: character, series: series })
+        CharacterModel.findOne({ character: character, series: series })
           .select("wishCount")
           .lean()
           .exec()

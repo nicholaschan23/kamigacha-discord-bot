@@ -28,7 +28,7 @@ module.exports = {
 
     try {
       // Find the filter document for the user
-      const filterDocument = await FilterModel().findOne({ userId: interaction.user.id });
+      const filterDocument = await FilterModel.findOne({ userId: interaction.user.id });
 
       // Handle case where no filter data exists
       if (!filterDocument) {
@@ -51,7 +51,7 @@ module.exports = {
       const { emoji: emoji, label: label, filter: filter } = filterDocument.filterList[oldFilterIndex];
 
       // Remove the old filter
-      await FilterModel().findOneAndUpdate(
+      await FilterModel.findOneAndUpdate(
         { userId: interaction.user.id },
         {
           $pull: { filterList: { label: oldLabel } },
@@ -59,7 +59,7 @@ module.exports = {
       );
 
       // Add the new filter with sorted order
-      await FilterModel().findOneAndUpdate(
+      await FilterModel.findOneAndUpdate(
         { userId: interaction.user.id },
         {
           $push: {

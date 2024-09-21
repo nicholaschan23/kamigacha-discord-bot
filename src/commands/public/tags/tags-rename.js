@@ -28,7 +28,7 @@ module.exports = {
 
     try {
       // Find the tag document for the user
-      const tagDocument = await TagModel().findOne({ userId: interaction.user.id });
+      const tagDocument = await TagModel.findOne({ userId: interaction.user.id });
 
       // Handle case where no tag data exists
       if (!tagDocument) {
@@ -51,7 +51,7 @@ module.exports = {
       const { emoji: oldEmoji, quantity: oldQuantity } = tagDocument.tagList[oldTagIndex];
 
       // Remove the old tag
-      await TagModel().findOneAndUpdate(
+      await TagModel.findOneAndUpdate(
         { userId: interaction.user.id },
         {
           $pull: { tagList: { tag: oldTag } },
@@ -59,7 +59,7 @@ module.exports = {
       );
 
       // Add the new tag with sorted order
-      await TagModel().findOneAndUpdate(
+      await TagModel.findOneAndUpdate(
         { userId: interaction.user.id },
         {
           $push: {
@@ -72,7 +72,7 @@ module.exports = {
       );
 
       // Update cards with the associated old tag with the new tag
-      await CardModel().updateMany(
+      await CardModel.updateMany(
         { userId: interaction.user.id, tag: oldTag }, // Filter
         { $set: { tag: newTag } } // Update
       );

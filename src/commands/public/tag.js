@@ -26,7 +26,7 @@ module.exports = {
       }
 
       // Check if tag exists
-      const tagDocument = await TagModel().findOne(
+      const tagDocument = await TagModel.findOne(
         { userId: interaction.user.id } // Filter
       );
       if (!tagDocument.tagList.get(tag)) {
@@ -40,7 +40,7 @@ module.exports = {
     if (!inputString) {
       // Retrieve latest card in collection
       try {
-        const collectionDocument = await CollectionModel().findOne(
+        const collectionDocument = await CollectionModel.findOne(
           { userId: interaction.user.id },
           { cardsOwned: { $slice: -1 } } // Only retrieve the first element in the cardsOwned array
         );
@@ -50,7 +50,7 @@ module.exports = {
           return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
         }
 
-        const cardDocument = await CardModel().findById(cardId);
+        const cardDocument = await CardModel.findById(cardId);
         if (!cardDocument) {
           return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
         }
@@ -68,7 +68,7 @@ module.exports = {
 
     try {
       // Fetch the cards from the database based on the provided card codes
-      const queriedCards = await CardModel().find({
+      const queriedCards = await CardModel.find({
         code: { $in: inputCardCodes },
       });
 
@@ -120,13 +120,13 @@ module.exports = {
       }
 
       // Update quantity of cards in tags
-      await TagModel().findOneAndUpdate(
+      await TagModel.findOneAndUpdate(
         { userId: interaction.user.id }, // Filter
         { $inc: incOperations } // Update operation
       );
 
       // Update cards with the new tag and emoji
-      await CardModel().updateMany(
+      await CardModel.updateMany(
         {
           // Filter
           ownerId: interaction.user.id,

@@ -28,7 +28,4 @@ const userSettingsSchema = new mongoose.Schema({
   },
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.userDB.model("settings", userSettingsSchema);
-};
+module.exports = mongoose.model("settings", userSettingsSchema);

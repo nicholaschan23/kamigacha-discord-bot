@@ -13,7 +13,4 @@ const counterSchema = new mongoose.Schema({
   },
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.cardDB.model("counter", counterSchema);
-};
+module.exports = mongoose.model("counter", counterSchema);

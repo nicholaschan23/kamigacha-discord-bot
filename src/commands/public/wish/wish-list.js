@@ -14,7 +14,7 @@ module.exports = {
     const user = interaction.options.getUser("user") ?? interaction.user;
 
     // Fetch wish document
-    const wishDocument = await WishModel().findOne({ userId: user.id });
+    const wishDocument = await WishModel.findOne({ userId: user.id });
     if (!wishDocument) {
       return interaction.reply({ content: "That player does not have a wish list.", ephemeral: true });
     }
@@ -28,7 +28,7 @@ module.exports = {
     const limit = wishDocument.wishListLimit;
     const chunkSize = 10;
     const wishListChunked = chunkArray([...wishDocument.wishList], chunkSize);
-    
+
     // Create page embeds
     const total = wishDocument.wishList.length;
     const pages = []; // Store embeds

@@ -23,12 +23,12 @@ module.exports = {
     // Retrieve card by code if provided
     const code = interaction.options.getString("code")?.toLowerCase();
     if (code) {
-      const cardDocument = await CardModel().findOne({ code });
+      const cardDocument = await CardModel.findOne({ code });
       return sendCardReply(cardDocument);
     }
 
     // Retrieve latest card from the user's collection
-    const collectionDocument = await CollectionModel().findOne(
+    const collectionDocument = await CollectionModel.findOne(
       { userId: interaction.user.id },
       { cardsOwned: { $slice: -1 } } // Retrieve the most recent card
     );
@@ -36,7 +36,7 @@ module.exports = {
     if (!cardId) {
       return interaction.reply({ content: "Something went wrong retrieving your latest card. Please try again.", ephemeral: true });
     }
-    const cardDocument = await CardModel().findById(cardId);
+    const cardDocument = await CardModel.findById(cardId);
     return sendCardReply(cardDocument);
   },
 };

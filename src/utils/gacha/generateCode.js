@@ -6,7 +6,7 @@ async function generateCode() {
 }
 
 async function getNextSequenceValue() {
-  const sequenceDocument = await CounterModel().findByIdAndUpdate(
+  const sequenceDocument = await CounterModel.findByIdAndUpdate(
     "cardCode",
     {
       $inc: { sequenceValue: 1 },

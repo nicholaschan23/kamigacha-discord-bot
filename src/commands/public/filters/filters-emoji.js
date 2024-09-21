@@ -28,7 +28,7 @@ module.exports = {
 
     try {
       // Check if filter exists, if so change the emoji
-      const filterDocument = await FilterModel().findOneAndUpdate(
+      const filterDocument = await FilterModel.findOneAndUpdate(
         {
           userId: interaction.user.id,
           "filterList.label": label,

@@ -15,7 +15,7 @@ module.exports = {
   async execute(client, interaction) {
     try {
       // Find the wish list document for the user
-      const wishDocument = await WishModel().findOneAndUpdate(
+      const wishDocument = await WishModel.findOneAndUpdate(
         { userId: interaction.user.id }, // Filter
         { $setOnInsert: { userId: interaction.user.id } }, // Update
         { new: true, upsert: true }

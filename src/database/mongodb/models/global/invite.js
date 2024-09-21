@@ -21,7 +21,4 @@ const inviteSchema = new mongoose.Schema({
   },
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.globalDB.model("invite", inviteSchema);
-};
+module.exports = mongoose.model("invite", inviteSchema);

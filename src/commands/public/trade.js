@@ -14,7 +14,7 @@ module.exports = {
     if (receiver.bot) {
       return interaction.reply({ content: "You cannot trade with a bot.", ephemeral: true });
     }
-    
+
     if (interaction.user.id === receiver.id) {
       return interaction.reply({ content: "You cannot trade with yourself.", ephemeral: true });
     }
@@ -22,7 +22,7 @@ module.exports = {
     const bp = new TradeManager(interaction, receiver);
     bp.initTrade();
 
-    // const inventoryDocument = await InventoryModel().findOneAndUpdate({ userId: interaction.user.id }, { $setOnInsert: { userId: interaction.user.id } }, { new: true, upsert: true });
+    // const inventoryDocument = await InventoryModel.findOneAndUpdate({ userId: interaction.user.id }, { $setOnInsert: { userId: interaction.user.id } }, { new: true, upsert: true });
 
     // if (inventoryDocument.inventory.size === 0) {
     //   return interaction.reply({ content: "Your inventory is empty.", ephemeral: true });

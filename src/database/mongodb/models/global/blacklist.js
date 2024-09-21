@@ -27,7 +27,4 @@ const blacklistSchema = new mongoose.Schema({
   },
 });
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.globalDB.model("blacklist", blacklistSchema);
-};
+module.exports = mongoose.model("blacklist", blacklistSchema);

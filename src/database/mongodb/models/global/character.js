@@ -63,7 +63,4 @@ const characterSchema = new mongoose.Schema(
   { _id: false }
 );
 
-module.exports = () => {
-  const client = require("../../../../../bot");
-  return client.globalDB.model("character", characterSchema);
-};
+module.exports = mongoose.model("character", characterSchema);
