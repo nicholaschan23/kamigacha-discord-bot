@@ -15,7 +15,7 @@ const logger = new Logger("Trade manager");
  * - TRADE_COMPLETE: Trade is complete
  * - TRADE_EXPIRED: Trade request expired
  * - TRADE_CANCELLED: Trade was cancelled
- * - TRANSFER_ERROR: Trade transaction failed
+ * - TRANSACTION_ERROR: Trade transaction failed
  */
 class TradeManager {
   constructor(interaction, receiver) {
@@ -179,7 +179,6 @@ class TradeManager {
           });
         } else if (this.isConfirmed.size === 2) {
           await this.processTrade();
-          this.state = "TRADE_COMPLETE";
           this.collector.stop();
         }
         break;
@@ -222,7 +221,7 @@ class TradeManager {
           components: [],
         });
         break;
-      case "TRANSFER_ERROR":
+      case "TRANSACTION_ERROR":
         msg.edit({
           content: `Error completing trade. (${this.requester.user} ${this.receiver.user})`,
           embeds: this.setColorToEmbeds(msg.embeds, config.embedColor.red),
@@ -276,19 +275,14 @@ class TradeManager {
     const rec = this.receiver;
 
     const session = await mongoose.startSession();
-    console.log("Session started");
-
     session.startTransaction();
-    console.log("Transaction started");
 
     try {
       // Fetch both user collections and inventories
-      const [reqCollection, recCollection, reqInventory, recInventory] = await Promise.all([
-        CollectionModel.findOne({ userId: req.user.id }).session(session),
-        CollectionModel.findOne({ userId: rec.user.id }).session(session),
-        InventoryModel.findOne({ userId: req.user.id }).session(session),
-        InventoryModel.findOne({ userId: rec.user.id }).session(session),
-      ]);
+      const reqCollection = await CollectionModel.findOne({ userId: req.user.id }).session(session);
+      const recCollection = await CollectionModel.findOne({ userId: rec.user.id }).session(session);
+      const reqInventory = await InventoryModel.findOne({ userId: req.user.id }).session(session);
+      const recInventory = await InventoryModel.findOne({ userId: rec.user.id }).session(session);
 
       if (!reqCollection || !recCollection || !reqInventory || !recInventory) {
         throw new Error("One or both user collections or inventories not found.");
@@ -297,47 +291,29 @@ class TradeManager {
       // Fetch card document IDs for the valid cards
       const [reqCardIds, recCardIds] = await Promise.all([req.getValidCardIds(), rec.getValidCardIds()]);
 
-      // Debugging: Log fetched card IDs
-      console.log("Requester Card IDs:", reqCardIds);
-      console.log("Receiver Card IDs:", recCardIds);
-
       // Remove card IDs from both user collections
       reqCollection.cardsOwned = this.filterCardIds(reqCollection.cardsOwned, new Set(reqCardIds));
       recCollection.cardsOwned = this.filterCardIds(recCollection.cardsOwned, new Set(recCardIds));
-
-      // Debugging: Log collections after removal
-      console.log("Requester Collection after removal:", reqCollection.cardsOwned);
-      console.log("Receiver Collection after removal:", recCollection.cardsOwned);
 
       // Add card IDs to both user collections
       reqCollection.cardsOwned.push(...recCardIds);
       recCollection.cardsOwned.push(...reqCardIds);
 
-      // Debugging: Log collections after addition
-      console.log("Requester Collection after addition:", reqCollection.cardsOwned);
-      console.log("Receiver Collection after addition:", recCollection.cardsOwned);
-
       // Transfer items between inventories
       this.transferItems(reqInventory.inventory, recInventory.inventory, req.validItems);
       this.transferItems(recInventory.inventory, reqInventory.inventory, rec.validItems);
-
-      // Debugging: Log inventories after transfer
-      console.log("Requester Inventory after transfer:", reqInventory.inventory);
-      console.log("Receiver Inventory after transfer:", recInventory.inventory);
 
       // Save both collections and inventories
       await Promise.all([reqCollection.save({ session }), recCollection.save({ session }), reqInventory.save({ session }), recInventory.save({ session })]);
 
       await session.commitTransaction();
-      console.log("Transaction committed successfully.");
+      this.state = "TRADE_COMPLETE";
     } catch (error) {
       await session.abortTransaction();
-      this.state = "TRANSFER_ERROR";
-      this.collector.stop();
-      console.error("Transaction aborted due to error:", error);
-      logger.error(error.stack);
+      this.state = "TRANSACTION_ERROR";
+      logger.error("Transaction aborted due to error:", error.stack);
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
