@@ -140,15 +140,14 @@ class TradeProfile {
     return offer.join(", ");
   }
 
-  /**
-   * Fetches card document IDs of this profile's valid cards.
-   * @returns {mongoose.Types.ObjectId[]} An array of card document IDs.
-   */
-  async getValidCardIds() {
-    if (this.validCards.length === 0) return [];
-    const cards = await CardModel.find({ cardCode: { $in: this.validCards } }, "_id");
-    return cards.map((card) => card._id);
-  }
+  // /**
+  //  * Fetches card document IDs of this profile's valid cards.
+  //  * @returns {mongoose.Types.ObjectId[]} An array of card document IDs.
+  //  */
+  // async getValidCardIds() {
+  //   if (this.validCards.length === 0) return [];
+  //   return (await CardModel.find({ cardCode: { $in: this.validCards } }, "_id")).map((card) => card._id);
+  // }
 
   /**
    * Returns an array of valid card codes.

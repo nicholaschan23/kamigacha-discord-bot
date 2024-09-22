@@ -278,40 +278,56 @@ class TradeManager {
     session.startTransaction();
 
     try {
-      // Fetch both user collections and inventories
-      const reqCollection = await CollectionModel.findOne({ userId: req.user.id }).session(session);
-      const recCollection = await CollectionModel.findOne({ userId: rec.user.id }).session(session);
-      const reqInventory = await InventoryModel.findOne({ userId: req.user.id }).session(session);
-      const recInventory = await InventoryModel.findOne({ userId: rec.user.id }).session(session);
-
-      if (!reqCollection || !recCollection || !reqInventory || !recInventory) {
-        throw new Error("One or both user collections or inventories not found.");
-      }
-
-      // Fetch card document IDs for the valid cards
-      const [reqCardIds, recCardIds] = await Promise.all([req.getValidCardIds(), rec.getValidCardIds()]);
-
-      // Remove card IDs from both user collections
-      reqCollection.cardsOwned = this.filterCardIds(reqCollection.cardsOwned, new Set(reqCardIds));
-      recCollection.cardsOwned = this.filterCardIds(recCollection.cardsOwned, new Set(recCardIds));
-
-      // Add card IDs to both user collections
-      reqCollection.cardsOwned.push(...recCardIds);
-      recCollection.cardsOwned.push(...reqCardIds);
-
       // Transfer items between inventories
-      this.transferItems(reqInventory.inventory, recInventory.inventory, req.validItems);
-      this.transferItems(recInventory.inventory, reqInventory.inventory, rec.validItems);
+      {
+        const reqInventory = await InventoryModel.findOne({ userId: req.user.id }).session(session);
+        const recInventory = await InventoryModel.findOne({ userId: rec.user.id }).session(session);
+        
+        this.transferItems(reqInventory.inventory, recInventory.inventory, req.validItems);
+        this.transferItems(recInventory.inventory, reqInventory.inventory, rec.validItems);
+  
+        await InventoryModel.updateOne({ userId: req.user.id }, { $set: reqInventory.inventory }, { session });
+        await InventoryModel.updateOne({ userId: rec.user.id }, { $set: recInventory.inventory }, { session });
+      }
+      
+      // Transfer cards between collections
+      {
+        const reqCardCodes = req.validCards;
+        const recCardCodes = rec.validCards;
 
-      // Save both collections and inventories
-      await Promise.all([reqCollection.save({ session }), recCollection.save({ session }), reqInventory.save({ session }), recInventory.save({ session })]);
+        // Get card IDs from card codes
+        const reqCardIds = await CardModel.find({ cardCode: { $in: reqCardCodes } }, "_id")
+          .session(session)
+          .map((card) => card._id);
+        const recCardIds = await CardModel.find({ cardCode: { $in: recCardCodes } }, "_id")
+          .session(session)
+          .map((card) => card._id);
+
+        // Add and remove cards from both user collections
+        await CollectionModel.updateOne(
+          { userId: req.user.id },
+          { $pull: { cardsOwned: { cardCode: { $in: reqCardCodes } } } },
+          { $push: { cardsOwned: { $each: reqCardIds } } },
+          { session }
+        );
+        await CollectionModel.updateOne(
+          { userId: rec.user.id },
+          { $pull: { cardsOwned: { cardCode: { $in: recCardCodes } } } },
+          { $push: { cardsOwned: { $each: recCardIds } } },
+          { session }
+        );
+
+        // Update owner and modified fields for the traded cards
+        await CardModel.updateMany({ code: { $in: reqCardCodes } }, { $set: { owner: rec.user.id, modified: Math.floor(Date.now() / 1000) } }, { session });
+        await CardModel.updateMany({ _id: { $in: recCardCodes } }, { $set: { owner: req.user.id, modified: Math.floor(Date.now() / 1000) } }, { session });
+      }
 
       await session.commitTransaction();
       this.state = "TRADE_COMPLETE";
     } catch (error) {
       await session.abortTransaction();
       this.state = "TRANSACTION_ERROR";
-      logger.error("Transaction aborted due to error:", error.stack);
+      logger.error("Transaction aborted:", error.stack);
     } finally {
       await session.endSession();
     }
@@ -333,35 +349,7 @@ class TradeManager {
   }
 
   /**
-   * Filters out card IDs from a collection and returns the updated collection.
-   * @param {Array} cardsOwned - The array of card IDs owned by the user.
-   * @param {Set} cardIdsToRemove - A set of card IDs to be removed.
-   * @returns {Array} The updated array of card IDs.
-   */
-  filterCardIds(cardsOwned, cardIdsToRemove) {
-    if (cardIdsToRemove.size === 0) return cardsOwned;
-
-    const newCardsOwned = [];
-    let removedCount = 0;
-
-    for (const cardId of cardsOwned) {
-      if (!cardIdsToRemove.has(cardId)) {
-        newCardsOwned.push(cardId);
-      } else {
-        removedCount++;
-        if (removedCount === cardIdsToRemove.size) {
-          // Add the remaining cards and break the loop
-          newCardsOwned.push(...cardsOwned.slice(cardsOwned.indexOf(cardId) + 1));
-          break;
-        }
-      }
-    }
-
-    return newCardsOwned;
-  }
-
-  /**
-   * Transfers items from one inventory to another.
+   * Transfers items from one inventory to another. Throws an error if insufficient inventory balance.
    * @param {Map} fromInventory - The inventory to transfer items from.
    * @param {Map} toInventory - The inventory to transfer items to.
    * @param {Array} items The array of items to transfer.
@@ -370,6 +358,10 @@ class TradeManager {
     items.forEach(({ itemName, quantity }) => {
       // Remove from the source inventory
       const currentCount = fromInventory.get(itemName);
+      if (!currentCount || currentCount < quantity) {
+        throw new Error("Not all items are owned by traders.");
+      }
+
       const newCount = currentCount - quantity;
       if (newCount === 0) {
         fromInventory.delete(itemName);

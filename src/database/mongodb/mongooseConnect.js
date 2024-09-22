@@ -9,6 +9,14 @@ module.exports = async (client) => {
   const mongoURI = process.env.MONGODB_URI;
 
   try {
+    // const [userDB, guildDB, globalDB, assetDB] = await Promise.all([
+    //   mongoose.createConnection(mongoURI, { dbName: "user" }),
+    //   mongoose.createConnection(mongoURI, { dbName: "guild" }),
+    //   mongoose.createConnection(mongoURI, { dbName: "global" }),
+    //   mongoose.createConnection(mongoURI, { dbName: "asset" }),
+    // ]);
+
+
     // Connect to MongoDB
     await mongoose.connect(mongoURI, {
       dbName: "global", // Specify the default database name
