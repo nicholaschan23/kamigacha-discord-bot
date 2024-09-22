@@ -1,6 +1,7 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
 const mongoose = require("mongoose");
 const TradeProfile = require("../../models/TradeProfile");
+const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
 const InventoryModel = require("../../database/mongodb/models/user/inventory");
 const config = require("../../config");
@@ -273,53 +274,45 @@ class TradeManager {
   async processTrade() {
     const req = this.requester;
     const rec = this.receiver;
+    const reqValidCards = req.validCards;
+    const recValidCards = rec.validCards;
 
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
+      // Fetch all necessary models sequentially with session
+      const reqInventory = await InventoryModel.findOne({ userId: req.user.id }).session(session);
+      const recInventory = await InventoryModel.findOne({ userId: rec.user.id }).session(session);
+      const reqCollection = await CollectionModel.findOne({ userId: req.user.id }).session(session);
+      const recCollection = await CollectionModel.findOne({ userId: rec.user.id }).session(session);
+      const reqCards = await CardModel.find({ code: { $in: reqValidCards } }).session(session);
+      const recCards = await CardModel.find({ code: { $in: recValidCards } }).session(session);
+
       // Transfer items between inventories
-      {
-        const reqInventory = await InventoryModel.findOne({ userId: req.user.id }).session(session);
-        const recInventory = await InventoryModel.findOne({ userId: rec.user.id }).session(session);
-        
-        this.transferItems(reqInventory.inventory, recInventory.inventory, req.validItems);
-        this.transferItems(recInventory.inventory, reqInventory.inventory, rec.validItems);
-  
-        await InventoryModel.updateOne({ userId: req.user.id }, { $set: reqInventory.inventory }, { session });
-        await InventoryModel.updateOne({ userId: rec.user.id }, { $set: recInventory.inventory }, { session });
+      this.transferItems(reqInventory.inventory, recInventory.inventory, req.validItems);
+      this.transferItems(recInventory.inventory, reqInventory.inventory, rec.validItems);
+
+      // Validate and update card ownership
+      this.validateAndUpdateCards(reqCards, reqValidCards, req.user.id, rec.user.id);
+      this.validateAndUpdateCards(recCards, recValidCards, rec.user.id, req.user.id);
+
+      // Add and remove cards from both user collections
+      const reqCardIds = reqCards.map((doc) => doc._id.toString());
+      const recCardIds = recCards.map((doc) => doc._id.toString());
+      this.updateCollection(reqCollection, reqCardIds, recCardIds);
+      this.updateCollection(recCollection, recCardIds, reqCardIds);
+
+      // Save all models sequentially
+      await reqInventory.save({ session });
+      await recInventory.save({ session });
+      await reqCollection.save({ session });
+      await recCollection.save({ session });
+      for (const card of reqCards) {
+        await card.save({ session });
       }
-      
-      // Transfer cards between collections
-      {
-        const reqCardCodes = req.validCards;
-        const recCardCodes = rec.validCards;
-
-        // Get card IDs from card codes
-        const reqCardIds = await CardModel.find({ cardCode: { $in: reqCardCodes } }, "_id")
-          .session(session)
-          .map((card) => card._id);
-        const recCardIds = await CardModel.find({ cardCode: { $in: recCardCodes } }, "_id")
-          .session(session)
-          .map((card) => card._id);
-
-        // Add and remove cards from both user collections
-        await CollectionModel.updateOne(
-          { userId: req.user.id },
-          { $pull: { cardsOwned: { cardCode: { $in: reqCardCodes } } } },
-          { $push: { cardsOwned: { $each: reqCardIds } } },
-          { session }
-        );
-        await CollectionModel.updateOne(
-          { userId: rec.user.id },
-          { $pull: { cardsOwned: { cardCode: { $in: recCardCodes } } } },
-          { $push: { cardsOwned: { $each: recCardIds } } },
-          { session }
-        );
-
-        // Update owner and modified fields for the traded cards
-        await CardModel.updateMany({ code: { $in: reqCardCodes } }, { $set: { owner: rec.user.id, modified: Math.floor(Date.now() / 1000) } }, { session });
-        await CardModel.updateMany({ _id: { $in: recCardCodes } }, { $set: { owner: req.user.id, modified: Math.floor(Date.now() / 1000) } }, { session });
+      for (const card of recCards) {
+        await card.save({ session });
       }
 
       await session.commitTransaction();
@@ -334,25 +327,10 @@ class TradeManager {
   }
 
   /**
-   * Retrieves the trade profile for a given user ID.
-   * @param {String} userId - The ID of the user whose trade profile is to be retrieved.
-   * @returns {TradeProfile} Returns the trade profile object if the user is either the requester or the receiver, otherwise returns null.
-   */
-  getTradeProfile(userId) {
-    if (this.requester.user.id === userId) {
-      return this.requester;
-    } else if (this.receiver.user.id === userId) {
-      return this.receiver;
-    } else {
-      return null;
-    }
-  }
-
-  /**
    * Transfers items from one inventory to another. Throws an error if insufficient inventory balance.
    * @param {Map} fromInventory - The inventory to transfer items from.
    * @param {Map} toInventory - The inventory to transfer items to.
-   * @param {Array} items The array of items to transfer.
+   * @param {Map} items The Map of items to transfer.
    */
   transferItems(fromInventory, toInventory, items) {
     items.forEach(({ itemName, quantity }) => {
@@ -373,6 +351,31 @@ class TradeManager {
       const otherCount = toInventory.get(itemName) || 0;
       toInventory.set(itemName, otherCount + quantity);
     });
+  }
+
+  /**
+   * Validates and updates card ownership.
+   */
+  validateAndUpdateCards(cards, validCardCodes, currentOwnerId, newOwnerId) {
+    if (cards.length !== validCardCodes.length) throw new Error(`Missing cards ${cards.length} !== ${validCardCodes.length}.`);
+    cards.forEach((card) => {
+      if (card.ownerId !== currentOwnerId) {
+        throw new Error(`Card ${card.cardCode} does not belong to the expected owner.`);
+      }
+      card.ownerId = newOwnerId;
+      card.modified = Math.floor(Date.now() / 1000);
+    });
+  }
+
+  /**
+   * Updates the collection by removing old card IDs and adding new card IDs.
+   */
+  updateCollection(collection, removeCardIds, addCardIds) {
+    // Convert card IDs to strings to ensure proper comparison
+    const cardIdSet = new Set(collection.cardsOwned.map((id) => id.toString()));
+    removeCardIds.forEach((id) => cardIdSet.delete(id));
+    addCardIds.forEach((id) => cardIdSet.add(id));
+    collection.cardsOwned = Array.from(cardIdSet);
   }
 
   /**
@@ -404,6 +407,21 @@ class TradeManager {
       await this.publishTradeEmbeds();
     } catch (error) {
       logger.error(error.stack);
+    }
+  }
+
+  /**
+   * Retrieves the trade profile for a given user ID.
+   * @param {String} userId - The ID of the user whose trade profile is to be retrieved.
+   * @returns {TradeProfile} Returns the trade profile object if the user is either the requester or the receiver, otherwise returns null.
+   */
+  getTradeProfile(userId) {
+    if (this.requester.user.id === userId) {
+      return this.requester;
+    } else if (this.receiver.user.id === userId) {
+      return this.receiver;
+    } else {
+      return null;
     }
   }
 
