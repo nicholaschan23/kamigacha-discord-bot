@@ -274,45 +274,54 @@ class TradeManager {
   async processTrade() {
     const req = this.requester;
     const rec = this.receiver;
-    const reqValidCards = req.validCards;
-    const recValidCards = rec.validCards;
 
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
       // Fetch all necessary models sequentially with session
-      const reqInventory = await InventoryModel.findOne({ userId: req.user.id }).session(session);
-      const recInventory = await InventoryModel.findOne({ userId: rec.user.id }).session(session);
-      const reqCollection = await CollectionModel.findOne({ userId: req.user.id }).session(session);
-      const recCollection = await CollectionModel.findOne({ userId: rec.user.id }).session(session);
-      const reqCards = await CardModel.find({ code: { $in: reqValidCards } }).session(session);
-      const recCards = await CardModel.find({ code: { $in: recValidCards } }).session(session);
+      const reqValidItems = req.validItems;
+      const recValidItems = rec.validItems;
+      if (reqValidItems.size > 0 || recValidItems.size > 0) {
+        const reqInventory = await InventoryModel.findOne({ userId: req.user.id }).session(session);
+        const recInventory = await InventoryModel.findOne({ userId: rec.user.id }).session(session);
 
-      // Transfer items between inventories
-      this.transferItems(reqInventory.inventory, recInventory.inventory, req.validItems);
-      this.transferItems(recInventory.inventory, reqInventory.inventory, rec.validItems);
+        // Transfer items between inventories
+        this.transferItems(reqInventory.inventory, recInventory.inventory, reqValidItems);
+        this.transferItems(recInventory.inventory, reqInventory.inventory, recValidItems);
 
-      // Validate and update card ownership
-      this.validateAndUpdateCards(reqCards, reqValidCards, req.user.id, rec.user.id);
-      this.validateAndUpdateCards(recCards, recValidCards, rec.user.id, req.user.id);
-
-      // Add and remove cards from both user collections
-      const reqCardIds = reqCards.map((doc) => doc._id.toString());
-      const recCardIds = recCards.map((doc) => doc._id.toString());
-      this.updateCollection(reqCollection, reqCardIds, recCardIds);
-      this.updateCollection(recCollection, recCardIds, reqCardIds);
-
-      // Save all models sequentially
-      await reqInventory.save({ session });
-      await recInventory.save({ session });
-      await reqCollection.save({ session });
-      await recCollection.save({ session });
-      for (const card of reqCards) {
-        await card.save({ session });
+        // Save models sequentially
+        await reqInventory.save({ session });
+        await recInventory.save({ session });
       }
-      for (const card of recCards) {
-        await card.save({ session });
+
+      const reqValidCards = req.validCards;
+      const recValidCards = rec.validCards;
+      if (reqValidCards.length > 0 || recValidCards.length > 0) {
+        const reqCollection = await CollectionModel.findOne({ userId: req.user.id }).session(session);
+        const recCollection = await CollectionModel.findOne({ userId: rec.user.id }).session(session);
+        const reqCards = await CardModel.find({ code: { $in: reqValidCards } }).session(session);
+        const recCards = await CardModel.find({ code: { $in: recValidCards } }).session(session);
+
+        // Validate and update card ownership
+        this.validateAndUpdateCards(reqCards, reqValidCards, req.user.id, rec.user.id);
+        this.validateAndUpdateCards(recCards, recValidCards, rec.user.id, req.user.id);
+
+        // Add and remove cards from both user collections
+        const reqCardIds = reqCards.map((doc) => doc._id.toString());
+        const recCardIds = recCards.map((doc) => doc._id.toString());
+        this.updateCollection(reqCollection, reqCardIds, recCardIds);
+        this.updateCollection(recCollection, recCardIds, reqCardIds);
+
+        // Save models sequentially
+        await reqCollection.save({ session });
+        await recCollection.save({ session });
+        for (const card of reqCards) {
+          await card.save({ session });
+        }
+        for (const card of recCards) {
+          await card.save({ session });
+        }
       }
 
       await session.commitTransaction();
