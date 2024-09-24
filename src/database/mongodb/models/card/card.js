@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const CollectionModel = require("./collection");
 
 const cardSchema = new mongoose.Schema({
   // Unique card code identifier
@@ -87,35 +86,6 @@ const cardSchema = new mongoose.Schema({
   // Cosmetics
   sleeve: String,
   frame: String,
-});
-
-cardSchema.pre("save", async function (next) {
-  // Update the modified field
-  this.modified = Math.floor(Date.now() / 1000);
-
-  // Handle ownerId changes
-  if (this.isModified("ownerId")) {
-    try {
-      await Promise.all([
-        // Remove card from old owner's collection
-        CollectionModel.updateOne({ userId: this._originalOwnerId }, { $pull: { cardsOwned: this._id } }),
-        // Add card to new owner's collection
-        CollectionModel.updateOne({ userId: this.ownerId }, { $addToSet: { cardsOwned: this._id } }),
-      ]);
-    } catch (error) {
-      return next(error);
-    }
-  }
-
-  next();
-});
-
-// Middleware to store the original ownerId before saving
-cardSchema.pre("validate", function (next) {
-  if (this.isModified("ownerId")) {
-    this._originalOwnerId = this.ownerId;
-  }
-  next();
 });
 
 module.exports = mongoose.model("card", cardSchema);

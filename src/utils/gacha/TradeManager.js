@@ -408,7 +408,7 @@ class TradeManager {
     await interaction.showModal(modal);
     try {
       const submitted = await interaction.awaitModalSubmit({
-        filter: (i) => i.customId === "tradeOfferModal",
+        filter: (i) => i.customId === "tradeOfferModal" && i.user.id === interaction.user.id,
         time: 60_000,
       });
 
