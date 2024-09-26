@@ -12,8 +12,6 @@ const { initCharacterDB } = require("@database/mongodb/initialization/characterD
 const { getSearchModel } = require("@database/aws/preprocessing/searchModel");
 
 const shutdownManager = require("@utils/shutdownManager");
-const BlacklistCache = require("@utils/cache/BlacklistCache");
-const InviteCache = require("@utils/cache/InviteCache");
 const Logger = require("@utils/Logger");
 const logger = new Logger("Client");
 
@@ -60,11 +58,6 @@ class ExtendedClient extends Client {
     // Preprocess card search
     const { model: jsonSearches } = await getSearchModel(this.jsonCharacters, this.jsonCharacterKeys);
     this.jsonSearches = jsonSearches;
-
-    // TODO: fix with Redis
-    // Initialize caches
-    this.blacklistCache = new BlacklistCache(this);
-    this.inviteCache = new InviteCache(this);
 
     findEvents(this); // Load event listeners
 

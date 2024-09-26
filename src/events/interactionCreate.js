@@ -1,6 +1,7 @@
 const { Events } = require("discord.js");
 
-const RedisCache = require("@database/redis");
+const InviteCache = require("@database/redis/cache/invite");
+const BlacklistCache = require("@database/redis/cache/blacklist");
 
 const Logger = require("@utils/Logger");
 const logger = new Logger("Interaction Create");
@@ -14,21 +15,21 @@ module.exports = {
 
   async call(client, interaction) {
     try {
-      if (RedisCache.isUserInvited(client, interaction.user.id)) {
+      const response = await BlacklistCache.isUserBlacklisted(client, interaction.user.id);
+      if (response !== false) {
+        return interaction.reply({
+          content: `**You are blacklisted from playing KamiGacha.** Reason: ${response.reason}`,
+          ephemeral: true,
+        });
+      }
+
+      if (await InviteCache.isUserInvited(client, interaction.user.id)) {
         return interaction.reply({
           content:
             "✨ **KamiGacha is a divine realm where only the chosen may enter.** To gain access, you must find a powerful deity willing to take you in as their apprentice. Seek out a master among the gods, forge bonds of friendship, and unlock the secrets of KamiGacha together. Only through their guidance will you be able to step into this legendary world!",
           ephemeral: true,
         });
       }
-
-      // Check if the user is blacklisted
-      // if (client.blacklistCache.isBlacklisted(interaction.user.id)) {
-      //   return interaction.reply({
-      //     content: `You are blacklisted from using this bot. Reason: ${client.blacklistCache.getReason(interaction.user.id)}`,
-      //     ephemeral: true,
-      //   });
-      // }
 
       // Determine interaction type and call the appropriate handler
       if (interaction.isChatInputCommand()) {
