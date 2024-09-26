@@ -78,19 +78,6 @@ create_redis_cluster() {
   fi
 }
 
-# Function to check if Redis cluster exists
-check_redis_cluster_exists() {
-  echo "Checking if Redis cluster exists..."
-  for port in "${REDIS_PORTS[@]}"; do
-    nodes=$(redis-cli -p $port cluster nodes)
-    if [ -n "$nodes" ]; then
-      echo "Redis cluster already exists on port $port."
-      return 0
-    fi
-  done
-  return 1
-}
-
 # Function to check if all nodes are connected to the same cluster
 check_cluster_consistency() {
   echo "Checking cluster consistency..."
@@ -123,21 +110,17 @@ case "$1" in
     sleep 3 # Wait a bit to ensure Redis servers are fully started
 
     if ! check_cluster_consistency; then
-      echo "Creating a new cluster..."
       create_redis_cluster
     fi
     ;;
   stop)
     shutdown_redis_servers
     ;;
-  check-stop)
+  node-list)
     check_redis_servers_shutdown
     ;;
-  check-cluster)
-    check_redis_cluster_exists
-    ;;
   *)
-    echo "Usage: $0 {start|stop|check-stop|check-cluster}"
+    echo "Usage: $0 {start|stop|node-list}"
     exit 1
     ;;
 esac

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@root/*": ["./*"],
+      "@assets/*": ["./src/assets/*"],
+      "@client/*": ["./src/client/*"],
+      "@commands/*": ["./src/commands/*"],
+      "@config/*": ["./src/config/*"],
+      "@database/*": ["./src/database/*"],
+      "@events/*": ["./src/events/*"],
+      "@models/*": ["./src/models/*"],
+      "@utils/*": ["./src/utils/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}

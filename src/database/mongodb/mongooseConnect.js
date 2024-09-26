@@ -1,9 +1,9 @@
 const path = require("path");
 const mongoose = require("mongoose");
 
-const { getJsFiles } = require("../../utils/fileSystem");
-const shutdownManager = require("../../utils/shutdownManager");
-const Logger = require("../../utils/Logger");
+const { getJsFiles } = require("@utils/fileSystem");
+const shutdownManager = require("@utils/shutdownManager");
+const Logger = require("@utils/Logger");
 const logger = new Logger("MongoDB");
 
 module.exports = async (client) => {

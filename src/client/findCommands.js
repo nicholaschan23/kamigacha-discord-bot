@@ -1,9 +1,11 @@
 const { SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const { getJsFiles, abbrevCmdPath } = require("../utils/fileSystem");
-const Logger = require("../utils/Logger");
+
+const { getJsFiles, abbrevCmdPath } = require("@utils/fileSystem");
+const Logger = require("@utils/Logger");
 const logger = new Logger("Command loader");
+
 const commandsPath = path.join(__dirname, "../commands/");
 
 module.exports = (client) => {

@@ -35,6 +35,7 @@
     "sharp": "^0.33.5"
   },
   "_moduleAliases": {
+    "@root": ".",
     "@assets": "src/assets",
     "@client": "src/client",
     "@commands": "src/commands",

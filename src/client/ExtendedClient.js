@@ -1,8 +1,7 @@
-require('module-alias/register');
-const shutdownManager = require("@utils/shutdownManager");
 const { Client, Collection } = require("discord.js");
 
-// Database
+const config = require("@config");
+
 const mongooseConnect = require("@database/mongodb/mongooseConnect");
 const { downloadFiles } = require("@database/aws/downloadFiles");
 const { getCardModel } = require("@database/aws/preprocessing/cardModel");
@@ -11,15 +10,13 @@ const { getFormattedNames } = require("@database/aws/preprocessing/formattedName
 const { initCharacterDB } = require("@database/mongodb/initialization/characterDB");
 const { getSearchModel } = require("@database/aws/preprocessing/searchModel");
 
-// Initialization helpers
-const findEvents = require("./findEvents");
-
-// Util
-const Logger = require("@utils/Logger");
-const logger = new Logger("Client");
-const config = require("@config");
+const shutdownManager = require("@utils/shutdownManager");
 const BlacklistCache = require("@utils/cache/BlacklistCache");
 const InviteCache = require("@utils/cache/InviteCache");
+const Logger = require("@utils/Logger");
+const logger = new Logger("Client");
+
+const findEvents = require("./findEvents");
 
 class ExtendedClient extends Client {
   constructor(options) {
