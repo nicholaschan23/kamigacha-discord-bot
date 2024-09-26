@@ -1,9 +1,8 @@
-require('module-alias/register');
-const { ClusterManager } = require("discord-hybrid-sharding");
-const shutdownManager = require("@utils/shutdownManager");
-const redis = require("redis");
+require("module-alias/register");
 const assert = require("assert");
+const { ClusterManager } = require("discord-hybrid-sharding");
 const path = require("path");
+
 const Logger = require("@utils/Logger");
 const logger = new Logger("Cluster manager");
 
@@ -32,29 +31,6 @@ const manager = new ClusterManager("./bot.js", {
 // Handle cluster creation
 manager.on("clusterCreate", async (cluster) => {
   if (isShuttingDown) return; // Skip creation if shutting down
-
-  // Create and add reference for the Redis cluster
-  const redisCluster = redis.createCluster({
-    rootNodes: [
-      {
-        url: "redis://127.0.0.1:6379",
-      },
-      {
-        url: "redis://127.0.0.1:6380",
-      },
-      {
-        url: "redis://127.0.0.1:6381",
-      },
-    ],
-  });
-  redisCluster.on("error", (err) => logger.info(`Redis connection (${cluster.id}) error`, err));
-  await redisCluster.connect();
-  cluster.redis = redisCluster;
-
-  shutdownManager.register(async () => {
-    await redisCluster.quit();
-    logger.info(`Redis connection (${cluster.id}) disconnected`);
-  });
 });
 
 // Handle unexpected cluster death

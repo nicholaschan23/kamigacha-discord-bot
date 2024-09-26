@@ -3,6 +3,7 @@ const { Client, Collection } = require("discord.js");
 const config = require("@config");
 
 const mongooseConnect = require("@database/mongodb/mongooseConnect");
+const redisConnect = require("@database/redis/redisConnect");
 const { downloadFiles } = require("@database/aws/downloadFiles");
 const { getCardModel } = require("@database/aws/preprocessing/cardModel");
 const { getCharacterModel } = require("@database/aws/preprocessing/characterModel");
@@ -45,11 +46,14 @@ class ExtendedClient extends Client {
     this.jsonCharacterKeys = characterKeys;
 
     // Map character and series names to hash table
+    // TODO: move these to the index.js level. don't need multiple instances of these
     this.characterNameMap = await getFormattedNames(this.jsonCharacterKeys, config.CHARACTER_NAME_MAP_PATH);
     this.seriesNameMap = await getFormattedNames(this.jsonCardsKeys, config.SERIES_NAME_MAP_PATH);
 
     // Connect to MongoDB
     await mongooseConnect(this);
+
+    await redisConnect(this);
 
     await initCharacterDB(this);
 
