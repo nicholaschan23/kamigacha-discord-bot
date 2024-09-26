@@ -1,24 +1,25 @@
-const { registerShutdownTask } = require("./shutdown");
+require('module-alias/register');
+const shutdownManager = require("@utils/shutdownManager");
 const { Client, Collection } = require("discord.js");
 
 // Database
-const mongooseConnect = require("../../database/mongodb/mongooseConnect");
-const { downloadFiles } = require("../../database/aws/downloadFiles");
-const { getCardModel } = require("../../database/aws/preprocessing/cardModel");
-const { getCharacterModel } = require("../../database/aws/preprocessing/characterModel");
-const { getFormattedNames } = require("../../database/aws/preprocessing/formattedNames");
-const { initCharacterDB } = require("../../database/mongodb/initialization/characterDB");
-const { getSearchModel } = require("../../database/aws/preprocessing/searchModel");
+const mongooseConnect = require("@database/mongodb/mongooseConnect");
+const { downloadFiles } = require("@database/aws/downloadFiles");
+const { getCardModel } = require("@database/aws/preprocessing/cardModel");
+const { getCharacterModel } = require("@database/aws/preprocessing/characterModel");
+const { getFormattedNames } = require("@database/aws/preprocessing/formattedNames");
+const { initCharacterDB } = require("@database/mongodb/initialization/characterDB");
+const { getSearchModel } = require("@database/aws/preprocessing/searchModel");
 
 // Initialization helpers
 const findEvents = require("./findEvents");
 
 // Util
-const Logger = require("../Logger");
+const Logger = require("@utils/Logger");
 const logger = new Logger("Client");
-const config = require("../../config");
-const BlacklistCache = require("../../utils/cache/BlacklistCache");
-const InviteCache = require("../../utils/cache/InviteCache");
+const config = require("@config");
+const BlacklistCache = require("@utils/cache/BlacklistCache");
+const InviteCache = require("@utils/cache/InviteCache");
 
 class ExtendedClient extends Client {
   constructor(options) {
@@ -66,28 +67,13 @@ class ExtendedClient extends Client {
 
     findEvents(this); // Load event listeners
 
-    registerShutdownTask(async () => {
+    shutdownManager.register(async () => {
       await this.destroy();
       logger.info("Discord client closed");
     });
 
     await this.login(process.env.DISCORD_BOT_TOKEN);
   }
-
-  // initRedisListener() {
-  //   process.on("message", (message) => {
-  //     if (message.type === "VERIFY_REDIS") {
-  //       // Access the Redis client that was created in the Discord cluster
-  //       // this.redisClient = this.cluster.redisClient;
-
-  //       if (!this.cluster.redisClient) {
-  //         logger.error(`[Cluster ${this.cluster.id}] [Shard ${this.shard.ids[0]}] Redis client reference is not available`);
-  //       } else {
-  //         logger.info(`[Cluster ${this.cluster.id}] [Shard ${this.shard.ids[0]}] Connected to Redis`);
-  //       }
-  //     }
-  //   });
-  // }
 }
 
 module.exports = ExtendedClient;

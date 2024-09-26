@@ -1,14 +1,15 @@
 const { SlashCommandBuilder } = require("discord.js");
 const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
+const InventoryModel = require("../../database/mongodb/models/user/inventory");
 const viewCardEmbed = require("../../assets/embeds/card/viewCard");
 
 module.exports = {
   category: "public",
   data: new SlashCommandBuilder()
-    .setName("view")
-    .setDescription("View a card.")
-    .addStringOption((option) => option.setName("code").setDescription("Card code. Omit to view your latest card.")),
+    .setName("disenchant")
+    .setDescription("Disenchant a card into materials.")
+    .addStringOption((option) => option.setName("code").setDescription("Card code. Omit to disenchant your latest card.")),
 
   async execute(client, interaction) {
     // Function to retrieve card and send the response

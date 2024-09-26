@@ -4,8 +4,8 @@ const Logger = require("../utils/Logger");
 const logger = new Logger("Client ready");
 
 // Initialization helpers
-const findCommands = require("../utils/initialization/findCommands");
-const registerCommands = require("../utils/initialization/registerCommands");
+const findCommands = require("../client/findCommands");
+const registerCommands = require("../client/registerCommands");
 
 module.exports = {
   event: Events.ClientReady,

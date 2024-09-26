@@ -1,8 +1,8 @@
-const Logger = require("../Logger");
+const Logger = require("../utils/Logger");
 const logger = new Logger("Event loader");
-const { getJsFiles } = require("../fileSystem");
+const { getJsFiles } = require("../utils/fileSystem");
 const path = require("path");
-const eventsPath = path.join(__dirname, "../../events/");
+const eventsPath = path.join(__dirname, "../events/");
 
 module.exports = (client) => {
   const events = getJsFiles(eventsPath);

@@ -1,10 +1,10 @@
 const { SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const { getJsFiles, abbrevCmdPath } = require("../fileSystem");
-const Logger = require("../Logger");
+const { getJsFiles, abbrevCmdPath } = require("../utils/fileSystem");
+const Logger = require("../utils/Logger");
 const logger = new Logger("Command loader");
-const commandsPath = path.join(__dirname, "../../commands/");
+const commandsPath = path.join(__dirname, "../commands/");
 
 module.exports = (client) => {
   // Initialize an empty stack to store commands

@@ -29,8 +29,19 @@
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
     "emoji-regex": "^10.3.0",
+    "module-alias": "^2.2.3",
     "mongoose": "^8.4.1",
     "redis": "^4.7.0",
     "sharp": "^0.33.5"
+  },
+  "_moduleAliases": {
+    "@assets": "src/assets",
+    "@client": "src/client",
+    "@commands": "src/commands",
+    "@config": "src/config",
+    "@database": "src/database",
+    "@events": "src/events",
+    "@models": "src/models",
+    "@utils": "src/utils"
   }
 }

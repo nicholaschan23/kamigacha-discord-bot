@@ -1,9 +1,10 @@
-const { registerShutdownTask, shutdown } = require("./src/utils/initialization/shutdown");
+require('module-alias/register');
 const { ClusterManager } = require("discord-hybrid-sharding");
-const { createRedisClient } = require("./src/database/redis/createRedisClient");
+const shutdownManager = require("@utils/shutdownManager");
+const redis = require("redis");
 const assert = require("assert");
 const path = require("path");
-const Logger = require("./src/utils/Logger");
+const Logger = require("@utils/Logger");
 const logger = new Logger("Cluster manager");
 
 // Load environment variables
@@ -14,12 +15,12 @@ assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
 let isShuttingDown = false;
 process.on("SIGINT", async () => {
   isShuttingDown = true;
-  await shutdown("SIGINT");
 });
 process.on("SIGTERM", async () => {
   isShuttingDown = true;
-  await shutdown("SIGTERM");
 });
+
+require("./src/database/redis/createRedisCluster");
 
 // Initialize ClusterManager
 const manager = new ClusterManager("./bot.js", {
@@ -34,16 +35,28 @@ const manager = new ClusterManager("./bot.js", {
 manager.on("clusterCreate", async (cluster) => {
   if (isShuttingDown) return; // Skip creation if shutting down
 
-  // Create and add reference for the cluster's Redis client
-  // const redisClient = createRedisClient(cluster.id);
-  // await redisClient.connect();
-  // cluster.redisClient = redisClient;
-
-  // Handle shutdown of Redis clients
-  // registerShutdownTask(async () => {
-  //   await redisClient.quit();
+  // Create and add reference for the  Redis cluster
+  // const redisCluster = redis.createCluster({
+  //   rootNodes: [
+  //     {
+  //       url: "redis://127.0.0.1:6379",
+  //     },
+  //     {
+  //       url: "redis://127.0.0.1:6380",
+  //     },
+  //     {
+  //       url: "redis://127.0.0.1:6381",
+  //     },
+  //   ],
   // });
-  // cluster.send({ type: "VERIFY_REDIS" });
+  // redisCluster.on("error", (err) => logger.info(`Redis connection (${cluster.id}) error`, err));
+  // await redisCluster.connect();
+  // cluster.redis = redisCluster;
+
+  // shutdownManager.register(async () => {
+  //   await redisCluster.quit();
+  //   logger.info(`Redis connection (${cluster.id}) disconnected`);
+  // });
 });
 
 // Handle unexpected cluster death

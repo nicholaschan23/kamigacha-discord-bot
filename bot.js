@@ -1,6 +1,6 @@
 const { GatewayIntentBits, Partials } = require("discord.js");
 const { ClusterClient, getInfo } = require("discord-hybrid-sharding");
-const ExtendedClient = require("./src/utils/initialization/ExtendedClient");
+const ExtendedClient = require("./src/client/ExtendedClient");
 
 const client = new ExtendedClient({
   intents: [

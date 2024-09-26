@@ -1,6 +1,6 @@
 const { REST, Routes } = require("discord.js");
-const config = require("../../config");
-const Logger = require("../Logger");
+const config = require("@config");
+const Logger = require("@utils/Logger");
 const logger = new Logger("Command register");
 
 module.exports = async (client, commands) => {

@@ -1,9 +1,10 @@
-const { registerShutdownTask } = require("../../utils/initialization/shutdown");
+const path = require("path");
 const mongoose = require("mongoose");
+
+const { getJsFiles } = require("../../utils/fileSystem");
+const shutdownManager = require("../../utils/shutdownManager");
 const Logger = require("../../utils/Logger");
 const logger = new Logger("MongoDB");
-const path = require("path");
-const { getJsFiles } = require("../../utils/fileSystem");
 
 module.exports = async (client) => {
   const mongoURI = process.env.MONGODB_URI;
@@ -15,7 +16,6 @@ module.exports = async (client) => {
     //   mongoose.createConnection(mongoURI, { dbName: "global" }),
     //   mongoose.createConnection(mongoURI, { dbName: "asset" }),
     // ]);
-
 
     // Connect to MongoDB
     await mongoose.connect(mongoURI, {
@@ -31,9 +31,9 @@ module.exports = async (client) => {
     throw error;
   }
 
-  registerShutdownTask(async () => {
+  shutdownManager.register(async () => {
     // Close MongoDB connections concurrently
-    await Promise.all([client.userDB.close(), client.guildDB.close(), client.globalDB.close(), client.cardDB.close()]);
+    // await Promise.all([client.userDB.close(), client.guildDB.close(), client.globalDB.close(), client.cardDB.close()]);
     await mongoose.disconnect();
     logger.info("Database connections closed");
   });
