@@ -1,6 +1,11 @@
 require("module-alias/register");
 const assert = require("assert");
 const path = require("path");
+
+// Load environment variables
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
+
 const { ClusterManager } = require("discord-hybrid-sharding");
 const config = require("@config");
 const { downloadFiles } = require("@database/aws/downloadFiles");
@@ -10,15 +15,10 @@ const { initSearchModel } = require("@database/aws/preprocessing/searchModel");
 const { initCharacterDB } = require("@database/mongodb/initialization/characterDB");
 const { initCardModel } = require("@database/aws/preprocessing/cardModel");
 const { initCharacterModel } = require("@database/aws/preprocessing/characterModel");
-
 const Logger = require("@utils/Logger");
 const logger = new Logger("Cluster manager");
 
-// Load environment variables
-require("dotenv").config({ path: path.join(__dirname, ".env") });
-assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
-
-(async () => {
+async function initDatabase() {
   // Connect to MongoDB for cloud database
   await mongooseConnect();
 
@@ -28,20 +28,24 @@ assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
     redisCluster.once("ready", resolve);
     redisCluster.once("error", reject);
   });
+}
 
+async function fetchData() {
   // Download images from AWS S3 Bucket
   await downloadFiles("customisations/boarders", config.IMAGES_PATH);
 
   // Preprocess card data from AWS S3 Bucket
-  // const { object: cardModel, keys: seriesKeys } = await initCardModel();
-  // const { object: characterModel, keys: characterKeys } = await initCharacterModel(cardModel, seriesKeys);
-  // await initCharacterNameMap(characterKeys, config.CHARACTER_NAME_MAP_PATH);
-  // await initSeriesNameMap(seriesKeys, config.SERIES_NAME_MAP_PATH);
-  // await initSearchModel(characterModel, characterKeys);
+  const { object: cardModel, keys: seriesKeys } = await initCardModel();
+  const { object: characterModel, keys: characterKeys } = await initCharacterModel(cardModel, seriesKeys);
+  await initCharacterNameMap(characterKeys, config.CHARACTER_NAME_MAP_PATH);
+  await initSeriesNameMap(seriesKeys, config.SERIES_NAME_MAP_PATH);
+  await initSearchModel(characterModel, characterKeys);
 
   // Update MongoDB character data
-  // await initCharacterDB(characterModel, characterKeys);
+  await initCharacterDB(characterModel, characterKeys);
+}
 
+function setupClusterManager() {
   // Track shutdown state for cluster respawning
   let isShuttingDown = false;
   process.on("SIGINT", async () => {
@@ -51,7 +55,7 @@ assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
     isShuttingDown = true;
   });
 
-  // Initialize ClusterManager
+  // init ClusterManager
   const manager = new ClusterManager("./bot.js", {
     totalShards: "auto",
     shardsPerClusters: 2,
@@ -78,5 +82,15 @@ assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
 
   // Setup signal handlers and spawn clusters
   manager.spawn({ timeout: -1 });
+}
 
+(async () => {
+  try {
+    await initDatabase();
+    await fetchData();
+    setupClusterManager();
+  } catch (error) {
+    logger.error("Initialization failed", error);
+    process.exit(1);
+  }
 })();
