@@ -1,7 +1,8 @@
 const { SlashCommandSubcommandGroupBuilder } = require("discord.js");
-const Logger = require("../../../utils/Logger");
-const logger = new Logger("Test collection");
+const Logger = require("@utils/Logger");
 const filter = require("./collection/test-collection-filter");
+
+const logger = new Logger("Test collection");
 
 module.exports = {
   category: "developer/test",

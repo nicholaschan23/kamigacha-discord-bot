@@ -15,7 +15,7 @@ module.exports = {
 
   async call(client, interaction) {
     try {
-      const response = await BlacklistCache.isUserBlacklisted(client, interaction.user.id);
+      const response = await BlacklistCache.isUserBlacklisted(interaction.user.id);
       if (response !== false) {
         return interaction.reply({
           content: `**You are blacklisted from playing KamiGacha.** Reason: ${response.reason}`,
@@ -23,10 +23,10 @@ module.exports = {
         });
       }
 
-      if (await InviteCache.isUserInvited(client, interaction.user.id)) {
+      if (await InviteCache.isUserInvited(interaction.user.id)) {
         return interaction.reply({
           content:
-            "✨ **KamiGacha is a divine realm where only the chosen may enter.** To gain access, you must find a powerful deity willing to take you in as their apprentice. Seek out a master among the gods, forge bonds of friendship, and unlock the secrets of KamiGacha together. Only through their guidance will you be able to step into this legendary world!",
+            "✨ **KamiGacha is invitation only.**",
           ephemeral: true,
         });
       }

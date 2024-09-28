@@ -1,10 +1,16 @@
 const handlers = [];
 
+/**
+ * Registers a shutdown handler function.
+ *
+ * @param {Function} handler - The function to be called during shutdown.
+ * @throws {TypeError} Throws an error if the handler is not a function.
+ */
 function register(handler) {
   if (typeof handler === "function") {
     handlers.push(handler);
   } else {
-    throw new TypeError("handler must be a function");
+    throw new TypeError("Handler must be a function");
   }
 }
 

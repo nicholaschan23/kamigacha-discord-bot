@@ -6,7 +6,7 @@ const shutdownManager = require("@utils/shutdownManager");
 const Logger = require("@utils/Logger");
 const logger = new Logger("MongoDB");
 
-module.exports = async (client) => {
+module.exports = async () => {
   const mongoURI = process.env.MONGODB_URI;
 
   try {

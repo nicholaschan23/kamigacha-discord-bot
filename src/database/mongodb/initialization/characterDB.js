@@ -1,19 +1,16 @@
-const Logger = require("../../../utils/Logger");
+const Logger = require("@utils/Logger");
 const logger = new Logger("Character DB");
 const CharacterModel = require("../models/global/character");
 
 /**
- * Adds characters associated with new cards.
- * Initializes character wish count and circulation for card versions.
+ * Initializes the character database by comparing the character model with the existing database entries.
+ * If there are new characters or cards, they are added to the database.
  *
- * @param {Object} client - The client object containing character data.
- * @param {Object} client.jsonCharacters - The character model containing card information.
- * @param {Array<String>} client.jsonCharacterKeys - The array of character keys.
+ * @param {Object} characterModel - The model containing character data.
+ * @param {Array<string>} characterKeys - The keys representing characters in the model.
+ * @returns {Promise<void>} A promise that resolves when the initialization is complete.
  */
-async function initCharacterDB(client) {
-  const characterModel = client.jsonCharacters;
-  const characterKeys = client.jsonCharacterKeys;
-
+async function initCharacterDB(characterModel, characterKeys) {
   // Sum JSON characters stats (from S3 Bucket)
   let sumCharacterJson = 0;
   let sumCardJson = 0;
@@ -95,12 +92,14 @@ async function sumCardsDB() {
   return totalCards;
 }
 
+
 /**
- * Helper function to update Character Models in database.
+ * Upserts a character document in the database.
  *
- * @param {Object} query - Character and series field.
- * @param {Number} set - Set number the rarities are associated with.
- * @param {Array<String>} rarities - Array of rarities for a given set.
+ * @param {Object} query - The filter to find the character document.
+ * @param {string} set - The card's set number.
+ * @param {Array<string>} rarities - An array of card rarity.
+ * @returns {Promise<boolean>} Returns true if the operation is successful.
  */
 async function upsertCharacter(query, set, rarities) {
   // Fetch character document

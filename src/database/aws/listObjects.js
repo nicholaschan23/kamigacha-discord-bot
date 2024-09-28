@@ -1,6 +1,7 @@
+const Logger = require("@utils/Logger");
 const { ListObjectsV2Command } = require("@aws-sdk/client-s3");
 const s3Client = require("./s3Client");
-const Logger = require("../../utils/Logger");
+
 const logger = new Logger("AWS list objects");
 
 async function listObjects(prefix) {

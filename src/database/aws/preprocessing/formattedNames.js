@@ -1,9 +1,15 @@
-const Logger = require("../../../utils/Logger");
-const logger = new Logger("Formatted names");
-const fsp = require("fs").promises;
-const path = require("path");
-const { ensureDirExists } = require("../../../utils/fileSystem");
+const { loadModel, saveModel } = require("@utils/fileSystem");
 
+let characterNameMapCache = null;
+let seriesNameMapCache = null;
+
+/**
+ * Creates a model by formatting and mapping an array of names.
+ *
+ * @param {string[]} names - The array of names to be formatted and added to the model.
+ * @param {Object} [existingModel={}] - An optional existing model to be extended.
+ * @returns {Object} The updated model with formatted names.
+ */
 function createModel(names, existingModel = {}) {
   // Remove dashes and capitalize first letter of each word
   function formatName(name) {
@@ -21,27 +27,13 @@ function createModel(names, existingModel = {}) {
   }, existingModel);
 }
 
-async function loadModel(filePath) {
-  try {
-    await ensureDirExists(filePath);
-    const data = await fsp.readFile(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    if (err.code === "ENOENT") {
-      logger.warn("Creating file: " + path.basename(filePath));
-      // If the file does not exist, return an empty object
-      return {};
-    } else {
-      throw err;
-    }
-  }
-}
-
-async function saveModel(data, filePath) {
-  await fsp.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
-  logger.success("Saved: " + path.basename(filePath));
-}
-
+/**
+ * Retrieves and formats names based on provided keys and updates the model stored in the specified file path.
+ *
+ * @param {Array<string>} keys - An array of keys to be used for formatting names.
+ * @param {string} filePath - The path to the file where the model is stored.
+ * @returns {Promise<Map<string, any>>} A promise that resolves to a Map containing the formatted names.
+ */
 async function getFormattedNames(keys, filePath) {
   const existingModel = await loadModel(filePath);
   const updatedModel = createModel(keys, existingModel);
@@ -50,4 +42,24 @@ async function getFormattedNames(keys, filePath) {
   return new Map(Object.entries(updatedModel));
 }
 
-module.exports = { getFormattedNames };
+async function initCharacterNameMap(keys, filePath) {
+  if (!characterNameMapCache) {
+    characterNameMapCache = await getFormattedNames(keys, filePath);
+  }
+}
+
+async function initSeriesNameMap(keys, filePath) {
+  if (!seriesNameMapCache) {
+    seriesNameMapCache = await getFormattedNames(keys, filePath);
+  }
+}
+
+function getCharacterName(key) {
+  return characterNameMapCache.get(key);
+}
+
+function getSeriesName(key) {
+  return seriesNameMapCache.get(key);
+}
+
+module.exports = { initCharacterNameMap, initSeriesNameMap, getCharacterName, getSeriesName };

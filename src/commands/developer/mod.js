@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-const config = require("../../config");
-const Logger = require("../../utils/Logger");
+const config = require("@config");
+const ModeratorCache = require("@database/redis/cache/moderator");
+const Logger = require("@utils/Logger");
 const logger = new Logger("Mod command");
-const ModeratorModel = require("../../database/mongodb/models/global/moderator");
 
 module.exports = {
   category: "developer",
@@ -21,15 +21,14 @@ module.exports = {
     }
 
     // Check if the user is already a moderator
-    const userIsMod = await ModeratorModel.findOne({ userId: user.id });
+    const userIsMod = await ModeratorCache.isUserMod(user.id);
     if (userIsMod) {
       return await interaction.reply({ content: `This user is already a moderator.`, ephemeral: true });
     }
 
     // Promote the user to moderator
     try {
-      const newModerator = new ModeratorModel({ userId: user.id });
-      await newModerator.save();
+      await ModeratorCache.addUser(user.id);
       return interaction.reply({ content: `${user} has been promoted to moderator.`, allowedMentions: { parse: [] } });
     } catch (error) {
       logger.error(error);

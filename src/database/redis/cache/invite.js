@@ -1,7 +1,7 @@
 const InviteModel = require("@database/mongodb/models/global/invite");
+const redis = require("@database/redis/redisConnect");
 
-async function isUserInvited(client, userId) {
-  const redis = client.redis;
+async function isUserInvited(userId) {
   const key = `invited:${userId}`;
 
   // Try to get data from Redis cache
@@ -17,16 +17,12 @@ async function isUserInvited(client, userId) {
   return value;
 }
 
-async function addInvite(client, senderUserId, receiverUserId) {
-  const redis = client.cluster.redis;
-
+async function addInvite(senderUserId, receiverUserId) {
   const newInvite = new InviteModel({
     senderUserId,
     receiverUserId,
   });
   await newInvite.save();
-
-  // Add data to Redis cache
   await redis.set(`invited:${receiverUserId}`, true);
 }
 

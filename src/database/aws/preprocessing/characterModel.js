@@ -1,11 +1,17 @@
-const Logger = require("../../../utils/Logger");
-const logger = new Logger("Character model");
-const fsp = require("fs").promises;
-const path = require("path");
-const config = require("../../../config");
-const { ensureDirExists } = require("../../../utils/fileSystem");
+const config = require("@config");
+const { loadModel, saveModel } = require("@utils/fileSystem");
+const { createMapWithKeys } = require("./createMapWithKeys");
 
-// Preprocess unique character names and the sets and rarities that exist for them
+let cache = null;
+
+/**
+ * Creates a character model from the given card model and series keys.
+ *
+ * @param {Object} cardModel - The card model containing series, sets, and rarities.
+ * @param {Array<string>} seriesKeys - An array of series names to process.
+ * @param {Object} [existingModel={}] - An optional existing character model to extend.
+ * @returns {Promise<Object>} A promise that resolves to the created character model.
+ */
 async function createModel(cardModel, seriesKeys, existingModel = {}) {
   const characterModel = { ...existingModel };
 
@@ -62,28 +68,7 @@ async function createModel(cardModel, seriesKeys, existingModel = {}) {
   return characterModel;
 }
 
-async function loadModel(filePath) {
-  try {
-    await ensureDirExists(filePath);
-    const data = await fsp.readFile(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    if (err.code === "ENOENT") {
-      logger.warn("Creating file: " + path.basename(filePath));
-      // If the file does not exist, return an empty object
-      return {};
-    } else {
-      throw err;
-    }
-  }
-}
-
-async function saveModel(data, filePath) {
-  await fsp.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
-  logger.success("Saved: " + path.basename(filePath));
-}
-
-async function getCharacterModel(cardModel, seriesKeys) {
+async function initCharacterModel(cardModel, seriesKeys) {
   const filePath = config.CHARACTER_MODEL_PATH;
 
   // Create and save model
@@ -93,8 +78,12 @@ async function getCharacterModel(cardModel, seriesKeys) {
 
   // Parse model
   const model = await loadModel(filePath);
-  const keys = Object.keys(model);
-  return { model: model, keys: keys };
+  cache = createMapWithKeys(model);
+  return { object: model, keys: cache.keys };
 }
 
-module.exports = { getCharacterModel };
+function getCharacterModelMap() {
+  return cache;
+}
+
+module.exports = { initCharacterModel, getCharacterModelMap };

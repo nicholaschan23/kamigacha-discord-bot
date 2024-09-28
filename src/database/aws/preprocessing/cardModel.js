@@ -1,11 +1,19 @@
-const Logger = require("../../../utils/Logger");
-const logger = new Logger("Card model");
-const fsp = require("fs").promises;
-const path = require("path");
-const config = require("../../../config");
-const { ensureDirExists } = require("../../../utils/fileSystem");
+const config = require("@config");
+const { loadModel, saveModel } = require("@utils/fileSystem");
+const { createMapWithKeys } = require("./createMapWithKeys");
 const { listObjects } = require("../listObjects");
 
+let cache = null;
+
+/**
+ * Creates a hierarchical model of objects based on the given prefix and existing model.
+ * It lists objects with the specified prefix and organizes them into a nested structure.
+ * Only files with a ".jpg" extension are included in the model.
+ *
+ * @param {string} prefix - The prefix used to list objects.
+ * @param {Object} [existingModel={}] - An optional existing model to merge with.
+ * @returns {Promise<Object>} A promise that resolves to the hierarchical model.
+ */
 async function createModel(prefix, existingModel = {}) {
   const keys = await listObjects(prefix);
 
@@ -40,28 +48,9 @@ async function createModel(prefix, existingModel = {}) {
   }, existingModel);
 }
 
-async function loadModel(filePath) {
-  try {
-    await ensureDirExists(filePath);
-    const data = await fsp.readFile(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    if (err.code === "ENOENT") {
-      logger.warn("Creating file: " + path.basename(filePath));
-      // If the file does not exist, return an empty object
-      return {};
-    } else {
-      throw err;
-    }
-  }
-}
+async function initCardModel() {
+  if (cache) return cache;
 
-async function saveModel(data, filePath) {
-  await fsp.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
-  logger.success("Saved: " + path.basename(filePath));
-}
-
-async function getCardModel() {
   const filePath = config.CARD_MODEL_PATH;
 
   // Create and save model
@@ -71,8 +60,13 @@ async function getCardModel() {
 
   // Parse model
   const model = await loadModel(filePath);
-  const keys = Object.keys(model);
-  return { model: model, keys: keys };
+  cache = createMapWithKeys(model);
+  return { object: model, keys: cache.keys };
 }
 
-module.exports = { getCardModel };
+
+function getCardModelMap() {
+  return cache;
+}
+
+module.exports = { initCardModel, getCardModelMap };

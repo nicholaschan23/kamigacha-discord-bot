@@ -1,7 +1,7 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const Logger = require("../../../../utils/Logger");
+const { parseFilterString } = require("@utils/gacha/filter");
+const Logger = require("@utils/Logger");
 const logger = new Logger("Test collection filter");
-const { parseFilterString } = require("../../../../utils/gacha/filter");
 
 module.exports = {
   category: "developer/test/collection",

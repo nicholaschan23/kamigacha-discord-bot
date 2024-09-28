@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
-const Logger = require("../../utils/Logger.js");
-const logger = new Logger("test");
 const collection = require("./test/test-collection.js");
+const Logger = require("@utils/Logger.js");
+const logger = new Logger("test");
 
 module.exports = {
   category: "developer",

@@ -1,11 +1,9 @@
 const { SlashCommandBuilder, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-
 const { getJsFiles, abbrevCmdPath } = require("@utils/fileSystem");
 const Logger = require("@utils/Logger");
 const logger = new Logger("Command loader");
-
 const commandsPath = path.join(__dirname, "../commands/");
 
 module.exports = (client) => {
@@ -43,11 +41,10 @@ module.exports = (client) => {
 
   /**
    * Validates a command to ensure it meets the necessary criteria.
-   *
    * @param {Function} type - The expected type of the command (SlashCommandBuilder, etc.).
    * @param {Object} command - The command object to validate.
-   * @param {String} filePathAbbrev - The abbreviated file path of the command.
-   * @returns {Boolean} True if the command is valid, false otherwise.
+   * @param {string} filePathAbbrev - The abbreviated file path of the command.
+   * @returns {boolean} True if the command is valid, false otherwise.
    */
   function validateCommand(type, command, filePathAbbrev) {
     if (!command) {
@@ -71,8 +68,7 @@ module.exports = (client) => {
 
   /**
    * Loads subcommands and subcommand groups for a given command.
-   *
-   * @param {String} subcommandPath - The path to the subcommands directory.
+   * @param {string} subcommandPath - The path to the subcommands directory.
    */
   function loadSubcommandsAndGroups(subcommandPath) {
     if (fs.existsSync(subcommandPath) && fs.statSync(subcommandPath).isDirectory()) {
@@ -98,8 +94,7 @@ module.exports = (client) => {
 
   /**
    * Loads subcommands for a given subcommand group.
-   *
-   * @param {String} subcommandGroupPath - The path to the subcommand groups directory.
+   * @param {string} subcommandGroupPath - The path to the subcommand groups directory.
    */
   function loadGroupSubcommands(subcommandGroupPath) {
     if (fs.existsSync(subcommandGroupPath) && fs.statSync(subcommandGroupPath).isDirectory()) {

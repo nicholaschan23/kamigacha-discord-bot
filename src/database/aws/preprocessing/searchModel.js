@@ -1,17 +1,18 @@
-const Logger = require("../../../utils/Logger");
+const config = require("@config");
+const CharacterModel = require("@database/mongodb/models/global/character");
+const Logger = require("@utils/Logger");
+const { loadModel, saveModel } = require("@utils/fileSystem");
+const { createMapWithKeys } = require("./createMapWithKeys");
+
 const logger = new Logger("Search model");
-const fsp = require("fs").promises;
-const path = require("path");
-const config = require("../../../config");
-const { ensureDirExists } = require("../../../utils/fileSystem");
-const CharacterModel = require("../../mongodb/models/global/character");
+let cache = null;
 
 /**
  * Generate all possible search results given the character and series name.
  * Results are sorted by wish count, series name, and character name.
  *
  * @param {Object} characterModel - Parsed character.json object.
- * @param {Array<String>} characterKeys - Array of series.
+ * @param {Array<string>} characterKeys - Array of series.
  * @param {Object} existingModel - Parsed searches.json object.
  * @returns {Object} Search model to save as JSON.
  */
@@ -75,28 +76,7 @@ async function createModel(characterModel, characterKeys, existingModel = {}) {
   return searchModel;
 }
 
-async function loadModel(filePath) {
-  try {
-    await ensureDirExists(filePath);
-    const data = await fsp.readFile(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    if (err.code === "ENOENT") {
-      logger.warn("Creating file: " + path.basename(filePath));
-      // If the file does not exist, return an empty object
-      return {};
-    } else {
-      throw err;
-    }
-  }
-}
-
-async function saveModel(data, filePath) {
-  await fsp.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
-  logger.success("Saved: " + path.basename(filePath));
-}
-
-async function getSearchModel(characterModel, characterKeys) {
+async function initSearchModel(characterModel, characterKeys) {
   const filePath = config.SEARCH_MODEL_PATH;
 
   // Create and save model
@@ -106,7 +86,12 @@ async function getSearchModel(characterModel, characterKeys) {
 
   // Parse model
   const model = await loadModel(filePath);
-  return { model: model };
+  cache = createMapWithKeys(model);
+  return { object: model, keys: cache.keys };
 }
 
-module.exports = { getSearchModel };
+function getSearchModelMap() {
+  return cache;
+}
+
+module.exports = { initSearchModel, getSearchModelMap };

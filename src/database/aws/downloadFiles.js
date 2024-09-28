@@ -1,10 +1,11 @@
-const { ensureDirExists, fileExists } = require("../../utils/fileSystem");
-const { listObjects } = require("./listObjects");
 const { GetObjectCommand } = require("@aws-sdk/client-s3");
-const s3Client = require("./s3Client");
 const fsp = require("fs").promises;
 const path = require("path");
-const Logger = require("../../utils/Logger");
+const { ensureDirExists, fileExists } = require("@utils/fileSystem");
+const Logger = require("@utils/Logger");
+const { listObjects } = require("./listObjects");
+const s3Client = require("./s3Client");
+
 const logger = new Logger("Download files");
 
 async function downloadFile(key, localBasePath) {
@@ -52,6 +53,7 @@ async function downloadFiles(keyPrefix, localBasePath) {
       logger.info(`Located: ${path.basename(key)}`);
     }
   });
+  
   await Promise.all(downloadPromises);
 }
 

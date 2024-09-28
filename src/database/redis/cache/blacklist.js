@@ -1,16 +1,14 @@
 const BlacklistModel = require("@database/mongodb/models/global/blacklist");
-const ExtendedClient = require("@client/ExtendedClient");
+const redis = require("@database/redis/redisConnect");
 
 /**
  * Checks if a user is blacklisted by querying the Redis cache first, and if not found, querying the MongoDB database.
  * If the user is found in the database, the result is cached in Redis.
  *
- * @param {ExtendedClient} client - The client object containing the Redis instance.
  * @param {string} userId - The ID of the user to check.
  * @returns {Promise<Object|boolean>} Returns the blacklist document if the user is blacklisted, otherwise returns false.
  */
-async function isUserBlacklisted(client, userId) {
-  const redis = client.redis;
+async function isUserBlacklisted(userId) {
   const key = `blacklisted:${userId}`;
 
   let value = await redis.get(key);
@@ -44,22 +42,33 @@ async function getReason(client, userId) {
   return response.reason;
 }
 
-async function addUser(client, userId, moderatorUserId, reason) {
+/**
+ * Adds a user to the blacklist.
+ *
+ * @param {string} blacklistUserId - The ID of the user to be blacklisted.
+ * @param {string} moderatorUserId - The ID of the moderator who is blacklisting the user.
+ * @param {string} reason - The reason for blacklisting the user.
+ */
+async function addUser(blacklistUserId, moderatorUserId, reason) {
   const model = new BlacklistModel({
-    blacklistUserId: userId,
+    blacklistUserId: blacklistUserId,
     moderatorUserId: moderatorUserId,
     reason: reason,
   });
   await model.save();
-
-  const redis = client.redis;
   await redis.set(`blacklisted:${userId}`, JSON.stringify(model));
 }
 
-async function removeUser(client, userId) {
+/**
+ * Removes a user from the blacklist.
+ *
+ * This function deletes the user from the BlacklistModel and updates the Redis cache
+ * to indicate that the user is no longer blacklisted.
+ *
+ * @param {string} userId - The ID of the user to be removed from the blacklist.
+ */
+async function removeUser(userId) {
   await BlacklistModel.deleteOne({ blacklistUserId: userId });
-
-  const redis = client.cluster.redis;
   await redis.set(`blacklisted:${userId}`, false);
 }
 
