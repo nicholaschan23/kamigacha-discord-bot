@@ -51,6 +51,17 @@ shutdown_redis_servers() {
   done
 }
 
+# Function to stop all Redis servers using the service manager
+stop_all_redis_servers() {
+  echo "Stopping all Redis servers using the service manager..."
+  sudo service redis-server stop
+  if [ $? -eq 0 ]; then
+    echo "Successfully stopped all Redis servers."
+  else
+    echo "Failed to stop Redis servers."
+  fi
+}
+
 # Function to check if Redis servers are shut down
 check_redis_servers_shutdown() {
   echo "Checking if Redis servers are shut down..."
@@ -116,11 +127,14 @@ case "$1" in
   stop)
     shutdown_redis_servers
     ;;
+  stop-all)
+    stop_all_redis_servers
+    ;;
   node-list)
     check_redis_servers_shutdown
     ;;
   *)
-    echo "Usage: $0 {start|stop|node-list}"
+    echo "Usage: $0 {start|stop|stop-all|node-list}"
     exit 1
     ;;
 esac

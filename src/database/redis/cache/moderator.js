@@ -1,13 +1,17 @@
+const config = require("@config");
 const ModeratorModel = require("@database/mongodb/models/global/moderator");
-const redis = require("@database/redis/redisConnect");
+const RedisClient = require("@database/redis/RedisClient");
+
+const EXPIRATION = config.redisExpiration.default;
+const redis = RedisClient.connection;
 
 /**
  * Checks if a user is a moderator.
- * 
+ *
  * This function first attempts to retrieve the moderator status from a Redis cache.
  * If the status is not found in the cache, it queries a MongoDB database to determine
  * if the user is a moderator, updates the cache with the result, and then returns the status.
- * 
+ *
  * @param {string} userId - The ID of the user to check.
  * @returns {boolean} Boolean indicating whether the user is a moderator.
  */
@@ -22,8 +26,9 @@ async function isUserMod(userId) {
     const moderatorDocument = await ModeratorModel.findOne({ userId: userId });
     value = !!moderatorDocument;
     await redis.set(key, value);
+    await redis.expire(key, EXPIRATION);
   }
-  
+
   return value;
 }
 
@@ -38,7 +43,10 @@ async function addUser(userId) {
     userId: userId,
   });
   await newModerator.save();
-  await redis.set(`moderator:${userId}`, true);
+
+  const key = `moderator:${userId}`;
+  await redis.set(key, true);
+  await redis.expire(key, EXPIRATION);
 }
 
 /**
@@ -48,7 +56,10 @@ async function addUser(userId) {
  */
 async function removeUser(userId) {
   await ModeratorModel.deleteOne({ userId: userId });
-  await redis.set(`moderator:${userId}`, false);
+
+  const key = `moderator:${userId}`;
+  await redis.set(key, false);
+  await redis.expire(key, EXPIRATION);
 }
 
 module.exports = {

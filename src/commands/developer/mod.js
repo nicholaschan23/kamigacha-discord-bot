@@ -16,23 +16,25 @@ module.exports = {
     const user = interaction.options.getUser("user");
 
     // Only the developer can use this command
-    if (config.developer.userId && interaction.user.id !== config.developer.userId) {
-      return await interaction.reply({ content: `You do not have access to this command.`, ephemeral: true });
+    if (interaction.user.id !== config.developer.userId) {
+      interaction.reply({ content: `You do not have access to this command.`, ephemeral: true });
+      return;
     }
 
     // Check if the user is already a moderator
     const userIsMod = await ModeratorCache.isUserMod(user.id);
     if (userIsMod) {
-      return await interaction.reply({ content: `This user is already a moderator.`, ephemeral: true });
+      interaction.reply({ content: `This user is already a moderator.`, ephemeral: true });
+      return;
     }
 
     // Promote the user to moderator
     try {
       await ModeratorCache.addUser(user.id);
-      return interaction.reply({ content: `${user} has been promoted to moderator.`, allowedMentions: { parse: [] } });
+      interaction.reply({ content: `${user} has been promoted to moderator.`, allowedMentions: { parse: [] } });
     } catch (error) {
       logger.error(error);
-      return interaction.reply({ content: `An error occurred while promoting the user to moderator.`, ephemeral: true });
+      interaction.reply({ content: `An error occurred while promoting the user to moderator.`, ephemeral: true });
     }
   },
 };

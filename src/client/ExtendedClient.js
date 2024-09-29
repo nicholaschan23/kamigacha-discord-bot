@@ -1,6 +1,11 @@
 const { Client, Collection } = require("discord.js");
-const shutdownManager = require("@utils/shutdownManager");
+const ShutdownManager = require("@utils/ShutdownManager");
 const findEvents = require("./findEvents");
+const MongooseClient = require("@database/mongodb/MongooseClient");
+const RedisClient = require("@database/redis/RedisClient");
+const Logger = require("../utils/Logger");
+
+const logger = new Logger("Client");
 
 class ExtendedClient extends Client {
   constructor(options) {
@@ -16,10 +21,16 @@ class ExtendedClient extends Client {
   }
 
   async init() {
-    findEvents(this); // Load event listeners
+    // Connect to MongoDB for cloud database
+    await MongooseClient.connect();
+    await RedisClient.connect();
 
-    shutdownManager.register(async () => {
+    // Load event listeners
+    findEvents(this);
+
+    ShutdownManager.register(async () => {
       await this.destroy();
+      logger.info("Client has disconnected");
     });
 
     await this.login(process.env.DISCORD_BOT_TOKEN);

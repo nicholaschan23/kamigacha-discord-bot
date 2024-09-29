@@ -24,12 +24,6 @@ const collectionFilterSchema = new mongoose.Schema({
     required: true,
   },
 
-  // Privacy settings
-  isPrivate: {
-    type: Boolean,
-    default: false,
-  },
-
   /**
    * Collection filters list.
    * @type {CollectionFilter[]}

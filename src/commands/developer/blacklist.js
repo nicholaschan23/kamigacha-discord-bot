@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
+const BlacklistCache = require("@database/redis/cache/blacklist");
+const ModeratorCache = require("@database/redis/cache/moderator");
 const Logger = require("@utils/Logger");
-const ModeratorModel = require("@database/mongodb/models/global/moderator");
 
 const logger = new Logger("Blacklist command");
 
@@ -19,39 +20,46 @@ module.exports = {
     const reason = interaction.options.getString("reason");
 
     // Must be moderator to use this command
-    const userIsMod = await ModeratorModel.findOne({ userId: moderatorUserId });
+    const userIsMod = await ModeratorCache.isUserMod(moderatorUserId);
     if (!userIsMod) {
-      return await interaction.reply({ content: `You do not have access to this command.`, ephemeral: true });
+      interaction.reply({ content: `You do not have access to this command.`, ephemeral: true });
+      return;
     }
 
     // You can't blacklist yourself or bots
     if (receiver.id == interaction.user.id || receiver.bot) {
-      return await interaction.reply({ content: `Please input a valid user.`, ephemeral: true });
+      interaction.reply({ content: `Please input a valid user.`, ephemeral: true });
+      return;
     }
 
     // You can't blacklist moderators
-    const blacklistUserIsMod = await ModeratorModel.findOne({ userId: blacklistUser.id });
+    const blacklistUserIsMod = await ModeratorCache.isUserMod(blacklistUser.id);
     if (blacklistUserIsMod) {
-      return await interaction.reply({ content: `That user cannot be blacklisted.`, ephemeral: true });
+      interaction.reply({ content: `That user cannot be blacklisted.`, ephemeral: true });
+      return;
     }
 
     // Check if user is already blacklisted
-    if (client.blacklistCache.isBlacklisted(blacklistUser.id)) {
-      return await interaction.reply({ content: `User is already blacklisted. Reason: ${client.blacklistCache.getReason(user.id)}` });
+    const alreadyBlacklisted = await BlacklistCache.isUserBlacklisted(blacklistUserId);
+    if (alreadyBlacklisted) {
+      const reason = await BlacklistCache.getDocument(blacklistUserId).reason;
+      interaction.reply({ content: `${blacklistUser} is already blacklisted. Reason: ${reason}`, ephemeral: true });
+      return;
     }
 
     // Reason can only be length of 300
     if (reason.length > 300) {
-      return await interaction.reply({ content: `Reason must be less than 300 characters.`, ephemeral: true });
+      interaction.reply({ content: `Reason must be less than 300 characters.`, ephemeral: true });
+      return;
     }
 
     // Blacklist the user
     try {
-      await client.blacklistCache.addToBlacklist(blacklistUserId, moderatorUserId, reason);
-      return interaction.reply({ content: `${blacklistUser} has been blacklisted. Reason: ${reason}`, allowedMentions: { parse: [] } });
+      await BlacklistCache.addUser(blacklistUserId, moderatorUserId, reason);
+      interaction.reply({ content: `${blacklistUser} has been blacklisted. Reason: ${reason}`, allowedMentions: { parse: [] } });
     } catch (error) {
       logger.error(error);
-      return interaction.reply({ content: `Error occurred when blacklisting the user.` });
+      interaction.reply({ content: `Error occurred when blacklisting the user.` });
     }
   },
 };

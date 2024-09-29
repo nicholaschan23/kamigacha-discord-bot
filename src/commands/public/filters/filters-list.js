@@ -1,9 +1,10 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
-const { chunkArray, formatFilterListPage } = require("../../../utils/string/formatPage");
-const FilterModel = require("../../../database/mongodb/models/user/filter");
-const ButtonPages = require("../../../utils/pages/ButtonPages");
-const Logger = require("../../../utils/Logger");
-const logger = new Logger("Filters create command");
+const FilterCache = require("@database/redis/cache/collectionFilter");
+const ButtonPages = require("@utils/pages/ButtonPages");
+const Logger = require("@utils/Logger");
+const { chunkArray, formatFilterListPage } = require("@utils/string/formatPage");
+
+const logger = new Logger("Filters list command");
 
 module.exports = {
   category: "public/filters",
@@ -15,18 +16,14 @@ module.exports = {
   async execute(client, interaction) {
     const user = interaction.options.getUser("user") ?? interaction.user;
 
-    try {
-      const filterDocument = await FilterModel.findOne(
-        { userId: user.id } // Filter
-      );
-      if (!filterDocument) {
-        return interaction.reply({ content: `That player does not have any filters.` });
-      }
+    await interaction.deferReply();
 
-      // Cannot view private filters
-      if (filterDocument.isPrivate && user != interaction.user) {
-        return interaction.reply({ content: `That player's filters are private.` });
-      }
+    try {
+      const filterDocument = await FilterCache.getDocument(user.id);
+      // if (filterDocument.filterList.length === 0) {
+      //   interaction.editReply({ content: `That player does not have any filters.` });
+      //   return;
+      // }
 
       // Split the list of cards into chunks of 10
       const chunkSize = 10;
@@ -45,11 +42,11 @@ module.exports = {
         pages.push(embed);
       }
 
-      const bp = new ButtonPages(interaction, pages, filterDocument.isPrivate);
-      bp.publishPages();
+      const bp = new ButtonPages(interaction, pages);
+      bp.publishPages(true);
     } catch (error) {
       logger.error(error.stack);
-      interaction.reply({ content: "There was an issue viewing those collection tags. Please try again." });
+      interaction.editReply({ content: "There was an issue viewing those collection tags. Please try again." });
     }
   },
 };

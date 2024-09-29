@@ -1,5 +1,9 @@
+const config = require("@config");
 const InviteModel = require("@database/mongodb/models/global/invite");
-const redis = require("@database/redis/redisConnect");
+const RedisClient = require("@database/redis/RedisClient");
+
+const EXPIRATION = config.redisExpiration.default;
+const redis = RedisClient.connection;
 
 async function isUserInvited(userId) {
   const key = `invited:${userId}`;
@@ -12,6 +16,7 @@ async function isUserInvited(userId) {
     const inviteDocument = await InviteModel.findOne({ receiverUserId: userId });
     value = !!inviteDocument;
     await redis.set(key, value);
+    await redis.expire(key, EXPIRATION);
   }
   
   return value;
@@ -23,7 +28,10 @@ async function addInvite(senderUserId, receiverUserId) {
     receiverUserId,
   });
   await newInvite.save();
-  await redis.set(`invited:${receiverUserId}`, true);
+
+  const key = `invited:${receiverUserId}`;
+  await redis.set(key, true);
+  await redis.expire(key, EXPIRATION);
 }
 
 module.exports = {

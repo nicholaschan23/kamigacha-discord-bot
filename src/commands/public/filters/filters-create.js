@@ -1,5 +1,5 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const FilterModel = require("@database/mongodb/models/user/filter");
+const FilterCache = require("@database/redis/cache/collectionFilter");
 const Logger = require("@utils/Logger");
 const { capitalizeFirstLetter } = require("@utils/string/format");
 const { isOneEmoji, isValidFilter, isValidFilterLabel } = require("@utils/string/validation");
@@ -16,53 +16,44 @@ module.exports = {
     .addStringOption((option) => option.setName("emoji").setDescription("Emoji to associate with this filter.").setRequired(true)),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-
     const filter = interaction.options.getString("filter").toLowerCase().replace(",", "");
     if (!isValidFilter(filter)) {
-      return interaction.editReply({ content: `Please input a valid filter string. Refer to \`/help filters\` for details.` });
+      interaction.reply({ content: `Please input a valid filter string. Refer to \`/help filters\` for details.` });
+      return;
     }
 
     const label = capitalizeFirstLetter(interaction.options.getString("label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(label)) {
-      return interaction.editReply({ content: `Please input a valid label. It can only contain letters, numbers, and spaces.` });
+      interaction.reply({ content: `Please input a valid label. It can only contain letters, numbers, and spaces.` });
+      return;
     }
 
     const emoji = interaction.options.getString("emoji");
     if (!isOneEmoji(emoji)) {
-      return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      interaction.reply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      return;
     }
+
+    await interaction.deferReply();
 
     try {
       // Find the filter document for the user
-      const filterDocument = await FilterModel.findOneAndUpdate(
-        { userId: interaction.user.id, "filterList.label": { $ne: label } }, // Filter
-        { $setOnInsert: { userId: interaction.user.id } }, // Update
-        { new: true, upsert: true }
-      );
+      const filterDocument = await FilterCache.getDocument(interaction.user.id);
 
-      // Handle case where no filter data exists
-      if (!filterDocument) {
-        return interaction.editReply({ content: `The **${label}** filter already exists.` });
+      // Handle case where label already exists
+      const labelExists = filterDocument.filterList.some((filter) => filter.label === label);
+      if (labelExists) {
+        interaction.editReply({ content: `The **${label}** filter already exists.` });
+        return;
       }
 
       // Check if filter limit is reached
       if (filterDocument.filterList.length >= 25) {
-        return interaction.editReply({ content: `You've reached your filter limit of ${filterDocument.filterList.length}.` });
+        interaction.editReply({ content: `You've reached your filter limit of ${filterDocument.filterList.length}.` });
+        return;
       }
 
-      // Save document
-      await FilterModel.findOneAndUpdate(
-        { userId: interaction.user.id }, // Filter
-        {
-          $push: {
-            filterList: {
-              $each: [{ emoji: emoji, label: label, filter: filter }],
-              $sort: { label: 1 },
-            },
-          },
-        } // Update
-      );
+      await FilterCache.addFilter(interaction.user.id, emoji, label, filter);
 
       interaction.editReply({ content: `Successfully created filter ${emoji} **${label}** \`${filter}\`!` });
     } catch (error) {

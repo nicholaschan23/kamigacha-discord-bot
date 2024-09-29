@@ -1,8 +1,9 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidFilterLabel, isValidFilter } = require("../../../utils/string/validation");
-const FilterModel = require("../../../database/mongodb/models/user/filter");
-const Logger = require("../../../utils/Logger");
-const logger = new Logger("Filters emoji command");
+const FilterCache = require("@database/redis/cache/collectionFilter");
+const { isValidFilterLabel, isValidFilter } = require("@utils/string/validation");
+const Logger = require("@utils/Logger");
+
+const logger = new Logger("Filters string command");
 
 module.exports = {
   category: "public/filters",
@@ -13,31 +14,36 @@ module.exports = {
     .addStringOption((option) => option.setName("string").setDescription("New string of filters.").setRequired(true)),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-
     const label = interaction.options.getString("label").replace(/\s+/g, " ");
     if (!isValidFilterLabel(label)) {
-      return interaction.editReply({ content: "That filter does not exist." });
+      interaction.reply({ content: "That filter does not exist." });
+      return;
     }
 
     const filter = interaction.options.getString("string").toLowerCase().replace(/\s+/g, " ");
     if (!isValidFilter(filter)) {
-      return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      interaction.reply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      return;
     }
 
+    await interaction.deferReply();
+
     try {
-      // Check if filter exists, if so change the emoji
-      const filterDocument = await FilterModel.findOneAndUpdate(
-        {
-          userId: interaction.user.id,
-          "filterList.label": label,
-        }, // Filter
-        { $set: { "filterList.$.filter": filter } }, // Update
-        { new: true }
-      );
-      if (!filterDocument) {
-        return interaction.editReply({ content: "That filter does not exist." });
+      const filterDocument = await FilterCache.getDocument(interaction.user.id);
+
+      // Handle case where no filter data exists
+      if (filterDocument.filterList.length === 0) {
+        interaction.reply({ content: `You do not have any filters.` });
+        return;
       }
+
+      const labelExists = filterDocument.filterList.some((filter) => filter.label === label);
+      if (!labelExists) {
+        interaction.editReply({ content: "That filter does not exist." });
+        return;
+      }
+
+      await FilterCache.updateFilterString(interaction.user.id, label, string);
 
       interaction.editReply({ content: `Successfully updated filter to **${label}** \`${filter}\`!` });
     } catch (error) {

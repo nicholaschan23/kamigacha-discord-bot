@@ -22,4 +22,9 @@ module.exports = {
     green: "#43b581",
     blue: "#7289da",
   },
+
+  // Redis cache expiration
+  redisExpiration: {
+    default: 600, // 10 minutes
+  },
 };

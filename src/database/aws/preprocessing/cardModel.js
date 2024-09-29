@@ -1,9 +1,6 @@
 const config = require("@config");
 const { loadModel, saveModel } = require("@utils/fileSystem");
-const { createMapWithKeys } = require("./createMapWithKeys");
 const { listObjects } = require("../listObjects");
-
-let cache = null;
 
 /**
  * Creates a hierarchical model of objects based on the given prefix and existing model.
@@ -49,8 +46,6 @@ async function createModel(prefix, existingModel = {}) {
 }
 
 async function initCardModel() {
-  if (cache) return cache;
-
   const filePath = config.CARD_MODEL_PATH;
 
   // Create and save model
@@ -60,13 +55,8 @@ async function initCardModel() {
 
   // Parse model
   const model = await loadModel(filePath);
-  cache = createMapWithKeys(model);
-  return { object: model, keys: cache.keys };
+  const keys = Object.keys(model);
+  return { object: model, keys: keys };
 }
 
-
-function getCardModelMap() {
-  return cache;
-}
-
-module.exports = { initCardModel, getCardModelMap };
+module.exports = { initCardModel };

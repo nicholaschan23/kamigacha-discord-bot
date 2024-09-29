@@ -1,8 +1,5 @@
 const config = require("@config");
 const { loadModel, saveModel } = require("@utils/fileSystem");
-const { createMapWithKeys } = require("./createMapWithKeys");
-
-let cache = null;
 
 /**
  * Creates a character model from the given card model and series keys.
@@ -78,12 +75,8 @@ async function initCharacterModel(cardModel, seriesKeys) {
 
   // Parse model
   const model = await loadModel(filePath);
-  cache = createMapWithKeys(model);
-  return { object: model, keys: cache.keys };
+  const keys = Object.keys(model);
+  return { object: model, keys: keys };
 }
 
-function getCharacterModelMap() {
-  return cache;
-}
-
-module.exports = { initCharacterModel, getCharacterModelMap };
+module.exports = { initCharacterModel };

@@ -2,10 +2,8 @@ const config = require("@config");
 const CharacterModel = require("@database/mongodb/models/global/character");
 const Logger = require("@utils/Logger");
 const { loadModel, saveModel } = require("@utils/fileSystem");
-const { createMapWithKeys } = require("./createMapWithKeys");
 
 const logger = new Logger("Search model");
-let cache = null;
 
 /**
  * Generate all possible search results given the character and series name.
@@ -86,12 +84,8 @@ async function initSearchModel(characterModel, characterKeys) {
 
   // Parse model
   const model = await loadModel(filePath);
-  cache = createMapWithKeys(model);
-  return { object: model, keys: cache.keys };
+  const keys = Object.keys(model);
+  return { object: model, keys: keys };
 }
 
-function getSearchModelMap() {
-  return cache;
-}
-
-module.exports = { initSearchModel, getSearchModelMap };
+module.exports = { initSearchModel };

@@ -1,8 +1,9 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const FilterModel = require("@database/mongodb/models/user/filter");
+const FilterCache = require("@database/redis/cache/collectionFilter");
+const Logger = require("@utils/Logger");
 const { capitalizeFirstLetter } = require("@utils/string/format");
 const { isValidFilterLabel } = require("@utils/string/validation");
-const Logger = require("@utils/Logger");
+
 const logger = new Logger("Filters delete command");
 
 module.exports = {
@@ -17,19 +18,27 @@ module.exports = {
 
     const label = capitalizeFirstLetter(interaction.options.getString("label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(label)) {
-      return interaction.editReply({ content: "That filter does not exist." });
+      interaction.editReply({ content: "That filter does not exist." });
+      return;
     }
 
     try {
-      // Check if filter exists, if so delete it
-      const updatedDocument = await FilterModel.findOneAndUpdate(
-        { userId: interaction.user.id, "filterList.label": label }, // Filter
-        { $pull: { filterList: { label: label } } }, // Update
-        { new: true }
-      );
-      if (!updatedDocument) {
-        return interaction.editReply({ content: `That filter does not exist.` });
+      const filterDocument = await FilterCache.getDocument(interaction.user.id);
+
+      // Handle case where no filter data exists
+      if (filterDocument.filterList.length === 0) {
+        interaction.reply({ content: `You do not have any filters.` });
+        return;
       }
+
+      // Filter doesn't exist
+      const labelExists = filterDocument.filterList.some((filter) => filter.label === label);
+      if (!labelExists) {
+        interaction.editReply({ content: `That filter does not exist.` });
+        return;
+      }
+
+      await FilterCache.deleteFilter(interaction.user.id, label);
 
       interaction.editReply({ content: `Successfully deleted the filter **${label}**!` });
     } catch (error) {

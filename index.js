@@ -8,41 +8,45 @@ assert(process.env.DISCORD_BOT_TOKEN, "A Discord bot token is required");
 
 const { ClusterManager } = require("discord-hybrid-sharding");
 const config = require("@config");
+const MongooseClient = require("@database/mongodb/MongooseClient");
+const RedisClient = require("@database/redis/RedisClient");
 const { downloadFiles } = require("@database/aws/downloadFiles");
-const mongooseConnect = require("@database/mongodb/mongooseConnect");
-const { initCharacterNameMap, initSeriesNameMap } = require("@database/aws/preprocessing/formattedNames");
-const { initSearchModel } = require("@database/aws/preprocessing/searchModel");
-const { initCharacterDB } = require("@database/mongodb/initialization/characterDB");
+const { getFormattedNamesMap } = require("@database/aws/preprocessing/formattedNames");
 const { initCardModel } = require("@database/aws/preprocessing/cardModel");
 const { initCharacterModel } = require("@database/aws/preprocessing/characterModel");
+const { initCharacterDB } = require("@database/mongodb/initialization/characterDB");
+const { initSearchModel } = require("@database/aws/preprocessing/searchModel");
 const Logger = require("@utils/Logger");
+
 const logger = new Logger("Cluster manager");
 
-async function initDatabase() {
-  // Connect to MongoDB for cloud database
-  await mongooseConnect();
-
-  // Connect to Redis for local caching
-  await new Promise((resolve, reject) => {
-    const redisCluster = require("@database/redis/redisConnect");
-    redisCluster.once("ready", resolve);
-    redisCluster.once("error", reject);
-  });
-}
-
 async function fetchData() {
+  await MongooseClient.connect(false);
+  await RedisClient.connect(false);
+
   // Download images from AWS S3 Bucket
   await downloadFiles("customisations/boarders", config.IMAGES_PATH);
 
   // Preprocess card data from AWS S3 Bucket
   const { object: cardModel, keys: seriesKeys } = await initCardModel();
   const { object: characterModel, keys: characterKeys } = await initCharacterModel(cardModel, seriesKeys);
-  await initCharacterNameMap(characterKeys, config.CHARACTER_NAME_MAP_PATH);
-  await initSeriesNameMap(seriesKeys, config.SERIES_NAME_MAP_PATH);
-  await initSearchModel(characterModel, characterKeys);
+  const characterNameMap = await getFormattedNamesMap(characterKeys, config.CHARACTER_NAME_MAP_PATH);
+  const seriesNameMap = await getFormattedNamesMap(seriesKeys, config.SERIES_NAME_MAP_PATH);
+  const { object: searchModel, keys: tokenKeys } = await initSearchModel(characterModel, characterKeys);
+
+  // Store models and maps in Redis
+  const InitCache = require("@database/redis/cache/init");
+  await InitCache.storeModelAsMap("card-model", cardModel); // card-model-map, card-model-keys
+  await InitCache.storeModelAsMap("character-model", characterModel); // character-model-map, character-model-keys
+  await InitCache.storeModelAsMap("search-model", searchModel); // search-model-map, search-model-keys
+  await InitCache.storeModelAsMap("character-name", characterNameMap, false); // character-name-map
+  await InitCache.storeModelAsMap("series-name", seriesNameMap, false); // series-name-map
 
   // Update MongoDB character data
   await initCharacterDB(characterModel, characterKeys);
+
+  await MongooseClient.disconnect();
+  await RedisClient.quit();
 }
 
 function setupClusterManager() {
@@ -55,7 +59,6 @@ function setupClusterManager() {
     isShuttingDown = true;
   });
 
-  // init ClusterManager
   const manager = new ClusterManager("./bot.js", {
     totalShards: "auto",
     shardsPerClusters: 2,
@@ -86,11 +89,10 @@ function setupClusterManager() {
 
 (async () => {
   try {
-    await initDatabase();
     await fetchData();
     setupClusterManager();
   } catch (error) {
-    logger.error("Initialization failed", error);
+    logger.error("Initialization failed", error.stack);
     process.exit(1);
   }
 })();
