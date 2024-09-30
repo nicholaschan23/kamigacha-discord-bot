@@ -1,8 +1,8 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
-const { chunkArray, formatTagListPage } = require("../../../utils/string/formatPage");
-const TagModel = require("../../../database/mongodb/models/user/tag");
-const ButtonPages = require("../../../utils/pages/ButtonPages");
-const Logger = require("../../../utils/Logger");
+const { chunkArray, formatTagListPage } = require("@utils/string/formatPage");
+const TagCache = require("@database/redis/cache/collectionTag");
+const ButtonPages = require("@utils/pages/ButtonPages");
+const Logger = require("@utils/Logger");
 const logger = new Logger("Tags create command");
 
 module.exports = {
@@ -16,33 +16,38 @@ module.exports = {
     const user = interaction.options.getUser("user") || interaction.user;
 
     try {
-      const tagDocument = await TagModel.findOne(
-        { userId: user.id } // Filter
-      );
-      if (!tagDocument) {
-        return interaction.reply({ content: `That player does not have any tags.` });
-      }
+      const tagDocument = await TagCache.getDocument(user.id);
 
       // Cannot view private tags
       if (tagDocument.isPrivate && user != interaction.user) {
-        return interaction.reply({ content: `That player's tags are private.` });
+        interaction.reply({ content: `That player's tags are private.` });
+        return;
       }
-
-      // Split the list of cards into chunks of 10
-      const chunkSize = 10;
-      const cardChunks = chunkArray([...tagDocument.tagList], chunkSize);
 
       // Create page embeds
       const total = tagDocument.tagList.length;
       const pages = [];
-      for (let i = 0; i < cardChunks.length; i++) {
-        const start = (i * chunkSize + 1).toLocaleString();
-        const end = (i * chunkSize + cardChunks[i].length).toLocaleString();
+
+      if (total === 0) {
         const embed = new EmbedBuilder()
           .setTitle(`Collection Tags`)
-          .setDescription(`Tags created by ${user}\n\n` + formatTagListPage(cardChunks[i]))
-          .setFooter({ text: `Showing tags ${start}-${end} (${total} total)` });
+          .setDescription(`Tags created by ${user}`)
+          .setFooter({ text: `Showing tags 0-0 (0 total)` });
         pages.push(embed);
+      } else {
+        // Split the list of cards into chunks of 10
+        const chunkSize = 10;
+        const cardChunks = chunkArray([...tagDocument.tagList], chunkSize);
+
+        for (let i = 0; i < cardChunks.length; i++) {
+          const start = (i * chunkSize + 1).toLocaleString();
+          const end = (i * chunkSize + cardChunks[i].length).toLocaleString();
+          const embed = new EmbedBuilder()
+            .setTitle(`Collection Tags`)
+            .setDescription(`Tags created by ${user}\n\n` + formatTagListPage(cardChunks[i]))
+            .setFooter({ text: `Showing tags ${start}-${end} (${total} total)` });
+          pages.push(embed);
+        }
       }
 
       const bp = new ButtonPages(interaction, pages, tagDocument.isPrivate);

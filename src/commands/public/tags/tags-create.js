@@ -1,7 +1,8 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isOneEmoji, isValidTag } = require("../../../utils/string/validation");
-const TagModel = require("../../../database/mongodb/models/user/tag");
-const Logger = require("../../../utils/Logger");
+const TagCache = require("@database/redis/cache/collectionTag");
+const Logger = require("@utils/Logger");
+const { isOneEmoji, isValidTag } = require("@utils/string/validation");
+
 const logger = new Logger("Tags create command");
 
 module.exports = {
@@ -13,29 +14,29 @@ module.exports = {
     .addStringOption((option) => option.setName("emoji").setDescription("Emoji to associate with this tag.").setRequired(true)),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-
     const tag = interaction.options.getString("tag").toLowerCase();
     if (!isValidTag(tag)) {
-      return interaction.editReply({ content: `Please input a valid tag. It can only contain letters, numbers, dashes, or underscores.` });
+      interaction.reply({ content: `Please input a valid tag. It can only contain letters, numbers, dashes, or underscores.` });
+      return;
     }
 
     const emoji = interaction.options.getString("emoji");
     if (!isOneEmoji(emoji)) {
-      return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      interaction.reply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      return;
     }
+
+    await interaction.deferReply();
 
     try {
       // Fetch tag data
-      const tagDocument = await TagModel.findOneAndUpdate(
-        { userId: interaction.user.id, "tagList.tag": { $ne: tag } }, // Filter
-        { $setOnInsert: { userId: interaction.user.id } }, // Update
-        { new: true, upsert: true }
-      );
+      const tagDocument = await TagCache.getDocument(interaction.user.id);
 
       // Check if the tag already exists
-      if (!tagDocument) {
-        return interaction.editReply({ content: `The \`${tag}\` tag already exists.` });
+      const tagExists = tagDocument.tagList.some((tagData) => tagData.tag === tag);
+      if (tagExists) {
+        interaction.editReply({ content: `The \`${tag}\` tag already exists.` });
+        return;
       }
 
       // Check if tag limit is reached
@@ -43,18 +44,7 @@ module.exports = {
         return interaction.editReply({ content: `You've reached your tag limit of ${tagDocument.tagLimit}.` });
       }
 
-      // Save document
-      await TagModel.findOneAndUpdate(
-        { userId: interaction.user.id }, // Filter
-        {
-          $push: {
-            tagList: {
-              $each: [{ tag: tag, emoji: emoji }],
-              $sort: { tag: 1 }, // Sort by tag alphabetically
-            },
-          },
-        } // Update
-      );
+      await TagCache.addTag(interaction.user.id, tag, emoji);
 
       interaction.editReply({ content: `Successfully created tag ${emoji} \`${tag}\`!` });
     } catch (error) {

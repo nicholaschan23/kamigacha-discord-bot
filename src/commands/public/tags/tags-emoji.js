@@ -1,8 +1,11 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isOneEmoji, isValidTag } = require("../../../utils/string/validation");
-const CardModel = require("../../../database/mongodb/models/card/card");
-const TagModel = require("../../../database/mongodb/models/user/tag");
-const Logger = require("../../../utils/Logger");
+const mongoose = require("mongoose");
+const CardModel = require("@database/mongodb/models/card/card");
+const TagCache = require("@database/redis/cache/collectionTag");
+const TagModel = require("@database/mongodb/models/user/tag");
+const Logger = require("@utils/Logger");
+const { isOneEmoji, isValidTag } = require("@utils/string/validation");
+
 const logger = new Logger("Tags emoji command");
 
 module.exports = {
@@ -14,41 +17,60 @@ module.exports = {
     .addStringOption((option) => option.setName("emoji").setDescription("New emoji to associate with tag.").setRequired(true)),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-
     const tag = interaction.options.getString("tag").toLowerCase();
     if (!isValidTag(tag)) {
-      return interaction.editReply({ content: "That tag does not exist." });
+      interaction.reply({ content: "That tag does not exist." });
+      return;
     }
 
     const emoji = interaction.options.getString("emoji");
     if (!isOneEmoji(emoji)) {
-      return interaction.editReply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      interaction.reply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      return;
     }
 
+    await interaction.deferReply();
+
     try {
-      // Check if tag exists, if so change the emoji
-      const tagDocument = await TagModel.findOneAndUpdate(
-        {
-          userId: interaction.user.id,
-          "tagList.tag": tag,
-        }, // Filter
-        { $set: { "tagList.$.emoji": emoji } }, // Update
-        { new: true }
-      );
-      if (!tagDocument) {
-        return interaction.editReply({ content: "That tag does not exist." });
+      const tagDocument = await TagCache.getDocument(interaction.user.id);
+
+      if (tagDocument.tagList.length === 0) {
+        return interaction.editReply({ content: `You do not have any tags.` });
       }
 
-      // Update cards with the associated tag with the new emoji
-      await CardModel.updateMany(
-        { userId: interaction.user.id, tag: tag }, // Filter
-        { $set: { emoji: emoji } } // Update
-      );
+      const tagExists = tagDocument.tagList.some((tagData) => tagData.tag === tag);
+      if (!tagExists) {
+        interaction.editReply({ content: "That tag does not exist." });
+        return;
+      }
 
       interaction.editReply({ content: `Successfully updated tag to ${emoji} \`${tag}\`!` });
     } catch (error) {
       logger.error(error.stack);
+      interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });
+      return;
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const tagDocument = await TagModel.findOneAndUpdate(
+        { userId: interaction.user.id, "tagList.tag": tag },
+        { $set: { "tagList.$.emoji": emoji } },
+        { new: true, session: session }
+      );
+      await TagCache.cache(interaction.user.id, tagDocument);
+
+      // Update cards with the associated tag with the new emoji
+      await CardModel.updateMany({ userId: interaction.user.id, tag: tag }, { $set: { emoji: emoji } }, { session: session });
+
+      interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });
     }
   },

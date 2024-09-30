@@ -35,12 +35,12 @@ async function fetchData() {
   const { object: searchModel, keys: tokenKeys } = await initSearchModel(characterModel, characterKeys);
 
   // Store models and maps in Redis
-  const InitCache = require("@database/redis/cache/init");
-  await InitCache.storeModelAsMap("card-model", cardModel); // card-model-map, card-model-keys
-  await InitCache.storeModelAsMap("character-model", characterModel); // character-model-map, character-model-keys
-  await InitCache.storeModelAsMap("search-model", searchModel); // search-model-map, search-model-keys
-  await InitCache.storeModelAsMap("character-name", characterNameMap, false); // character-name-map
-  await InitCache.storeModelAsMap("series-name", seriesNameMap, false); // series-name-map
+  const MapCache = require("@database/redis/cache/map");
+  await MapCache.storeModelAsMap("card-model", cardModel); // card-model-map, card-model-keys
+  await MapCache.storeModelAsMap("character-model", characterModel); // character-model-map, character-model-keys
+  await MapCache.storeModelAsMap("search-model", searchModel); // search-model-map, search-model-keys
+  await MapCache.storeModelAsMap("character-name", characterNameMap, false); // character-name-map
+  await MapCache.storeModelAsMap("series-name", seriesNameMap, false); // series-name-map
 
   // Update MongoDB character data
   await initCharacterDB(characterModel, characterKeys);

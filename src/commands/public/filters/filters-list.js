@@ -16,34 +16,37 @@ module.exports = {
   async execute(client, interaction) {
     const user = interaction.options.getUser("user") ?? interaction.user;
 
-    await interaction.deferReply();
-
     try {
       const filterDocument = await FilterCache.getDocument(user.id);
-      // if (filterDocument.filterList.length === 0) {
-      //   interaction.editReply({ content: `That player does not have any filters.` });
-      //   return;
-      // }
-
-      // Split the list of cards into chunks of 10
-      const chunkSize = 10;
-      const cardChunks = chunkArray([...filterDocument.filterList], chunkSize);
 
       // Create page embeds
       const total = filterDocument.filterList.length;
       const pages = [];
-      for (let i = 0; i < cardChunks.length; i++) {
-        const start = (i * chunkSize + 1).toLocaleString();
-        const end = (i * chunkSize + cardChunks[i].length).toLocaleString();
+
+      if (total === 0) {
         const embed = new EmbedBuilder()
           .setTitle(`Collection Filters`)
-          .setDescription(`Filters created by ${user}\n\n` + formatFilterListPage(cardChunks[i]))
-          .setFooter({ text: `Showing filters ${start}-${end} (${total} total)` });
+          .setDescription(`Filters created by ${user}`)
+          .setFooter({ text: `Showing filters 0-0 (0 total)` });
         pages.push(embed);
+      } else {
+        // Split the list of cards into chunks of 10
+        const chunkSize = 10;
+        const cardChunks = chunkArray([...filterDocument.filterList], chunkSize);
+
+        for (let i = 0; i < cardChunks.length; i++) {
+          const start = (i * chunkSize + 1).toLocaleString();
+          const end = (i * chunkSize + cardChunks[i].length).toLocaleString();
+          const embed = new EmbedBuilder()
+            .setTitle(`Collection Filters`)
+            .setDescription(`Filters created by ${user}\n\n` + formatFilterListPage(cardChunks[i]))
+            .setFooter({ text: `Showing filters ${start}-${end} (${total} total)` });
+          pages.push(embed);
+        }
       }
 
       const bp = new ButtonPages(interaction, pages);
-      bp.publishPages(true);
+      bp.publishPages();
     } catch (error) {
       logger.error(error.stack);
       interaction.editReply({ content: "There was an issue viewing those collection tags. Please try again." });

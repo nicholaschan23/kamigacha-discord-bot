@@ -37,7 +37,11 @@ async function addFilter(userId, emoji, label, filter) {
 }
 
 async function deleteFilter(userId, label) {
-  const filterDocument = await FilterModel.findOneAndUpdate({ userId: userId }, { $pull: { filterList: { label: label } } }, { new: true });
+  const filterDocument = await FilterModel.findOneAndUpdate(
+    { userId: userId, "filterList.label": label },
+    { $pull: { filterList: { label: label } } },
+    { new: true }
+  );
   await cache(userId, filterDocument);
 }
 

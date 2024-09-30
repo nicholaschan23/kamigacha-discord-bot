@@ -1,8 +1,10 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const { isValidTag } = require("../../../utils/string/validation");
-const TagModel = require("../../../database/mongodb/models/user/tag");
-const CardModel = require("../../../database/mongodb/models/card/card");
-const Logger = require("../../../utils/Logger");
+const mongoose = require("mongoose");
+const TagCache = require("@database/redis/cache/collectionTag");
+const TagModel = require("@database/mongodb/models/user/tag");
+const Logger = require("@utils/Logger");
+const { isValidTag } = require("@utils/string/validation");
+
 const logger = new Logger("Tags delete command");
 
 module.exports = {
@@ -13,33 +15,52 @@ module.exports = {
     .addStringOption((option) => option.setName("tag").setDescription("Name of tag to delete.").setRequired(true)),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-
     const tag = interaction.options.getString("tag").toLowerCase();
+
     if (!isValidTag(tag)) {
-      return interaction.editReply({ content: "That tag does not exist." });
+      return interaction.reply({ content: "That tag does not exist." });
     }
 
+    await interaction.deferReply();
+
     try {
-      // Check if tag exists, if so delete it
-      const tagDocument = await TagModel.findOneAndUpdate(
-        { userId: interaction.user.id, "tagList.tag": tag }, // Filter
-        { $pull: { tagList: { tag: tag } } }, // Update
-        { new: true }
-      );
-      if (!tagDocument) {
-        return interaction.editReply({ content: `That tag does not exist.` });
+      const tagDocument = await TagCache.getDocument(interaction.user.id);
+
+      if (tagDocument.tagList.length === 0) {
+        return interaction.editReply({ content: `You do not have any tags.` });
       }
 
-      // Update cards with the associated tag with default untagged values
-      await CardModel.updateMany(
-        { userId: interaction.user.id, tag: tag }, // Filter
-        { $set: { tag: "untagged", emoji: "▪️" } } // Update
-      );
-
-      interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
+      const tagExists = tagDocument.tagList.some((tagData) => tagData.tag === tag);
+      if (!tagExists) {
+        interaction.editReply({ content: `That tag does not exist.` });
+        return;
+      }
     } catch (error) {
       logger.error(error.stack);
+      interaction.editReply({ content: `There was an issue deleting your tag. Please try again.` });
+      return;
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const tagDocument = await TagModel.findOneAndUpdate(
+        { userId: interaction.user.id, "tagList.tag": tag },
+        { $pull: { tagList: { tag: tag } } },
+        { new: true, session: session }
+      );
+      await TagCache.cache(interaction.user.id, tagDocument);
+
+      // Update cards with the associated tag with default untagged values
+      await CardModel.updateMany({ ownerId: interaction.user.id, tag: tag }, { $set: { tag: "untagged", emoji: "▪️" } }, { session: session });
+
+      interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       interaction.editReply({ content: `There was an issue deleting your tag. Please try again.` });
     }
   },
