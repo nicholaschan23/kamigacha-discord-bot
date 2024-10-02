@@ -1,7 +1,15 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
+const MapCache = require("@database/redis/cache/map");
+const { chunkArray, formatLookupPage, getWishListEmoji } = require("@utils/string/formatPage");
 const ButtonPages = require("./ButtonPages");
-const { chunkArray, formatLookupPage, getWishListEmoji } = require("../string/formatPage");
-const client = require("../../../bot");
 
 class LookupPages extends ButtonPages {
   constructor(interaction, pageData) {
@@ -33,14 +41,19 @@ class LookupPages extends ButtonPages {
    *
    * @param {Array<Array>} pageDataChunks - An array of arrays, where each inner array contains string data to format.
    */
-  createPages(pageDataChunks = this.pageDataChunks) {
+  async createPages(pageDataChunks = this.pageDataChunks) {
     const pages = [];
 
     for (let i = 0; i < pageDataChunks.length; i++) {
       const embed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
-        .setDescription(formatLookupPage(pageDataChunks[i]))
-        .setFooter({ text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(i * 10 + pageDataChunks[i].length).toLocaleString()} (${this.totalCharacters.toLocaleString()} total)` });
+        .setDescription(await formatLookupPage(pageDataChunks[i]))
+        .setFooter({
+          text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(
+            i * 10 +
+            pageDataChunks[i].length
+          ).toLocaleString()} (${this.totalCharacters.toLocaleString()} total)`,
+        });
       pages.push(embed);
     }
 
@@ -70,7 +83,7 @@ class LookupPages extends ButtonPages {
     }
   }
 
-  addComponents() {
+  async addComponents() {
     // Button row
     const ends = new ButtonBuilder().setCustomId("toggleEnds").setEmoji("↔️").setStyle(ButtonStyle.Secondary);
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
@@ -83,23 +96,27 @@ class LookupPages extends ButtonPages {
     this.messageComponents.push(buttonRow);
 
     // Select menu row
-    this.addSelectMenu();
+    await this.addSelectMenu();
   }
 
-  addSelectMenu() {
+  async addSelectMenu() {
+    const options = await Promise.all(
+      this.pageDataChunks[this.index].map(async ({ character, series, wishCount }) => {
+        const formattedCharacter = await MapCache.getFormattedCharacter(character);
+
+        return new StringSelectMenuOptionBuilder()
+          .setEmoji(getWishListEmoji(wishCount))
+          .setLabel(formattedCharacter)
+          .setValue(JSON.stringify({ character: character, series: series }));
+      })
+    );
+
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("characterSelect")
       .setPlaceholder("Select a character")
       .setMinValues(1)
       .setMaxValues(1)
-      .addOptions(
-        this.pageDataChunks[this.index].map(({ character, series, wishCount }) =>
-          new StringSelectMenuOptionBuilder()
-            .setEmoji(getWishListEmoji(wishCount))
-            .setLabel(client.characterNameMap.get(character))
-            .setValue(`${JSON.stringify({ character: character, series: series })}`)
-        )
-      );
+      .addOptions(options);
     this.components["characterSelect"] = selectMenu;
     const selectRow = new ActionRowBuilder().addComponents(selectMenu);
     this.messageComponents.push(selectRow);
@@ -116,21 +133,21 @@ class LookupPages extends ButtonPages {
         } else {
           this.index = 0;
         }
-        this.updatePageButtons(i);
+        await this.updatePageButtons(i);
         break;
       }
       case "viewPrev": {
         if (this.index > 0) {
           this.index--;
         }
-        this.updatePageButtons(i);
+        await this.updatePageButtons(i);
         break;
       }
       case "viewNext": {
         if (this.index < this.pages.length - 1) {
           this.index++;
         }
-        this.updatePageButtons(i);
+        await this.updatePageButtons(i);
         break;
       }
       case "characterSelect": {
@@ -145,11 +162,11 @@ class LookupPages extends ButtonPages {
     this.collector.resetTimer();
   }
 
-  updatePageButtons(i) {
+  async updatePageButtons(i) {
     this.toggleComponents();
 
     this.messageComponents.pop();
-    this.addSelectMenu();
+    await this.addSelectMenu();
 
     // Update message
     i.message.edit({

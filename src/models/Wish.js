@@ -1,12 +1,17 @@
 class Wish {
   /**
    * Creates an instance of Wish.
-   * @param {String} character The character's name.
-   * @param {String} series The character's series name.
+   * @param {Object} object - The object containing character and series properties.
+   * @param {string} object.character - The character name.
+   * @param {string} object.series - The series name.
+   * @throws {Error} Will throw an error if the object is invalid.
    */
-  constructor(character, series) {
-    this.character = character;
-    this.series = series;
+  constructor(object) {
+    if (!object || typeof object.character !== "string" || typeof object.series !== "string") {
+      throw new Error("Invalid object parameter");
+    }
+    this.character = object.character;
+    this.series = object.series;
   }
 }
 

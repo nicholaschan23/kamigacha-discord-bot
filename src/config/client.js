@@ -17,10 +17,14 @@ module.exports = {
 
   // Preset embed colors
   embedColor: {
-    red: "#f04747",
-    yellow: "#faa61a",
-    green: "#43b581",
-    blue: "#7289da",
+    red: "#dd2e44",
+    yellow: "#ffcc4d",
+    green: "#77b255",
+    blue: "#5865f2",
+    // red: "#f04747",
+    // yellow: "#faa61a",
+    // green: "#43b581",
+    // blue: "#7289da",
   },
 
   // Redis cache expiration

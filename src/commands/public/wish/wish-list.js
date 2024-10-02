@@ -1,7 +1,7 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
-const { chunkArray, formatWishListPage } = require("../../../utils/string/formatPage");
-const ButtonPages = require("../../../utils/pages/ButtonPages");
-const WishModel = require("../../../database/mongodb/models/user/wish");
+const WishCache = require("@database/redis/cache/characterWish");
+const ButtonPages = require("@utils/pages/ButtonPages");
+const { chunkArray, formatWishListPage } = require("@utils/string/formatPage");
 
 module.exports = {
   category: "public/wish",
@@ -13,37 +13,46 @@ module.exports = {
   async execute(client, interaction) {
     const user = interaction.options.getUser("user") ?? interaction.user;
 
+    await interaction.deferReply();
+
     // Fetch wish document
-    const wishDocument = await WishModel.findOne({ userId: user.id });
-    if (!wishDocument) {
-      return interaction.reply({ content: "That player does not have a wish list.", ephemeral: true });
-    }
+    const wishDocument = await WishCache.getDocument(user.id);
 
     // Cannot view another player's wish list if it's private
     if (wishDocument.isPrivate && interaction.user.id !== wishDocument.userId) {
-      return interaction.reply({ content: "That player's wish list is private.", ephemeral: true });
+      interaction.editReply({ content: "That player's wish list is private.", ephemeral: true });
+      return;
     }
 
-    // Split the list of cards into chunks of 10
     const limit = wishDocument.wishListLimit;
-    const chunkSize = 10;
-    const wishListChunked = chunkArray([...wishDocument.wishList], chunkSize);
-
-    // Create page embeds
     const total = wishDocument.wishList.length;
     const pages = []; // Store embeds
-    for (let i = 0; i < wishListChunked.length; i++) {
-      const start = (i * chunkSize + 1).toLocaleString();
-      const end = (i * chunkSize + wishListChunked[i].length).toLocaleString();
+
+    // Create page embeds
+    if (total === 0) {
       const embed = new EmbedBuilder()
-        .setTitle(`Wish list`)
-        .setDescription(`Showing wish list of ${user}\n` + `-# Slots available (**${limit - total}**/${limit})\n` + formatWishListPage(wishListChunked[i]))
-        .setFooter({ text: `Showing wishes ${start}-${end} (${total} total)` });
+        .setTitle(`Wish List`)
+        .setDescription(`Showing wish list of ${user}\n` + `-# Slots available (**${limit}**/${limit})`)
+        .setFooter({ text: `Showing wishes 0-0 (${total} total)` });
       pages.push(embed);
+    } else {
+      // Split the list of cards into chunks of 10
+      const chunkSize = 10;
+      const wishListChunked = chunkArray([...wishDocument.wishList], chunkSize);
+
+      for (let i = 0; i < wishListChunked.length; i++) {
+        const start = (i * chunkSize + 1).toLocaleString();
+        const end = (i * chunkSize + wishListChunked[i].length).toLocaleString();
+        const embed = new EmbedBuilder()
+          .setTitle(`Wish List`)
+          .setDescription(`Showing wish list of ${user}\n` + `-# Slots available (**${limit - total}**/${limit})\n` + formatWishListPage(wishListChunked[i]))
+          .setFooter({ text: `Showing wishes ${start}-${end} (${total} total)` });
+        pages.push(embed);
+      }
     }
 
     // Publish wish list
     const bp = new ButtonPages(interaction, pages, wishDocument.isPrivate);
-    bp.publishPages();
+    bp.publishPages(true);
   },
 };

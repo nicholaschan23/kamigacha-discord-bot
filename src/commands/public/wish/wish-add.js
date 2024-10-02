@@ -1,8 +1,9 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const WishModel = require("../../../database/mongodb/models/user/wish");
-const WishListAddPages = require("../../../utils/pages/WishListAddPages");
-const { lookup } = require("../../../utils/gacha/lookupCharacter");
-const Logger = require("../../../utils/Logger");
+const WishCache = require("@database/redis/cache/characterWish");
+const Logger = require("@utils/Logger");
+const { lookup } = require("@utils/gacha/lookupCharacter");
+const WishListAddPages = require("@utils/pages/WishListAddPages");
+
 const logger = new Logger("Wish add command");
 
 module.exports = {
@@ -15,29 +16,27 @@ module.exports = {
   async execute(client, interaction) {
     try {
       // Find the wish list document for the user
-      const wishDocument = await WishModel.findOneAndUpdate(
-        { userId: interaction.user.id }, // Filter
-        { $setOnInsert: { userId: interaction.user.id } }, // Update
-        { new: true, upsert: true }
-      );
+      const wishDocument = await WishCache.getDocument(interaction.user.id);
 
       // Check if wish list limit is reached
       if (wishDocument.wishList.length >= wishDocument.wishListLimit) {
-        return interaction.reply({ content: `You've reached your wish list limit of ${wishDocument.wishListLimit}.` });
+        interaction.reply({ content: `You've reached your wish list limit of ${wishDocument.wishListLimit}.` });
+        return;
       }
 
       // Button pages for lookup search
       const character = interaction.options.getString("character");
-      const results = lookup(character, client.jsonSearches);
+      const results = await lookup(character);
 
       // No results
       if (results.length == 0) {
-        return interaction.reply("That character could not be found. It may not exist, or you may have misspelled their name.");
+        interaction.reply("That character could not be found. It may not exist, or you may have misspelled their name.");
+        return;
       }
 
       // Pages with select menu to choose wish to add
       const bp = new WishListAddPages(interaction, results);
-      bp.createPages();
+      await bp.createPages();
       bp.publishPages();
     } catch (error) {
       logger.error(error.stack);

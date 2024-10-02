@@ -22,7 +22,7 @@ class ButtonPages {
       await this.interaction.deferReply({ ephemeral: this.ephemeral });
     }
 
-    this.addComponents();
+    await this.addComponents();
 
     const currentPage = await this.interaction.editReply({
       embeds: [this.pages[this.index]],
@@ -45,6 +45,8 @@ class ButtonPages {
   }
 
   addComponents() {
+    if (this.pages.length === 1) return;
+
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const row = new ActionRowBuilder().addComponents(prev, next);

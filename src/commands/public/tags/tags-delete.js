@@ -44,24 +44,34 @@ module.exports = {
     const session = await mongoose.startSession();
     session.startTransaction();
 
+    let tagDocument;
     try {
-      const tagDocument = await TagModel.findOneAndUpdate(
+      tagDocument = await TagModel.findOneAndUpdate(
         { userId: interaction.user.id, "tagList.tag": tag },
         { $pull: { tagList: { tag: tag } } },
         { new: true, session: session }
       );
-      await TagCache.cache(interaction.user.id, tagDocument);
 
+      if (!tagDocument) {
+        throw new Error("Tag not found");
+      }
+      
       // Update cards with the associated tag with default untagged values
       await CardModel.updateMany({ ownerId: interaction.user.id, tag: tag }, { $set: { tag: "untagged", emoji: "▪️" } }, { session: session });
-
-      interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
+      
       await session.commitTransaction();
       session.endSession();
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
+
       interaction.editReply({ content: `There was an issue deleting your tag. Please try again.` });
+      return;
     }
+
+    
+    await TagCache.cache(interaction.user.id, tagDocument);
+      
+    interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
   },
 };

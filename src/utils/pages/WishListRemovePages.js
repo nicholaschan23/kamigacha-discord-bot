@@ -1,10 +1,16 @@
 const { EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } = require("discord.js");
-const { formatWishListPage } = require("../string/formatPage");
+const mongoose = require("mongoose");
+const config = require("@config");
+const RedisClient = require("@database/redis/RedisClient");
+const WishCache = require("@database/redis/cache/characterWish");
+const WishCountCache = require("@database/redis/cache/characterWishCount");
+const WishModel = require("@database/mongodb/models/user/wish");
+const CharacterModel = require("@database/mongodb/models/global/character");
+const Wish = require("@models/Wish");
+const { formatWishListPage } = require("@utils/string/formatPage");
 const LookupPages = require("./LookupPages");
-const WishModel = require("../../database/mongodb/models/user/wish");
-const CharacterModel = require("../../database/mongodb/models/global/character");
-const config = require("../../config");
-const client = require("../../../bot");
+
+const redis = RedisClient.connection;
 
 class WishListRemoveButtonPages extends LookupPages {
   constructor(interaction, wishDocument) {
@@ -49,10 +55,8 @@ class WishListRemoveButtonPages extends LookupPages {
       .setMinValues(1)
       .setMaxValues(1)
       .addOptions(
-        this.pageDataChunks[this.index].map(({ character, series }) =>
-          new StringSelectMenuOptionBuilder()
-            .setLabel(client.characterNameMap.get(character))
-            .setValue(`${JSON.stringify({ character: character, series: series })}`)
+        this.pageDataChunks[this.index].map(async ({ character, series }) =>
+          new StringSelectMenuOptionBuilder().setLabel(await redis.hget(character)).setValue(`${JSON.stringify({ character: character, series: series })}`)
         )
       );
     this.components["characterSelect"] = selectMenu;
@@ -62,52 +66,67 @@ class WishListRemoveButtonPages extends LookupPages {
 
   async handleSelect(interaction, value) {
     const embed = this.pages[this.index];
-    const data = JSON.parse(value);
 
-    // Save document
-    const characterToAdd = { character: data.character, series: data.series };
-    const wishDocument = await WishModel.findOneAndUpdate(
-      {
-        userId: interaction.user.id,
-        wishList: { $elemMatch: characterToAdd },
-      }, // Filter
-      {
-        $pull: {
-          wishList: characterToAdd,
+    const wish = new Wish(JSON.parse(value));
+    const formattedCharacter = await redis.hget("characterNameMap", wish.character);
+    const formattedSeries = await redis.hget("seriesNameMap", wish.series);
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    let messaged = false;
+    let wishDocument, characterDocument;
+    try {
+      // Remove wish from wish list
+      wishDocument = await WishModel.findOneAndUpdate(
+        { userId: interaction.user.id, wishList: { $elemMatch: wish } },
+        {
+          $pull: {
+            wishList: wish,
+          },
         },
-      }, // Update
-      { new: true }
-    );
+        { new: true, session: session }
+      );
 
-    // Somehow wish list entry was not found to remove
-    if (!wishDocument) {
+      // Wish list entry was not found to remove
+      if (!wishDocument) {
+        interaction.followUp({ content: `**${formattedCharacter}** · ${formattedSeries} is not on your wish list.` });
+        messaged = true;
+        throw new Error("Wish list entry not found");
+      }
+
+      // Remove wish count from character
+      characterDocument = await CharacterModel.findOneAndUpdate(
+        { character: wish.character, series: wish.series },
+        { $inc: { wishCount: -1 } },
+        { new: true, session: session }
+      );
+
+      // Character not found in database
+      if (!characterDocument) {
+        throw new Error("Couldn't find character in database");
+      }
+
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+
       embed.setColor(config.embedColor.red);
       this.collector.stop();
-      return await interaction.followUp({
-        content: `**${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} is not on your wish list.`,
-      });
+
+      if (!messaged) interaction.followUp({ content: "There was an issue removing from your wish list. Please try again." });
+      return;
     }
 
-    // Remove wish count from character
-    const characterDocument = await CharacterModel.findOneAndUpdate(
-      {
-        character: data.character,
-        series: data.series,
-      }, // Filter
-      { $inc: { wishCount: -1 } },
-      { new: true } // Options
-    );
+    // Update cache
+    await Promise.all([WishCache.cache(interaction.user.id, wishDocument), WishCountCache.cache(wish.character, wish.series, characterDocument.wishCount)]);
 
-    // Update message
-    if (!characterDocument) {
-      embed.setColor(config.embedColor.red);
-      this.collector.stop();
-      return await interaction.followUp({ content: "There was an issue removing from your wish list. Please try again." });
-    }
     embed.setColor(config.embedColor.green);
     this.collector.stop();
-    return await interaction.followUp({
-      content: `Successfully removed **${client.characterNameMap.get(data.character)}** · ${client.seriesNameMap.get(data.series)} from your wish list!`,
+    interaction.followUp({
+      content: `✅ Successfully removed **${formattedCharacter}** · ${formattedSeries} from your wish list!`,
     });
   }
 }

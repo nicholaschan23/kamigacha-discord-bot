@@ -1,11 +1,11 @@
-const Card = require("../../models/Card");
-const CharacterResult = require("../../models/CharacterResult");
-const Filter = require("../../models/CollectionFilter");
-const Item = require("../../models/Item");
-const Tag = require("../../models/CollectionTag");
-const Wish = require("../../models/Wish");
-const client = require("../../../bot");
-const config = require("../../config");
+const config = require("@config");
+const MapCache = require("@database/redis/cache/map");
+const Card = require("@models/Card");
+const CharacterResult = require("@models/CharacterResult");
+const Filter = require("@models/CollectionFilter");
+const Item = require("@models/Item");
+const Tag = require("@models/CollectionTag");
+const Wish = require("@models/Wish");
 
 /**
  * Splits an array into smaller chunks, suitable for content within an embed page.
@@ -27,26 +27,32 @@ function chunkArray(array, size) {
  * @param {Boolean} [showTags=true] - Whether to display card tag emoji.
  * @returns {String} The formatted card information string.
  */
-function formatCardInfoPage(cardList, showTags = true) {
+async function formatCardInfoPage(cardList, showTags = true) {
   // Calculate max lengths for padding
   const maxCodeLength = Math.max(...cardList.map((card) => card.code.length));
   const maxRarityLength = Math.max(...cardList.map((card) => card.rarity.length));
   const maxSetLength = Math.max(...cardList.map((card) => `${card.set}`.length));
 
-  return cardList
-    .map((card) => {
+  const formattedCardList = await Promise.all(
+    cardList.map(async (card) => {
       const paddedCode = card.code.padEnd(maxCodeLength, " ");
       const paddedRarity = card.rarity.padEnd(maxRarityLength, " ");
       const paddedSet = `${card.set}`.padEnd(maxSetLength, " ");
+  
+      const formattedCharacter = await MapCache.getFormattedCharacter(card.character);
+      const formattedSeries = await MapCache.getFormattedSeries(card.series);
+  
       return [
         `${showTags ? `${card.emoji} ` : ""}\`${paddedCode}\``,
         `\`${paddedRarity}\``,
         `\`◈${paddedSet}\``,
-        `${client.seriesNameMap.get(card.series)}`,
-        `**${client.characterNameMap.get(card.character)}**`,
+        `${formattedSeries}`,
+        `**${formattedCharacter}**`,
       ].join(" · ");
     })
-    .join("\n");
+  );
+  
+  return formattedCardList.join("\n");
 }
 
 /**
@@ -80,16 +86,17 @@ function formatFilterListPage(filterList) {
  * @param {CharacterResult[]} resultList - The array of lookup result objects.
  * @returns {String} The formatted character result string.
  */
-function formatLookupPage(resultList) {
-  return resultList
-    .map((result) => {
-      [
-        `${getWishListEmoji(result.wishCount)} \`❤${result.wishCount}\``,
-        `${client.seriesNameMap.get(result.series)}`,
-        `**${client.characterNameMap.get(result.character)}**`,
-      ].join(" · ");
+async function formatLookupPage(resultList) {
+  const formattedResults = await Promise.all(
+    resultList.map(async (result) => {
+      const formattedCharacter = await MapCache.getFormattedCharacter(result.character);
+      const formattedSeries = await MapCache.getFormattedSeries(result.series);
+  
+      return [`${getWishListEmoji(result.wishCount)} \`❤${result.wishCount}\``, `${formattedSeries}`, `**${formattedCharacter}**`].join(" · ");
     })
-    .join("\n");
+  );
+  
+  return formattedResults.join("\n");
 }
 
 /**
@@ -112,12 +119,17 @@ function formatInventoryPage(itemList) {
  * @param {Wish[]} wishList - The array of Wish objects.
  * @returns {String} The formatted wish list string output.
  */
-function formatWishListPage(wishList) {
-  return wishList
-    .map((wish) => {
-      return [`- ${client.seriesNameMap.get(wish.series)}`, `**${client.characterNameMap.get(wish.character)}**`].join(" · ");
+async function formatWishListPage(wishList) {
+  const formattedWishList = await Promise.all(
+    wishList.map(async (wish) => {
+      const formattedCharacter = await MapCache.getFormattedCharacter(wish.character);
+      const formattedSeries = await MapCache.getFormattedSeries(wish.series);
+  
+      return [`- ${formattedSeries}`, `**${formattedCharacter}**`].join(" · ");
     })
-    .join("\n");
+  );
+  
+  return formattedWishList.join("\n");
 }
 
 /**

@@ -54,24 +54,33 @@ module.exports = {
     const session = await mongoose.startSession();
     session.startTransaction();
 
+    let tagDocument;
     try {
-      const tagDocument = await TagModel.findOneAndUpdate(
+      tagDocument = await TagModel.findOneAndUpdate(
         { userId: interaction.user.id, "tagList.tag": tag },
         { $set: { "tagList.$.emoji": emoji } },
         { new: true, session: session }
       );
-      await TagCache.cache(interaction.user.id, tagDocument);
+
+      if (!tagDocument) {
+        throw new Error("Tag not found");
+      }
 
       // Update cards with the associated tag with the new emoji
       await CardModel.updateMany({ userId: interaction.user.id, tag: tag }, { $set: { emoji: emoji } }, { session: session });
 
-      interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
       await session.commitTransaction();
       session.endSession();
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
+
       interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });
+      return;
     }
+
+    await TagCache.cache(interaction.user.id, tagDocument);
+    
+    interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
   },
 };

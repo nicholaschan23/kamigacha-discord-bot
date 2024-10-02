@@ -72,6 +72,7 @@ module.exports = {
     const session = await mongoose.startSession();
     session.startTransaction();
 
+    let tagDocument;
     try {
       // Remove the old tag
       await TagModel.findOneAndUpdate(
@@ -83,7 +84,7 @@ module.exports = {
       );
 
       // Add the new tag with sorted order
-      const tagDocument = await TagModel.findOneAndUpdate(
+      tagDocument = await TagModel.findOneAndUpdate(
         { userId: interaction.user.id },
         {
           $push: {
@@ -93,21 +94,24 @@ module.exports = {
             },
           },
         },
-        { session: session }
+        { new: true, session: session }
       );
-
-      await TagCache.cache(interaction.user.id, tagDocument);
 
       // Update cards with the associated old tag with the new tag
       await CardModel.updateMany({ userId: interaction.user.id, tag: oldTag }, { $set: { tag: newTag } }, { session: session });
 
-      interaction.editReply({ content: `Successfully updated \`${oldTag}\` to \`${newTag}\`!` });
       await session.commitTransaction();
       session.endSession();
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
+      
       interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });
+      return;
     }
+
+    await TagCache.cache(interaction.user.id, tagDocument);
+
+    interaction.editReply({ content: `Successfully updated \`${oldTag}\` to \`${newTag}\`!` });
   },
 };
