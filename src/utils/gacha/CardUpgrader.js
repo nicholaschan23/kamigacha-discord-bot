@@ -1,13 +1,13 @@
-const config = require("../../config");
+const config = require("@config");
 const crypto = require("crypto");
-const { generateCode } = require("./generateCode");
-const CardModel = require("../../database/mongodb/models/card/card");
-const CollectionModel = require("../../database/mongodb/models/card/collection");
-const CharacterModel = require("../../database/mongodb/models/global/character");
+const { generateCode } = require("@utils/gacha/generateCode");
+const CardModel = require("@database/mongodb/models/card/card");
+const CollectionModel = require("@database/mongodb/models/card/collection");
+const CharacterModel = require("@database/mongodb/models/global/character");
+const MapCache = require("@database/redis/cache/map");
 
 class CardUpgrader {
-  constructor(client, guildId, queriedCards, seriesSetFreq, rarityFreq) {
-    this.client = client;
+  constructor(guildId, queriedCards, seriesSetFreq, rarityFreq) {
     this.userId = queriedCards[0].ownerId;
     this.guildId = guildId;
     this.queriedCards = queriedCards;
@@ -16,6 +16,11 @@ class CardUpgrader {
     this.rarityFreq = rarityFreq;
   }
 
+  /**
+   * Upgrades the specified cards.
+   * @param {Array} cardCodes - The codes of the cards to upgrade.
+   * @returns {Object} The data of the newly created upgraded card.
+   */
   async cardUpgrade(cardCodes = this.queriedCodes) {
     // Re-verify ownership of cards
     const cards = await CardModel.find({
@@ -33,42 +38,53 @@ class CardUpgrader {
     const cardInstance = new CardModel(cardData);
     const createdCard = await CardModel.create(cardInstance);
 
-    await Promise.all([
+    const session = await CardModel.startSession();
+    session.startTransaction();
+
+    try {
       // Remove card references from the user's collection
-      CollectionModel.updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardDocumentIds } } }),
+      await CollectionModel.updateOne({ userId: this.userId }, { $pull: { cardsOwned: { $in: cardDocumentIds } } }, { session: session });
 
       // Delete the cards from existence
-      CardModel.deleteMany({ code: { $in: cardCodes } }),
+      await CardModel.deleteMany({ code: { $in: cardCodes } }, { session: session });
 
       // Update character card destroyed stats
-      ...this.queriedCards.map((card) => {
-        return CharacterModel.updateOne(
-          { character: card.character, series: card.series }, // Query
-          { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.destroyed`]: 1 } } // Increment the destroyed field
-        );
-      }),
+      await Promise.all(
+        this.queriedCards.map(async (card) => {
+          return CharacterModel.updateOne(
+            { character: card.character, series: card.series }, // Query
+            { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.destroyed`]: 1 } }, // Increment the destroyed field
+            { session: session }
+          );
+        })
+      );
 
       // Add the new card to the user's collection
-      CollectionModel.updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } }),
+      await CollectionModel.updateOne({ userId: this.userId }, { $addToSet: { cardsOwned: createdCard._id } }, { session: session });
 
       // Update character card generated stats
-      CharacterModel.updateOne(
+      await CharacterModel.updateOne(
         { character: cardData.character, series: cardData.series }, // Query
-        { $inc: { [`circulation.${cardData.set}.rarities.${cardData.rarity}.generated`]: 1 } } // Increment the generated field
-      ),
-    ]);
+        { $inc: { [`circulation.${cardData.set}.rarities.${cardData.rarity}.generated`]: 1 } }, // Increment the generated field
+        { session: session }
+      );
 
-    // Determine success of upgrade
-    // if (!this.getSuccess) {
-    //   return false;
-    // }
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
 
     return cardData;
   }
 
+  /**
+   * Generates the data for an upgraded card.
+   * @returns {Object} The data of the newly generated upgraded card.
+   */
   async generateUpgradedCard() {
-    const jsonCards = this.client.jsonCards;
-
     // Select a series and set
     const [series, set] = this.getSeriesSet();
 
@@ -76,11 +92,13 @@ class CardUpgrader {
     const rarity = this.getRarity();
 
     // Select a random character
-    const characters = jsonCards[series][set][rarity];
+    const seriesModel = await MapCache.getMapEntry("card-model-map", series);
+    const characters = seriesModel[set][rarity];
     const character = characters[crypto.randomInt(0, characters.length)];
 
     const code = await generateCode();
 
+    // Construct the card data
     const card = {
       code: code,
       series: series,
@@ -97,6 +115,11 @@ class CardUpgrader {
     return card;
   }
 
+  /**
+   * Determines if the upgrade is successful based on rarity frequencies.
+   * @param {Object} rarityFreq - The frequency of each rarity.
+   * @returns {boolean} True if the upgrade is successful, false otherwise.
+   */
   getSuccess(rarityFreq = this.rarityFreq) {
     // Calculate the cumulative fail chance based on rarity frequencies
     let failChance = 0;
@@ -115,6 +138,11 @@ class CardUpgrader {
     return randNum <= failChance;
   }
 
+  /**
+   * Selects a series and set based on their frequencies.
+   * @param {Object} seriesSetFreq - The frequency of each series and set.
+   * @returns {Array} The selected series and set.
+   */
   getSeriesSet(seriesSetFreq = this.seriesSetFreq) {
     const randNum = crypto.randomInt(0, 10);
     let cumulativeChance = 0;
@@ -129,14 +157,17 @@ class CardUpgrader {
     }
   }
 
+  /**
+   * Selects a rarity based on its frequency.
+   * @param {Object} rarityFreq - The frequency of each rarity.
+   * @returns {string} The selected rarity.
+   */
   getRarity(rarityFreq = this.rarityFreq) {
     const randNum = crypto.randomInt(0, 10);
     let cumulativeChance = 0;
-    let failChance = 0;
     for (const rarity in rarityFreq) {
       const freq = rarityFreq[rarity];
       cumulativeChance += freq;
-      failChance += freq * config.upgradeFailRate[rarity];
       if (randNum <= cumulativeChance) {
         return config.getNextRarity(rarity);
       }

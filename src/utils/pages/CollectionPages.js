@@ -1,4 +1,12 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
 const ButtonPages = require("./ButtonPages");
 const { chunkArray, formatCardInfoPage } = require("../string/formatPage");
 const { parseFilterString, applyFilters } = require("../gacha/filter");
@@ -14,14 +22,17 @@ class CollectionPages extends ButtonPages {
     this.filterMenu = filterMenu;
 
     this.cardList = [...collectionDocument.cardsOwned].reverse();
-    this.updatePages(parseFilterString(filterString));
 
     if (!filterString) {
       this.filterString = "order=date";
     }
   }
 
-  updatePages(filters) {
+  async init() {
+    await this.updatePages(parseFilterString(this.filterString));
+  }
+
+  async updatePages(filters) {
     let display;
     [this.filteredList, display] = applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
 
@@ -29,7 +40,7 @@ class CollectionPages extends ButtonPages {
     this.cardChunks = chunkArray(this.filteredList, 10);
 
     // Create page embeds
-    this.pages = this.createPages(this.cardChunks);
+    this.pages = await this.createPages(this.cardChunks);
 
     this.index = 0;
   }
@@ -40,7 +51,7 @@ class CollectionPages extends ButtonPages {
    * @param {Array<Array>} cardDataChunks - An array of arrays, where each inner array contains card data.
    * @returns {Array<EmbedBuilder>} An array of embed pages.
    */
-  createPages(cardDataChunks) {
+  async createPages(cardDataChunks) {
     const pages = [];
     if (cardDataChunks.length == 0) {
       const embed = new EmbedBuilder()
@@ -51,10 +62,16 @@ class CollectionPages extends ButtonPages {
     }
 
     for (let i = 0; i < cardDataChunks.length; i++) {
+      const formattedPages = await formatCardInfoPage(cardDataChunks[i]);
       const embed = new EmbedBuilder()
         .setTitle(`Card Collection`)
-        .setDescription(`Cards owned by <@${this.collectionDocument.userId}>\n\n` + formatCardInfoPage(cardDataChunks[i]))
-        .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + cardDataChunks[i].length).toLocaleString()} (${this.cardList.length.toLocaleString()} total)` });
+        .setDescription(`Cards owned by <@${this.collectionDocument.userId}>\n\n` + formattedPages)
+        .setFooter({
+          text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(
+            i * 10 +
+            cardDataChunks[i].length
+          ).toLocaleString()} (${this.cardList.length.toLocaleString()} total)`,
+        });
       pages.push(embed);
     }
     return pages;
@@ -63,7 +80,7 @@ class CollectionPages extends ButtonPages {
   addComponents() {
     // Button row
     const ends = new ButtonBuilder().setCustomId("toggleEnds").setEmoji("↔️").setStyle(ButtonStyle.Secondary);
-    const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
+    const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const clipboard = new ButtonBuilder().setCustomId("copyCodes").setEmoji("📋").setStyle(ButtonStyle.Secondary);
     const view = new ButtonBuilder().setCustomId("viewImages").setEmoji("🖼️").setStyle(ButtonStyle.Secondary);
@@ -72,6 +89,7 @@ class CollectionPages extends ButtonPages {
     this.components["viewNext"] = next;
     this.components["copyCodes"] = clipboard;
     this.components["viewImages"] = view;
+    this.updateComponents();
     const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, clipboard, view);
     this.messageComponents.push(buttonRow);
 
@@ -151,7 +169,7 @@ class CollectionPages extends ButtonPages {
       case "collectionFilters": {
         const selectedValue = i.values[0];
         this.filterString = selectedValue;
-        this.updatePages(parseFilterString(this.filterString));
+        await this.updatePages(parseFilterString(this.filterString));
         this.updatePageButtons(i);
         break;
       }
@@ -162,7 +180,7 @@ class CollectionPages extends ButtonPages {
     this.collector.resetTimer();
   }
 
-  updatePageButtons(i) {
+  updateComponents() {
     // Update disabled states of page buttons
     const ends = this.components["toggleEnds"];
     const prev = this.components["viewPrev"];
@@ -198,6 +216,10 @@ class CollectionPages extends ButtonPages {
     } else {
       view.setDisabled(false);
     }
+  }
+
+  updatePageButtons(i) {
+    this.updateComponents();
 
     // Update message
     if (this.ephemeral) {

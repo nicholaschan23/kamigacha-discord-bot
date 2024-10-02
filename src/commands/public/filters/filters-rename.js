@@ -17,55 +17,96 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
 
+    // Get and validate old label
     const oldLabel = capitalizeFirstLetter(interaction.options.getString("old-label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(oldLabel)) {
       interaction.editReply({ content: "That filter does not exist." });
       return;
     }
 
+    // Get and validate new label
     const newLabel = capitalizeFirstLetter(interaction.options.getString("new-label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(newLabel)) {
       interaction.editReply({ content: `Please input a valid label. It can only contain letters, numbers, and spaces.` });
       return;
     }
 
+    let oldFilter;
     try {
-      // Find the filter document for the user
       const filterDocument = await FilterCache.getDocument(interaction.user.id);
 
-      // Handle case where no filter data exists
+      // Check if user has any filters
       if (filterDocument.filterList.length === 0) {
         interaction.reply({ content: `You do not have any filters.` });
         return;
       }
 
-      // Check if the new filter already exists
+      // Check for duplicate new label
       const duplicateLabel = filterDocument.filterList.some((label) => label.label === newLabel);
       if (duplicateLabel) {
         interaction.editReply({ content: `The **${newLabel}** filter already exists.` });
         return;
       }
 
-      // Find the index of the old filter in the filterList array
+      // Find the old filter
       const oldFilterIndex = filterDocument.filterList.findIndex((label) => label.label === oldLabel);
       if (oldFilterIndex === -1) {
         interaction.editReply({ content: `The **${oldLabel}** filter does not exist.` });
         return;
       }
-
-      // Extract old emoji and quantity
-      const { emoji: emoji, filter: filter } = filterDocument.filterList[oldFilterIndex];
-
-      // Remove the old filter
-      await FilterCache.deleteFilter(interaction.user.id, oldLabel);
-
-      // Add the new filter with sorted order
-      await FilterCache.addFilter(interaction.user.id, emoji, newLabel, filter);
-
-      interaction.editReply({ content: `Successfully updated **${oldLabel}** to **${newLabel}**!` });
+      oldFilter = filterDocument.filterList[oldFilterIndex];
     } catch (error) {
       logger.error(error.stack);
-      interaction.editReply({ content: `There was an issue renaming your filter. Please try again.` });
+      interaction.editReply({ content: "There was an issue renaming your filter. Please try again." });
+      return;
     }
+
+    // Start a session for transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const { emoji, label: oldLabel, filter } = oldFilter;
+
+      // Remove the old filter
+      let filterDocument = await FilterModel.findOneAndUpdate(
+        { userId: interaction.user.id, "filterList.label": oldLabel },
+        { $pull: { filterList: { label: oldLabel } } },
+        { new: true, session: session }
+      );
+      if (!filterDocument) {
+        throw new Error();
+      }
+
+      // Add the new filter
+      filterDocument = await FilterModel.findOneAndUpdate(
+        { userId: interaction.user.id, "filterList.label": { $ne: newLabel } },
+        {
+          $push: {
+            filterList: {
+              $each: [{ emoji, label: newLabel, filter }],
+              $sort: { label: 1 },
+            },
+          },
+        },
+        { new: true, session: session }
+      );
+      if (!filterDocument) {
+        throw new Error();
+      }
+
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      // Abort the transaction in case of error
+      await session.abortTransaction();
+      session.endSession();
+      interaction.editReply({ content: `There was an issue renaming your filter. Please try again.` });
+      return;
+    }
+
+    await FilterCache.cache(interaction.user.id, filterDocument);
+    interaction.editReply({ content: `Successfully updated **${oldLabel}** to **${newLabel}**!` });
   },
 };

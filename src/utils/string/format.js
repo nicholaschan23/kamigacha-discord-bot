@@ -1,4 +1,4 @@
-const client = require("../../../bot");
+const MapCache = require("@database/redis/cache/map");
 
 /**
  * Capitalize first letter of a string.
@@ -14,8 +14,10 @@ function capitalizeFirstLetter(str) {
  * @param {Card} card An object with card data.
  * @returns The formatted string.
  */
-function formatCardInfo(card) {
-  return [`\`${card.code}\``, `\`${card.rarity}\``, `\`◈${card.set}\``, `${client.seriesNameMap.get(card.series)}`, `**${client.characterNameMap.get(card.character)}**`].join(" · ");
+async function formatCardInfo(card) {
+  const formattedCharacter = await MapCache.getFormattedCharacter(card.character);
+  const formattedSeries = await MapCache.getFormattedSeries(card.series);
+  return [`\`${card.code}\``, `\`${card.rarity}\``, `\`◈${card.set}\``, `${formattedSeries}`, `**${formattedCharacter}**`].join(" · ");
 }
 
 /**

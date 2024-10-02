@@ -1,8 +1,7 @@
-const config = require("@config");
 const BlacklistModel = require("@database/mongodb/models/global/blacklist");
 const RedisClient = require("@database/redis/RedisClient");
 
-const EXPIRATION = config.redisExpiration.default;
+const KEY = "blacklisted";
 const redis = RedisClient.connection;
 
 /**
@@ -13,9 +12,7 @@ const redis = RedisClient.connection;
  * @returns {Promise<Object|boolean>} Returns the blacklist document if the user is blacklisted, otherwise returns false.
  */
 async function isUserBlacklisted(userId) {
-  const key = `blacklisted:${userId}`;
-
-  let value = await redis.get(key);
+  let value = await redis.hget(KEY, userId);
 
   switch (value) {
     case null: {
@@ -26,10 +23,6 @@ async function isUserBlacklisted(userId) {
         value = false;
       }
       await cache(userId, value);
-      break;
-    }
-    case "false": {
-      value = false;
       break;
     }
     default: {
@@ -44,7 +37,7 @@ async function isUserBlacklisted(userId) {
 async function getDocument(userId) {
   const response = await isUserBlacklisted(userId);
   if (response === false) return null;
-  return JSON.parse(response);
+  return response;
 }
 
 /**
@@ -78,10 +71,8 @@ async function removeUser(userId) {
 }
 
 async function cache(userId, object) {
-  const key = `blacklisted:${userId}`;
   const value = JSON.stringify(object);
-  await redis.set(key, value);
-  redis.expire(key, EXPIRATION);
+  await redis.hset(KEY, userId, value);
 }
 
 module.exports = {

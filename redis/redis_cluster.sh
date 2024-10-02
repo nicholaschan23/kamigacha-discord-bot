@@ -122,6 +122,20 @@ flush_all_redis_nodes() {
   done
 }
 
+# Function to list all keys from all Redis nodes
+list_all_keys() {
+  echo "Listing all keys from all Redis nodes..."
+  for port in "${REDIS_PORTS[@]}"; do
+    echo "Keys on port $port:"
+    redis-cli -p $port KEYS '*'
+    if [ $? -eq 0 ]; then
+      echo "Successfully listed keys on port $port."
+    else
+      echo "Failed to list keys on port $port."
+    fi
+  done
+}
+
 # Main script logic
 case "$1" in
   start)
@@ -150,8 +164,11 @@ case "$1" in
   flush-all)
     flush_all_redis_nodes
     ;;
+  key-list)
+    list_all_keys
+    ;;
   *)
-    echo "Usage: $0 {start|stop|stop-all|node-list|flush-all}"
+    echo "Usage: $0 {start|stop|stop-all|node-list|flush-all|key-list}"
     exit 1
     ;;
 esac

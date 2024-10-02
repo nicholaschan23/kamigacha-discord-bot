@@ -22,49 +22,6 @@ async function getDocument(userId) {
   return value;
 }
 
-async function addFilter(userId, emoji, label, filter) {
-  const filterDocument = await FilterModel.findOneAndUpdate(
-    { userId: userId, "filterList.label": { $ne: label } },
-    {
-      $push: {
-        filterList: {
-          $each: [{ emoji: emoji, label: label, filter: filter }],
-          $sort: { label: 1 },
-        },
-      },
-    },
-    { new: true }
-  );
-  await cache(userId, filterDocument);
-}
-
-async function deleteFilter(userId, label) {
-  const filterDocument = await FilterModel.findOneAndUpdate(
-    { userId: userId, "filterList.label": label },
-    { $pull: { filterList: { label: label } } },
-    { new: true }
-  );
-  await cache(userId, filterDocument);
-}
-
-async function updateEmoji(userId, label, emoji) {
-  const filterDocument = await FilterModel.findOneAndUpdate(
-    { userId: userId, "filterList.label": label },
-    { $set: { "filterList.$.emoji": emoji } },
-    { new: true }
-  );
-  await cache(userId, filterDocument);
-}
-
-async function updateFilterString(userId, label, string) {
-  const filterDocument = await FilterModel.findOneAndUpdate(
-    { userId: userId, "filterList.label": label },
-    { $set: { "filterList.$.filter": string } },
-    { new: true }
-  );
-  await cache(userId, filterDocument);
-}
-
 async function cache(userId, object) {
   const key = `collection-filter:${userId}`;
   const value = JSON.stringify(object);
@@ -74,8 +31,5 @@ async function cache(userId, object) {
 
 module.exports = {
   getDocument,
-  addFilter,
-  deleteFilter,
-  updateEmoji,
-  updateFilterString,
+  cache,
 };

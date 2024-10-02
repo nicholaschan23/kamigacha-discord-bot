@@ -15,15 +15,17 @@ module.exports = {
     .addStringOption((option) => option.setName("emoji").setDescription("New emoji to associate with filter.").setRequired(true)),
 
   async execute(client, interaction) {
+    // Validate filter label
     const label = capitalizeFirstLetter(interaction.options.getString("label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(label)) {
       interaction.reply({ content: "That filter does not exist." });
       return;
     }
 
+    // Validate emoji
     const emoji = interaction.options.getString("emoji");
     if (!isOneEmoji(emoji)) {
-      interaction.reply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
+      interaction.reply({ content: "Please input a valid emoji. It can only be a default Discord emoji." });
       return;
     }
 
@@ -34,22 +36,32 @@ module.exports = {
 
       // Handle case where no filter data exists
       if (filterDocument.filterList.length === 0) {
-        interaction.reply({ content: `You do not have any filters.` });
+        interaction.reply({ content: "You do not have any filters." });
         return;
       }
 
+      // Check if the label exists in the filter list
       const labelExists = filterDocument.filterList.some((filter) => filter.label === label);
       if (!labelExists) {
         interaction.editReply({ content: "That filter does not exist." });
         return;
       }
 
-      await FilterCache.updateEmoji(interaction.user.id, label, emoji);
+      // Update the filter document with the new emoji
+      const updatedDocument = await FilterModel.findOneAndUpdate(
+        { userId: interaction.user.id, "filterList.label": label },
+        { $set: { "filterList.$.emoji": emoji } },
+        { new: true }
+      );
+      if (!updatedDocument) {
+        throw new Error("Filter not found");
+      }
 
+      await FilterCache.cache(interaction.user.id, updatedDocument);
       interaction.editReply({ content: `Successfully updated filter to ${emoji} **${label}**!` });
     } catch (error) {
       logger.error(error.stack);
-      interaction.editReply({ content: `There was an issue changing the emoji for your filter. Please try again.` });
+      interaction.editReply({ content: "There was an issue changing the emoji for your filter. Please try again." });
     }
   },
 };

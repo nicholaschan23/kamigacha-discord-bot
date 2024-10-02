@@ -6,10 +6,10 @@ const {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } = require("discord.js");
-const ButtonPages = require("./ButtonPages");
-const CharacterModel = require("../../database/mongodb/models/global/character");
-const client = require("../../../bot");
-const config = require("../../config");
+const MapCache = require("@database/redis/cache/map");
+const CharacterModel = require("@database/mongodb/models/global/character");
+const config = require("@config");
+const ButtonPages = require("@utils/pages/ButtonPages");
 
 class LookupCharacterPages extends ButtonPages {
   constructor(interaction, value, prevState = null) {
@@ -76,6 +76,9 @@ class LookupCharacterPages extends ButtonPages {
     const statsPages = [];
     const zoomPages = [];
 
+    const formattedCharacter = await MapCache.getFormattedCharacter(this.character);
+    const formattedSeries = await MapCache.getFormattedSeries(this.series);
+    
     for (let i = 0; i < this.rarityArray.length; i++) {
       const rarity = this.rarityArray[i];
       const stats = this.circulation.get(this.set).rarities.get(rarity);
@@ -88,8 +91,8 @@ class LookupCharacterPages extends ButtonPages {
       const statEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
         .setDescription(
-          `Character: **${client.characterNameMap.get(this.character)}**\n` +
-            `Series: **${client.seriesNameMap.get(this.series)}**\n` +
+          `Character: **${formattedCharacter}**\n` +
+            `Series: **${formattedSeries}**\n` +
             `Set: **${this.set}**\n` +
             `Rarity: **${rarity}**\n` +
             `\n` +
@@ -106,8 +109,8 @@ class LookupCharacterPages extends ButtonPages {
       const zoomEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
         .setDescription(
-          `Character: **${client.characterNameMap.get(this.character)}**\n` +
-            `Series: **${client.seriesNameMap.get(this.series)}**\n` +
+          `Character: **${formattedCharacter}**\n` +
+            `Series: **${formattedSeries}**\n` +
             `Set: **${this.set}**\n` +
             `Rarity: **${rarity}**`
         )

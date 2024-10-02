@@ -14,21 +14,25 @@ module.exports = {
     .addStringOption((option) => option.setName("string").setDescription("New string of filters.").setRequired(true)),
 
   async execute(client, interaction) {
+    // Get the label and normalize whitespace
     const label = interaction.options.getString("label").replace(/\s+/g, " ");
     if (!isValidFilterLabel(label)) {
       interaction.reply({ content: "That filter does not exist." });
       return;
     }
 
+    // Get the filter string, convert to lowercase, and normalize whitespace
     const filter = interaction.options.getString("string").toLowerCase().replace(/\s+/g, " ");
     if (!isValidFilter(filter)) {
       interaction.reply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
       return;
     }
 
+    // Defer the reply to allow for async operations
     await interaction.deferReply();
 
     try {
+      // Retrieve the filter document from the cache
       const filterDocument = await FilterCache.getDocument(interaction.user.id);
 
       // Handle case where no filter data exists
@@ -37,14 +41,24 @@ module.exports = {
         return;
       }
 
+      // Check if the label exists in the filter list
       const labelExists = filterDocument.filterList.some((filter) => filter.label === label);
       if (!labelExists) {
         interaction.editReply({ content: "That filter does not exist." });
         return;
       }
 
-      await FilterCache.updateFilterString(interaction.user.id, label, string);
+      // Update the filter string in the database
+      const updatedDocument = await FilterModel.findOneAndUpdate(
+        { userId: interaction.user.id, "filterList.label": label },
+        { $set: { "filterList.$.filter": filter } },
+        { new: true }
+      );
+      if (!updatedDocument) {
+        throw new Error("Filter not found");
+      }
 
+      await FilterCache.cache(interaction.user.id, updatedDocument);
       interaction.editReply({ content: `Successfully updated filter to **${label}** \`${filter}\`!` });
     } catch (error) {
       logger.error(error.stack);

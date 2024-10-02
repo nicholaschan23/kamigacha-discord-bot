@@ -1,11 +1,13 @@
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
-const CardModel = require("../../database/mongodb/models/card/card");
-const CardUpgrader = require("../../utils/gacha/CardUpgrader");
-const upgradePreviewEmbed = require("../../assets/embeds/upgrade/upgradePreview");
-const viewUpgradeEmbed = require("../../assets/embeds/upgrade/viewUpgrade");
-const config = require("../../config");
-const { isValidCode } = require("../../utils/string/validation");
-const Logger = require("../../utils/Logger");
+const upgradePreviewEmbed = require("@assets/embeds/upgrade/upgradePreview");
+const viewUpgradeEmbed = require("@assets/embeds/upgrade/viewUpgrade");
+const config = require("@config");
+const MapCache = require("@database/redis/cache/map");
+const CardModel = require("@database/mongodb/models/card/card");
+const Logger = require("@utils/Logger");
+const CardUpgrader = require("@utils/gacha/CardUpgrader");
+const { isValidCode } = require("@utils/string/validation");
+
 const logger = new Logger("Upgrade command");
 
 module.exports = {
@@ -62,12 +64,14 @@ module.exports = {
     }
 
     // Verify all cards have an upgrade rarity
-    const noUpgradeCodes = queriedCards
-      .filter((card) => {
+    const noUpgradeCodes = [];
+    await Promise.all(
+      queriedCards.map(async (card) => {
+        const seriesModel = await MapCache.getMapEntry("card-model-map", card.series);
         const nextRarity = config.getNextRarity(card.rarity);
-        return !client.jsonCards[card.series][card.set][nextRarity];
+        if (seriesModel[card.set][nextRarity] === null) noUpgradeCodes.push(card.code);
       })
-      .map((card) => card.code);
+    );
     if (noUpgradeCodes.length > 0) {
       const formattedCodes = noUpgradeCodes.map((code) => `\`${code}\``).join(", ");
       return interaction.editReply({ content: `The following cards are the highest rarity in their set and cannot be further upgraded: ${formattedCodes}` });
@@ -90,7 +94,7 @@ module.exports = {
     }
 
     // Create message to send
-    const embed = upgradePreviewEmbed(queriedCards, seriesSetFreq, rarityFreq);
+    const embed = await upgradePreviewEmbed(queriedCards, seriesSetFreq, rarityFreq);
     embed.setColor(config.embedColor.yellow);
     const cancelButton = new ButtonBuilder().setCustomId("rejectUpgrade").setEmoji("❌").setStyle(ButtonStyle.Secondary);
     const acceptButton = new ButtonBuilder().setCustomId("acceptUpgrade").setEmoji("🔨").setStyle(ButtonStyle.Secondary);
@@ -110,7 +114,7 @@ module.exports = {
           await i.update({ embeds: [embed], components: [] });
         } else if (i.customId === "acceptUpgrade") {
           // Upgrade card
-          const cu = new CardUpgrader(client, interaction.guild.id, queriedCards, seriesSetFreq, rarityFreq);
+          const cu = new CardUpgrader(interaction.guild.id, queriedCards, seriesSetFreq, rarityFreq);
           try {
             const createdCard = await cu.cardUpgrade();
             if (createdCard) {

@@ -1,8 +1,8 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const mongoose = require("mongoose");
 const CardModel = require("@database/mongodb/models/card/card");
-const TagCache = require("@database/redis/cache/collectionTag");
 const TagModel = require("@database/mongodb/models/user/tag");
+const TagCache = require("@database/redis/cache/collectionTag");
 const Logger = require("@utils/Logger");
 const { isOneEmoji, isValidTag } = require("@utils/string/validation");
 
@@ -17,12 +17,14 @@ module.exports = {
     .addStringOption((option) => option.setName("emoji").setDescription("New emoji to associate with tag.").setRequired(true)),
 
   async execute(client, interaction) {
+    // Validate tag
     const tag = interaction.options.getString("tag").toLowerCase();
     if (!isValidTag(tag)) {
       interaction.reply({ content: "That tag does not exist." });
       return;
     }
 
+    // Validate emoji
     const emoji = interaction.options.getString("emoji");
     if (!isOneEmoji(emoji)) {
       interaction.reply({ content: `Please input a valid emoji. It can only be a default Discord emoji.` });
@@ -34,17 +36,18 @@ module.exports = {
     try {
       const tagDocument = await TagCache.getDocument(interaction.user.id);
 
+      // Check if the user has any tags
       if (tagDocument.tagList.length === 0) {
-        return interaction.editReply({ content: `You do not have any tags.` });
+        interaction.editReply({ content: `You do not have any tags.` });
+        return;
       }
 
+      // Check if the specified tag exists in the user's tag list
       const tagExists = tagDocument.tagList.some((tagData) => tagData.tag === tag);
       if (!tagExists) {
         interaction.editReply({ content: "That tag does not exist." });
         return;
       }
-
-      interaction.editReply({ content: `Successfully updated tag to ${emoji} \`${tag}\`!` });
     } catch (error) {
       logger.error(error.stack);
       interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });
@@ -56,12 +59,12 @@ module.exports = {
 
     let tagDocument;
     try {
+      // Find the tag document and update the emoji for the specified tag
       tagDocument = await TagModel.findOneAndUpdate(
         { userId: interaction.user.id, "tagList.tag": tag },
         { $set: { "tagList.$.emoji": emoji } },
         { new: true, session: session }
       );
-
       if (!tagDocument) {
         throw new Error("Tag not found");
       }
@@ -74,13 +77,11 @@ module.exports = {
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
-
       interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });
       return;
     }
 
     await TagCache.cache(interaction.user.id, tagDocument);
-    
-    interaction.editReply({ content: `Successfully deleted the tag \`${tag}\`!` });
+    interaction.editReply({ content: `Successfully updated tag to ${emoji} \`${tag}\`!` });
   },
 };

@@ -14,32 +14,42 @@ module.exports = {
     .addStringOption((option) => option.setName("label").setDescription("Name of filter to delete.").setRequired(true)),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-
+    // Validate filter label
     const label = capitalizeFirstLetter(interaction.options.getString("label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(label)) {
-      interaction.editReply({ content: "That filter does not exist." });
+      interaction.reply({ content: "That filter does not exist." });
       return;
     }
+
+    await interaction.deferReply();
 
     try {
       const filterDocument = await FilterCache.getDocument(interaction.user.id);
 
       // Handle case where no filter data exists
       if (filterDocument.filterList.length === 0) {
-        interaction.reply({ content: `You do not have any filters.` });
+        interaction.editReply({ content: `You do not have any filters.` });
         return;
       }
 
-      // Filter doesn't exist
+      // Check if the filter exists in the user's filter list
       const labelExists = filterDocument.filterList.some((filter) => filter.label === label);
       if (!labelExists) {
         interaction.editReply({ content: `That filter does not exist.` });
         return;
       }
 
-      await FilterCache.deleteFilter(interaction.user.id, label);
+      // Update the document by removing the filter
+      const updatedDocument = await FilterModel.findOneAndUpdate(
+        { userId: interaction.user.id, "filterList.label": label },
+        { $pull: { filterList: { label: label } } },
+        { new: true }
+      );
+      if (!updatedDocument) {
+        throw new Error("Filter not found");
+      }
 
+      await FilterCache.cache(interaction.user.id, updatedDocument);
       interaction.editReply({ content: `Successfully deleted the filter **${label}**!` });
     } catch (error) {
       logger.error(error.stack);

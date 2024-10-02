@@ -9,7 +9,8 @@ module.exports = async (data) => {
   // const desc = `Character · ${data.character}\n` + `Series · ${data.series}\n`;
   // R`arity · ${data.rarity}\n``Code · ${data.code}\n``Owner · <@${data.ownerId}>`;
 
-  const description = `Owned by <@${data.ownerId}>\n` + `\n` + `${formatCardInfo(data)}`;
+  const cardInfo = await formatCardInfo(data);
+  const description = `Owned by <@${data.ownerId}>\n` + `\n` + `${cardInfo}`;
 
   // Create the card image buffer
   const buffer = await createCard(data.image, getCardBorder(data.rarity));

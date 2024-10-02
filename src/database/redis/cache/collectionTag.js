@@ -22,27 +22,6 @@ async function getDocument(userId) {
   return value;
 }
 
-async function addTag(userId, tag, emoji) {
-  const tagDocument = await FilterModel.findOneAndUpdate(
-    { userId: userId, "tagList.tag": { $ne: tag } },
-    {
-      $push: {
-        tagList: {
-          $each: [{ tag: tag, emoji: emoji }],
-          $sort: { tag: 1 },
-        },
-      },
-    },
-    { new: true }
-  );
-  await cache(userId, tagDocument);
-}
-
-async function deleteTag(userId, tag) {
-  const tagDocument = await TagModel.findOneAndUpdate({ userId: userId, "tagList.tag": tag }, { $pull: { tagList: { tag: tag } } }, { new: true });
-  await cache(userId, tagDocument);
-}
-
 async function cache(userId, object) {
   const key = `collection-tag:${userId}`;
   const value = JSON.stringify(object);
@@ -52,7 +31,5 @@ async function cache(userId, object) {
 
 module.exports = {
   getDocument,
-  addTag,
-  deleteTag,
   cache,
 };

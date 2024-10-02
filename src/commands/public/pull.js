@@ -10,7 +10,7 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
 
-    const cg = new CardGenerator(client, interaction.user.id, interaction.guild.id, config.pullRate);
+    const cg = new CardGenerator(interaction.user.id, interaction.guild.id, config.pullRate);
     await cg.cardPull(1);
 
     try {

@@ -21,9 +21,18 @@ async function storeModelAsMap(cacheKey, model, storeKeys = true) {
   }
 }
 
-async function getObjectFromMap(cacheKey, mapKey) {
+async function getModel(cacheKey) {
+  const value = await redis.hgetall(cacheKey);
+  return value ? Object.fromEntries(Object.entries(value).map(([key, val]) => [key, JSON.parse(val)])) : null;
+}
+
+async function getMapEntry(cacheKey, mapKey) {
   const value = await redis.hget(cacheKey, mapKey);
   return value ? JSON.parse(value) : null;
+}
+
+async function getList(cacheKey, start = 0, end = -1) {
+  return await redis.lrange(cacheKey, start, end);
 }
 
 async function getFormattedCharacter(character) {
@@ -36,4 +45,4 @@ async function getFormattedSeries(series) {
   return value ? JSON.parse(value) : series;
 }
 
-module.exports = { storeModelAsMap, getObjectFromMap, getFormattedCharacter, getFormattedSeries };
+module.exports = { storeModelAsMap, getMapEntry, getList, getFormattedCharacter, getFormattedSeries };

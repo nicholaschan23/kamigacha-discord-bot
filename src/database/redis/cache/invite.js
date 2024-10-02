@@ -1,13 +1,11 @@
 const InviteModel = require("@database/mongodb/models/global/invite");
 const RedisClient = require("@database/redis/RedisClient");
 
+const KEY = "invited";
 const redis = RedisClient.connection;
 
 async function isUserInvited(userId) {
-  const key = `invited:${userId}`;
-
-  // Try to get data from Redis cache
-  let value = await redis.get(key);
+  let value = await redis.hget(KEY, userId);
 
   // If not in cache, get data from MongoDB
   if (value === null) {
@@ -32,9 +30,7 @@ async function addInvite(senderUserId, receiverUserId) {
 }
 
 function cache(userId, value) {
-  const key = `invited:${userId}`;
-  const value = value.toString();
-  redis.set(key, value);
+  redis.hset(KEY, userId, value.toString());
 }
 
 module.exports = {

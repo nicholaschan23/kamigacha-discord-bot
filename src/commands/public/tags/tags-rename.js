@@ -2,6 +2,7 @@ const { SlashCommandSubcommandBuilder } = require("discord.js");
 const mongoose = require("mongoose");
 const CardModel = require("@database/mongodb/models/card/card");
 const TagModel = require("@database/mongodb/models/user/tag");
+const TagCache = require("@database/redis/cache/collectionTag");
 const Logger = require("@utils/Logger");
 const { isValidTag } = require("@utils/string/validation");
 
@@ -16,25 +17,25 @@ module.exports = {
     .addStringOption((option) => option.setName("new-tag").setDescription("New name to assign to tag.").setRequired(true)),
 
   async execute(client, interaction) {
+    // Validate old tag
     const oldTag = interaction.options.getString("old-tag").toLowerCase();
     if (!isValidTag(oldTag)) {
       interaction.reply({ content: "That tag does not exist." });
       return;
     }
 
+    // Validate new tag
     const newTag = interaction.options.getString("new-tag").toLowerCase();
     if (!isValidTag(newTag)) {
       interaction.reply({ content: `Please input a valid tag. It can only contain letters, numbers, dashes, or underscores.` });
       return;
     }
 
-    let oldEmoji;
-    let oldQuantity;
-
     await interaction.deferReply();
 
+    let oldEmoji;
+    let oldQuantity;
     try {
-      // Find the tag document for the user
       const tagDocument = await TagCache.getDocument(interaction.user.id);
 
       // Handle case where no tag data exists
@@ -57,16 +58,10 @@ module.exports = {
         return;
       }
 
-      // Extract old emoji and quantity
       ({ emoji: oldEmoji, quantity: oldQuantity } = tagDocument.tagList[oldTagIndex]);
     } catch (error) {
       logger.error(error.stack);
       interaction.editReply({ content: `There was an issue renaming your tag. Please try again.` });
-    }
-
-    if (oldEmoji === undefined || oldQuantity === undefined) {
-      interaction.editReply({ content: `There was an issue renaming your tag. Please try again.` });
-      return;
     }
 
     const session = await mongoose.startSession();
@@ -75,17 +70,20 @@ module.exports = {
     let tagDocument;
     try {
       // Remove the old tag
-      await TagModel.findOneAndUpdate(
-        { userId: interaction.user.id },
+      tagDocument = await TagModel.findOneAndUpdate(
+        { userId: interaction.user.id, "tagList.tag": oldTag },
         {
           $pull: { tagList: { tag: oldTag } },
         },
         { session: session }
       );
+      if (!tagDocument) {
+        throw new Error("Tag not found");
+      }
 
       // Add the new tag with sorted order
       tagDocument = await TagModel.findOneAndUpdate(
-        { userId: interaction.user.id },
+        { userId: interaction.user.id, "tagList.tag": { $ne: newTag } },
         {
           $push: {
             tagList: {
@@ -96,6 +94,9 @@ module.exports = {
         },
         { new: true, session: session }
       );
+      if (!tagDocument) {
+        throw new Error("Tag not created");
+      }
 
       // Update cards with the associated old tag with the new tag
       await CardModel.updateMany({ userId: interaction.user.id, tag: oldTag }, { $set: { tag: newTag } }, { session: session });
@@ -105,13 +106,11 @@ module.exports = {
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
-      
       interaction.editReply({ content: `There was an issue changing the emoji for your tag. Please try again.` });
       return;
     }
 
     await TagCache.cache(interaction.user.id, tagDocument);
-
     interaction.editReply({ content: `Successfully updated \`${oldTag}\` to \`${newTag}\`!` });
   },
 };

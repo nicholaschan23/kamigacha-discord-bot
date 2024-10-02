@@ -1,15 +1,15 @@
 const CharacterModel = require("@database/mongodb/models/global/character");
 const RedisClient = require("@database/redis/RedisClient");
 
+const KEY = `character-wish-counts`;
 const redis = RedisClient.connection;
 
 async function getWishCount(character, series) {
-  const key = `character-wish-count:${character}:${series}`;
+  const field = `${character}:${series}`;
 
-  let value = await redis.get(key);
+  let value = await redis.hget(KEY, field);
 
   if (value === null) {
-    // Document not found in cache, fetch from database
     const wishDocument = await CharacterModel.findOne({ character: character, series: series }).select("wishCount").lean().exec();
     if (wishDocument) {
       const wishCount = wishDocument.wishCount;
@@ -26,8 +26,8 @@ async function getWishCount(character, series) {
 }
 
 function cache(character, series, value) {
-  const key = `character-wish-count:${character}:${series}`;
-  redis.set(key, value.toString());
+  const field = `${character}:${series}`;
+  redis.hset(KEY, field, value.toString());
 }
 
 module.exports = {

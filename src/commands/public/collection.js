@@ -37,6 +37,7 @@ module.exports = {
       }
 
       const bp = new CollectionPages(interaction, collectionDocument, filters, filterDocument.filterList);
+      await bp.init();
       bp.publishPages();
     } catch (error) {
       console.error("Error fetching user card codes:", error);

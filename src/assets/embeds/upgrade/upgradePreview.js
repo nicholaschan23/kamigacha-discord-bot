@@ -1,15 +1,16 @@
 const { EmbedBuilder } = require("discord.js");
-const { formatCardInfoPage } = require("../../../utils/string/formatPage");
-const config = require("../../../config");
-const client = require("../../../../bot");
+const config = require("@config");
+const MapCache = require("@database/redis/cache/map");
+const { formatCardInfoPage } = require("@utils/string/formatPage");
 
-module.exports = (queriedCards, seriesSetFreq, rarityFreq) => {
+module.exports = async (queriedCards, seriesSetFreq, rarityFreq) => {
   // Format text for series chances
   const seriesChances = [];
   for (const series in seriesSetFreq) {
     for (const set in seriesSetFreq[series]) {
       const freq = seriesSetFreq[series][set];
-      seriesChances.push([`${freq * 10}%`, `◈${set}`, `${client.seriesNameMap.get(series)}`].join(" · "));
+      const formattedSeries = await MapCache.getFormattedSeries(series);
+      seriesChances.push([`${freq * 10}%`, `◈${set}`, `${formattedSeries}`].join(" · "));
     }
   }
 
@@ -37,12 +38,13 @@ module.exports = (queriedCards, seriesSetFreq, rarityFreq) => {
     return `\`\`\`ansi\n\u001b[0;${color}m${successRate}%\u001b[0;0m\`\`\``;
   };
 
+  const cardInfo = await formatCardInfoPage(queriedCards);
   return new EmbedBuilder()
     .setTitle("Upgrade Preview")
     .addFields(
       {
         name: "Cards Inputted",
-        value: formatCardInfoPage(queriedCards),
+        value: cardInfo,
       },
       {
         name: "Series Chances",

@@ -11,26 +11,27 @@ module.exports = {
   data: new SlashCommandSubcommandBuilder()
     .setName("list")
     .setDescription("View a player's collection filters.")
-    .addUserOption((option) => option.setName("user").setDescription("Player's collection filters to view. Omit to view yours.")),
+    .addUserOption((option) => 
+      option.setName("user").setDescription("Player's collection filters to view. Omit to view yours.")
+    ),
 
   async execute(client, interaction) {
     const user = interaction.options.getUser("user") ?? interaction.user;
 
     try {
       const filterDocument = await FilterCache.getDocument(user.id);
-
-      // Create page embeds
       const total = filterDocument.filterList.length;
       const pages = [];
 
       if (total === 0) {
+        // No filters found
         const embed = new EmbedBuilder()
           .setTitle(`Collection Filters`)
           .setDescription(`Filters created by ${user}`)
           .setFooter({ text: `Showing filters 0-0 (0 total)` });
         pages.push(embed);
       } else {
-        // Split the list of cards into chunks of 10
+        // Filters found, chunk and format them
         const chunkSize = 10;
         const cardChunks = chunkArray([...filterDocument.filterList], chunkSize);
 
@@ -45,6 +46,7 @@ module.exports = {
         }
       }
 
+      // Publish paginated results
       const bp = new ButtonPages(interaction, pages);
       bp.publishPages();
     } catch (error) {

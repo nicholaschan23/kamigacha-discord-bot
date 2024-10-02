@@ -10,14 +10,14 @@ async function lookup(query) {
     .replace(/[^a-z0-9\s]+/gi, "") // Remove non-alphanumeric characters
     .split(/[\s,]+/); // Split query into words
 
-  // Store unique results in a map
-  const resultsMap = new Map();
+  const resultsMap = new Map(); // Store unique results in a map
   let maxFrequency = 0; // Keep track of the highest frequency of search results
 
   // Process each word in the filtered query
   const promises = filteredQuery.map(async (word) => {
     // Retrieve search model from cache
-    const searchModel = await MapCache.getObjectFromMap("search-model-map", word);
+    const searchModel = await MapCache.getMapEntry("search-model-map", word);
+
     if (searchModel) {
       // Process each character-series pair in the search model
       const innerPromises = searchModel.map(async ({ character, series }) => {
@@ -44,14 +44,10 @@ async function lookup(query) {
       await Promise.all(innerPromises);
     }
   });
-
-  // Wait for all outer promises to complete
   await Promise.all(promises);
 
-  // Convert the map of results to an array
-  const resultsArray = [...resultsMap.values()];
-
   // Filter and sort the top results based on frequency, wish count, series, and character
+  const resultsArray = [...resultsMap.values()];
   return resultsArray
     .filter((results) => results.frequency === maxFrequency)
     .sort((a, b) => {

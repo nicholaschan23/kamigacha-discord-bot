@@ -1,15 +1,15 @@
 const crypto = require("crypto");
-const config = require("../../config");
-const { generateCode } = require("./generateCode");
-const CardModel = require("../../database/mongodb/models/card/card");
-const CollectionModel = require("../../database/mongodb/models/card/collection");
-const PityModel = require("../../database/mongodb/models/user/pity");
-const StatsModel = require("../../database/mongodb/models/user/stats");
-const CharacterModel = require("../../database/mongodb/models/global/character");
+const config = require("@config");
+const CardModel = require("@database/mongodb/models/card/card");
+const CollectionModel = require("@database/mongodb/models/card/collection");
+const PityModel = require("@database/mongodb/models/user/pity");
+const StatsModel = require("@database/mongodb/models/user/stats");
+const CharacterModel = require("@database/mongodb/models/global/character");
+const MapCache = require("@database/redis/cache/map");
+const { generateCode } = require("@utils/gacha/generateCode");
 
 class CardGenerator {
-  constructor(client, userId, guildId, rates) {
-    this.client = client;
+  constructor(userId, guildId, rates) {
     this.userId = userId;
     this.guildId = guildId;
     this.rates = rates;
@@ -20,52 +20,28 @@ class CardGenerator {
     this.cardData = [];
   }
 
+  // Main function to handle card pulls
   async cardPull(numPulls) {
-    const jsonCards = this.client.jsonCards;
-    const seriesKeys = this.client.jsonCardsKeys;
     await this.fetchPity();
 
     for (let i = 0; i < numPulls; i++) {
-      // Select a rarity
       const rarity = this.getRarity();
-
-      // Select a series and set
-      const { series, set } = this.selectSeriesAndSet(rarity, jsonCards, seriesKeys);
-
-      // Select a random character
-      const characters = jsonCards[series][set][rarity];
-      const characterJpg = characters[crypto.randomInt(0, characters.length)];
+      const { series, set } = await this.selectSeriesAndSet(rarity);
+      const characterJpg = await this.selectCharacter(series, set, rarity);
       const character = characterJpg.split(`-${series}-`)[0];
-
-      // Generate card code
       const code = await generateCode();
 
-      // Create card data
-      const card = {
-        code: code,
-        character: character,
-        series: series,
-        set: set,
-        rarity: rarity,
-        ownerId: this.userId,
-        pulledId: this.userId,
-        guildId: this.guildId,
-        generationType: numPulls > 1 ? "Multi-Pull" : "Pull",
-        image: [process.env.CLOUDFRONT_URL, "cards", series, set, rarity, characterJpg].join("/"),
-        emoji: "▪️",
-      };
+      const card = this.createCardData(code, character, series, set, rarity, characterJpg, numPulls);
       this.cardData.push(card);
 
-      // Update pull rarities
       this.pullRarities[rarity]++;
-
-      // Update pity
       this.updatePity(rarity);
     }
 
     await this.saveChanges();
   }
 
+  // Fetch pity values from the database
   async fetchPity() {
     const userDocument = await PityModel.findOne({ userId: this.userId });
     if (userDocument) {
@@ -75,55 +51,69 @@ class CardGenerator {
     }
   }
 
-  selectSeriesAndSet(rarity, jsonCards, seriesKeys) {
-    let series, set;
+  // Select a series and set based on rarity
+  async selectSeriesAndSet(rarity) {
+    const seriesKeys = await MapCache.getList("card-model-keys");
 
     if (rarity !== "C") {
-      // Initialize arrays to hold series and set keys that match the rarity
-      const matchingSeriesSets = [];
-
-      // Traverse through series and sets to find matches
-      seriesKeys.forEach((series) => {
-        Object.keys(jsonCards[series]).forEach((setKey) => {
-          if (jsonCards[series][setKey][rarity]) {
-            matchingSeriesSets.push({ series: series, set: setKey });
-          }
-        });
-      });
-
-      // Select a random series from the matching list
+      const matchingSeriesSets = await this.getMatchingSeriesSets(seriesKeys, rarity);
       const selectedEntry = matchingSeriesSets[crypto.randomInt(0, matchingSeriesSets.length)];
-      series = selectedEntry.series;
-
-      // Filter matchingSeriesSets to get all sets for the selected series
+      const series = selectedEntry.series;
       const matchingSetsForSeries = matchingSeriesSets.filter((entry) => entry.series === series).map((entry) => entry.set);
-
-      // Select a set by weight from the filtered set keys
-      set = this.getSet(matchingSetsForSeries);
+      const set = this.getSet(matchingSetsForSeries);
+      return { series, set };
     } else {
-      // Select a random series
-      series = seriesKeys[crypto.randomInt(0, seriesKeys.length)];
-
-      // Select a random set
-      set = this.getSet(Object.keys(jsonCards[series]));
+      const series = seriesKeys[crypto.randomInt(0, seriesKeys.length)];
+      const seriesModel = await MapCache.getMapEntry("card-model-map", series);
+      const set = this.getSet(Object.keys(seriesModel));
+      return { series, set };
     }
+  }
 
-    return { series, set };
+  // Get matching series and sets for a given rarity
+  async getMatchingSeriesSets(seriesKeys, rarity) {
+    const matchingSeriesSets = [];
+    for (const series of seriesKeys) {
+      const seriesModel = await MapCache.getMapEntry("card-model-map", series);
+      const matchingSets = Object.keys(seriesModel).filter((setKey) => seriesModel[setKey][rarity]);
+      if (matchingSets.length > 0) {
+        matchingSets.forEach((setKey) => matchingSeriesSets.push({ series: series, set: setKey }));
+      }
+    }
+    return matchingSeriesSets;
+  }
+
+  // Select a random character from the series and set
+  async selectCharacter(series, set, rarity) {
+    const seriesModel = await MapCache.getMapEntry("card-model-map", series);
+    const characters = seriesModel[set][rarity];
+    return characters[crypto.randomInt(0, characters.length)];
+  }
+
+  // Create card data object
+  createCardData(code, character, series, set, rarity, characterJpg, numPulls) {
+    return {
+      code: code,
+      character: character,
+      series: series,
+      set: set,
+      rarity: rarity,
+      ownerId: this.userId,
+      pulledId: this.userId,
+      guildId: this.guildId,
+      generationType: numPulls > 1 ? "Multi-Pull" : "Pull",
+      image: [process.env.CLOUDFRONT_URL, "cards", series, set, rarity, characterJpg].join("/"),
+      emoji: "▪️",
+    };
   }
 
   // Function to get a random set with increasing probability for recent sets (1-indexed)
   getSet(setKeys) {
     if (setKeys.length > 1) {
-      // Convert array to numbers
       const numSetKeys = setKeys.map((set) => parseInt(set));
-
-      // Calculate the total weight sum
       const totalWeight = numSetKeys.reduce((a, b) => a + b, 0);
-
-      // Generate a random number between 0 and total weight
       const randomValue = crypto.randomInt(0, totalWeight);
 
-      // Find the index corresponding to the random value (1-indexed)
       let cumulativeWeight = 0;
       for (let i = 0; i < setKeys.length; i++) {
         cumulativeWeight += numSetKeys[i];
@@ -135,8 +125,8 @@ class CardGenerator {
     return setKeys[0];
   }
 
+  // Determine the rarity of the card being pulled
   getRarity() {
-    // Check if pity is triggered
     if (this.pity.UR > config.pity.UR) {
       this.pity.UR = 0;
       return "UR";
@@ -150,7 +140,6 @@ class CardGenerator {
       return "SSR";
     }
 
-    // Random pull
     const randNum = crypto.randomInt(0, 100);
     let cumulativeChance = 0;
     for (const rate of this.rates) {
@@ -162,38 +151,41 @@ class CardGenerator {
     return "C"; // Default to "Common" if no other rarity is selected
   }
 
+  // Update pity counters based on the rarity pulled
   updatePity(rarity) {
     switch (rarity) {
-      // UR is pulled, UR counter resets
-      case "UR": {
+      case "UR":
         this.pity.UR = 0;
         break;
-      }
-      // SR is pulled, UR and SR counter resets
-      case "SR": {
+      case "SR":
         this.pity.UR = 0;
         this.pity.SR = 0;
         break;
-      }
-      // SSR is pulled, all counters reset
-      case "SSR": {
+      case "SSR":
         this.pity.UR = 0;
         this.pity.SR = 0;
         this.pity.SSR = 0;
         break;
-      }
-      default: {
+      default:
         this.pity.UR++;
         this.pity.SR++;
         this.pity.SSR++;
-      }
     }
   }
 
+  // Save changes to the database
   async saveChanges() {
-    // Save pity timers
+    await this.savePity();
+    await this.updateStats();
+    const savedCards = await this.saveCards();
+    await this.updateCollection(savedCards);
+    await this.updateCharacterCirculation();
+  }
+
+  // Save pity values to the database
+  async savePity() {
     await PityModel.findOneAndUpdate(
-      { userId: this.userId }, // Filter
+      { userId: this.userId },
       {
         UR: this.pity.UR,
         SR: this.pity.SR,
@@ -201,8 +193,10 @@ class CardGenerator {
       },
       { upsert: true }
     );
+  }
 
-    // Update stats
+  // Update user stats in the database
+  async updateStats() {
     await StatsModel.findOneAndUpdate(
       { userId: this.userId },
       {
@@ -216,24 +210,26 @@ class CardGenerator {
       },
       { upsert: true }
     );
+  }
 
-    // Add card models to database
+  // Save card models to the database
+  async saveCards() {
     const cards = this.cardData.map((data) => new CardModel(data));
-    const savedCards = await CardModel.insertMany(cards);
+    return await CardModel.insertMany(cards);
+  }
 
-    // Add cards to user's collection
+  // Update user's card collection in the database
+  async updateCollection(savedCards) {
     const cardObjectIds = savedCards.map((card) => card._id);
-    await CollectionModel.findOneAndUpdate(
-      { userId: this.userId }, // Filter
-      { $addToSet: { cardsOwned: { $each: cardObjectIds } } },
-      { upsert: true }
-    );
+    await CollectionModel.findOneAndUpdate({ userId: this.userId }, { $addToSet: { cardsOwned: { $each: cardObjectIds } } }, { upsert: true });
+  }
 
-    // Update character cards generated in parallel
+  // Update character card circulation in the database
+  async updateCharacterCirculation() {
     const updateCirculation = this.cardData.map((card) => {
       return CharacterModel.updateOne(
-        { character: card.character, series: card.series }, // Match the single document based on the query
-        { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.generated`]: 1 } } // Increment the generated field
+        { character: card.character, series: card.series },
+        { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.generated`]: 1 } }
       );
     });
     await Promise.all(updateCirculation);
