@@ -20,7 +20,7 @@ module.exports = {
     const character = interaction.options.getString("character");
 
     if (character) {
-      const results = lookup(character, client.jsonSearches);
+      const results = await lookup(character);
 
       // No results
       if (results.length === 0) {
@@ -34,7 +34,8 @@ module.exports = {
         }
 
         // No results from lookup and from card code search
-        return interaction.reply("That character could not be found. It may not exist, or you may have misspelled their name.");
+        interaction.reply("That character could not be found. It may not exist, or you may have misspelled their name.");
+        return;
       }
 
       // If exactly 1 result, go straight to character stat page
@@ -53,7 +54,7 @@ module.exports = {
       }
 
       const bp = new LookupPages(interaction, results);
-      bp.createPages();
+      await bp.createPages();
       bp.publishPages();
     } else {
       await interaction.deferReply();
@@ -79,7 +80,8 @@ module.exports = {
         return;
       } catch (err) {
         logger.error(err);
-        return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+        interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+        return;
       }
     }
   },

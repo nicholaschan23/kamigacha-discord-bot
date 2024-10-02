@@ -13,11 +13,13 @@ async function getDocument(userId) {
   if (value === null) {
     // Document not found in cache, fetch from database
     const tagDocument = await TagModel.findOneAndUpdate({ userId: userId }, { $setOnInsert: { userId: userId } }, { new: true, upsert: true });
-    await redis.set(key, JSON.stringify(tagDocument));
-    return tagDocument;
+    value = tagDocument;
+    await cache(userId, tagDocument);
+  } else {
+    value = JSON.parse(value);
   }
 
-  return JSON.parse(value);
+  return value;
 }
 
 async function addTag(userId, tag, emoji) {
@@ -41,25 +43,11 @@ async function deleteTag(userId, tag) {
   await cache(userId, tagDocument);
 }
 
-async function updateEmoji(userId, tag, emoji) {
-  const tagDocument = await TagModel.findOneAndUpdate({ userId: userId, "tagList.tag": tag }, { $set: { "tagList.$.emoji": emoji } }, { new: true });
-  await cache(userId, tagDocument);
-}
-
-async function updateFilterString(userId, label, string) {
-  const tagDocument = await FilterModel.findOneAndUpdate(
-    { userId: userId, "filterList.label": label },
-    { $set: { "filterList.$.filter": string } },
-    { new: true }
-  );
-  await cache(userId, tagDocument);
-}
-
 async function cache(userId, object) {
   const key = `collection-tag:${userId}`;
   const value = JSON.stringify(object);
   await redis.set(key, value);
-  await redis.expire(key, EXPIRATION);
+  redis.expire(key, EXPIRATION);
 }
 
 module.exports = {

@@ -25,8 +25,9 @@ async function isUserMod(userId) {
   if (value === null) {
     const moderatorDocument = await ModeratorModel.findOne({ userId: userId });
     value = !!moderatorDocument;
-    await redis.set(key, value);
-    await redis.expire(key, EXPIRATION);
+    await cache(userId, value);
+  } else {
+    value = value === "true";
   }
 
   return value;
@@ -43,10 +44,7 @@ async function addUser(userId) {
     userId: userId,
   });
   await newModerator.save();
-
-  const key = `moderator:${userId}`;
-  await redis.set(key, true);
-  await redis.expire(key, EXPIRATION);
+  await cache(userId, true);
 }
 
 /**
@@ -56,10 +54,13 @@ async function addUser(userId) {
  */
 async function removeUser(userId) {
   await ModeratorModel.deleteOne({ userId: userId });
+  await cache(userId, false);
+}
 
+async function cache(userId, value) {
   const key = `moderator:${userId}`;
-  await redis.set(key, false);
-  await redis.expire(key, EXPIRATION);
+  await redis.set(key, value.toString());
+  redis.expire(key, EXPIRATION);
 }
 
 module.exports = {

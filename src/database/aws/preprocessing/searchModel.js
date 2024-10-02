@@ -1,5 +1,4 @@
 const config = require("@config");
-const CharacterModel = require("@database/mongodb/models/global/character");
 const Logger = require("@utils/Logger");
 const { loadModel, saveModel } = require("@utils/fileSystem");
 
@@ -19,54 +18,32 @@ async function createModel(characterModel, characterKeys, existingModel = {}) {
 
   const searchModel = { ...existingModel };
 
-  // Prepare an array of promises for fetching updated wish counts
-  const promises = [];
-
+  const results = [];
   for (const character of characterKeys) {
     for (const series of Object.keys(characterModel[character])) {
       const characterWords = character.split("-");
       const seriesWords = series.split("-");
       const allWords = new Set([...characterWords, ...seriesWords]);
-
-      promises.push(
-        CharacterModel.findOne({ character: character, series: series })
-          .select("wishCount")
-          .lean()
-          .exec()
-          .then((result) => {
-            const updatedWishCount = result ? result.wishCount : 0;
-            return { character, series, allWords, updatedWishCount };
-          })
-      );
+      results.push({ character, series, allWords });
     }
   }
 
-  const results = await Promise.all(promises);
-
-  results.forEach(({ character, series, allWords, updatedWishCount }) => {
+  results.forEach(({ character, series, allWords }) => {
     allWords.forEach((word) => {
       if (!searchModel[word]) {
         searchModel[word] = [];
       }
 
+      // Add character and series to search model if it doesn't exist
       const index = searchModel[word].findIndex((entry) => entry.character === character && entry.series === series);
       if (index === -1) {
         searchModel[word].push({
           character: character,
           series: series,
-          wishCount: updatedWishCount,
         });
         searchModel[word].sort((a, b) => {
-          return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+          return a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
         });
-      } else {
-        // Update wish count from database and sort result
-        if (searchModel[word][index].wishCount !== updatedWishCount) {
-          searchModel[word][index].wishCount = updatedWishCount;
-          searchModel[word].sort((a, b) => {
-            return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
-          });
-        }
       }
     });
   });

@@ -108,6 +108,20 @@ check_cluster_consistency() {
   return 0
 }
 
+# Function to flush all Redis nodes
+flush_all_redis_nodes() {
+  echo "Flushing all Redis nodes..."
+  for port in "${REDIS_PORTS[@]}"; do
+    echo "Flushing cache on port $port..."
+    redis-cli -p $port FLUSHALL
+    if [ $? -eq 0 ]; then
+      echo "Successfully flushed cache on port $port."
+    else
+      echo "Failed to flush cache on port $port."
+    fi
+  done
+}
+
 # Main script logic
 case "$1" in
   start)
@@ -133,8 +147,11 @@ case "$1" in
   node-list)
     check_redis_servers_shutdown
     ;;
+  flush-all)
+    flush_all_redis_nodes
+    ;;
   *)
-    echo "Usage: $0 {start|stop|stop-all|node-list}"
+    echo "Usage: $0 {start|stop|stop-all|node-list|flush-all}"
     exit 1
     ;;
 esac

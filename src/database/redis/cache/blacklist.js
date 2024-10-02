@@ -21,15 +21,15 @@ async function isUserBlacklisted(userId) {
     case null: {
       const blacklistDocument = await BlacklistModel.findOne({ blacklistUserId: userId });
       if (blacklistDocument) {
-        value = JSON.stringify(blacklistDocument);
+        value = blacklistDocument;
       } else {
         value = false;
       }
-      await redis.set(key, value);
-      await redis.expire(key, EXPIRATION);
+      await cache(userId, value);
       break;
     }
-    case false: {
+    case "false": {
+      value = false;
       break;
     }
     default: {
@@ -61,8 +61,7 @@ async function addUser(blacklistUserId, moderatorUserId, reason) {
     reason: reason,
   });
   await model.save();
-  await redis.set(`blacklisted:${userId}`, JSON.stringify(model));
-  await redis.expire(key, EXPIRATION);
+  await cache(blacklistUserId, model);
 }
 
 /**
@@ -75,8 +74,14 @@ async function addUser(blacklistUserId, moderatorUserId, reason) {
  */
 async function removeUser(userId) {
   await BlacklistModel.deleteOne({ blacklistUserId: userId });
-  await redis.set(`blacklisted:${userId}`, false);
-  await redis.expire(key, EXPIRATION);
+  await cache(userId, false);
+}
+
+async function cache(userId, object) {
+  const key = `blacklisted:${userId}`;
+  const value = JSON.stringify(object);
+  await redis.set(key, value);
+  redis.expire(key, EXPIRATION);
 }
 
 module.exports = {

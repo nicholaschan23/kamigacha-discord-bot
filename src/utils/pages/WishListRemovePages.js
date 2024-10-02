@@ -99,7 +99,7 @@ class WishListRemoveButtonPages extends LookupPages {
       characterDocument = await CharacterModel.findOneAndUpdate(
         { character: wish.character, series: wish.series },
         { $inc: { wishCount: -1 } },
-        { new: true, session: session }
+        { new: true, session: session, select: "wishCount" }
       );
 
       // Character not found in database

@@ -13,11 +13,13 @@ async function getDocument(userId) {
   if (value === null) {
     // Document not found in cache, fetch from database
     const filterDocument = await FilterModel.findOneAndUpdate({ userId: userId }, { $setOnInsert: { userId: userId } }, { new: true, upsert: true });
-    await redis.set(key, JSON.stringify(filterDocument));
-    return filterDocument;
+    value = filterDocument;
+    await cache(userId, filterDocument);
+  } else {
+    value = JSON.parse(value);
   }
 
-  return JSON.parse(value);
+  return value;
 }
 
 async function addFilter(userId, emoji, label, filter) {
@@ -67,7 +69,7 @@ async function cache(userId, object) {
   const key = `collection-filter:${userId}`;
   const value = JSON.stringify(object);
   await redis.set(key, value);
-  await redis.expire(key, EXPIRATION);
+  redis.expire(key, EXPIRATION);
 }
 
 module.exports = {

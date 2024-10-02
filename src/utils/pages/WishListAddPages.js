@@ -1,15 +1,15 @@
-const mongoose = require("mongoose");
 const config = require("@config");
+const mongoose = require("mongoose");
+
+const CharacterModel = require("@database/mongodb/models/global/character");
 const WishModel = require("@database/mongodb/models/user/wish");
-const RedisClient = require("@database/redis/RedisClient");
+
+const MapCache = require("@database/redis/cache/map");
 const WishCache = require("@database/redis/cache/characterWish");
 const WishCountCache = require("@database/redis/cache/characterWishCount");
-const MapCache = require("@database/redis/cache/map");
-const CharacterModel = require("@database/mongodb/models/global/character");
-const Wish = require("@models/Wish");
-const LookupPages = require("./LookupPages");
 
-const redis = RedisClient.connection;
+const Wish = require("@models/Wish");
+const LookupPages = require("@utils/pages/LookupPages");
 
 class WishListAddButtonPages extends LookupPages {
   constructor(interaction, pageData) {
@@ -19,17 +19,22 @@ class WishListAddButtonPages extends LookupPages {
   async handleSelect(interaction, value) {
     const embed = this.pages[this.index];
 
+    // Parse the wish from the selected value
     const wish = new Wish(JSON.parse(value));
+
+    // Get formatted character and series names from cache
     const formattedCharacter = await MapCache.getFormattedCharacter(wish.character);
     const formattedSeries = await MapCache.getFormattedSeries(wish.series);
 
+    // Start a MongoDB session for transaction
     const session = await mongoose.startSession();
     session.startTransaction();
 
     let messaged = false;
     let wishDocument, characterDocument;
+
     try {
-      // Add wish to wish list
+      // Add wish to wish list if it doesn't already exist
       wishDocument = await WishModel.findOneAndUpdate(
         { userId: interaction.user.id, wishList: { $not: { $elemMatch: wish } } },
         {
@@ -45,16 +50,16 @@ class WishListAddButtonPages extends LookupPages {
 
       // Prevent duplicate wish list entries
       if (!wishDocument) {
-        interaction.followUp({ content: `**${formattedCharacter}** · ${formattedSeries} is already on your wish list.` });
+        interaction.followUp({ content: `❌ **${formattedCharacter}** · ${formattedSeries} is already on your wish list.` });
         messaged = true;
         throw new Error("Duplicate wish list entry");
       }
 
-      // Add wish count to character
+      // Increment wish count for the character in the database
       characterDocument = await CharacterModel.findOneAndUpdate(
         { character: wish.character, series: wish.series },
         { $inc: { wishCount: 1 } },
-        { new: true, session: session }
+        { new: true, session: session, select: 'wishCount' }
       );
 
       // Character not found in database
@@ -62,25 +67,34 @@ class WishListAddButtonPages extends LookupPages {
         throw new Error("Couldn't find character in database");
       }
 
+      // Commit the transaction
       await session.commitTransaction();
       session.endSession();
     } catch (error) {
+      // Abort the transaction in case of error
       await session.abortTransaction();
       session.endSession();
 
+      // Set embed color to red to indicate error
       embed.setColor(config.embedColor.red);
       this.collector.stop();
 
-      if (!messaged) interaction.followUp({ content: "There was an issue adding to your wish list. Please try again." });
+      // Send error message if not already sent
+      if (!messaged) interaction.followUp({ content: "❌ There was an issue adding to your wish list. Please try again." });
       return;
     }
 
-    // Update cache
-    await Promise.all([WishCache.cache(interaction.user.id, wishDocument), WishCountCache.cache(wish.character, wish.series, characterDocument.wishCount)]);
+    // Update cache with new wish and wish count
+    await Promise.all([
+      WishCache.cache(interaction.user.id, wishDocument),
+      WishCountCache.cache(wish.character, wish.series, characterDocument.wishCount)
+    ]);
 
-    // Send message
+    // Set embed color to green to indicate success
     embed.setColor(config.embedColor.green);
     this.collector.stop();
+
+    // Send success message
     interaction.followUp({
       content: `✅ Successfully added **${formattedCharacter}** · ${formattedSeries} to your wish list!`,
     });

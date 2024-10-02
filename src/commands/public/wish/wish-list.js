@@ -43,9 +43,10 @@ module.exports = {
       for (let i = 0; i < wishListChunked.length; i++) {
         const start = (i * chunkSize + 1).toLocaleString();
         const end = (i * chunkSize + wishListChunked[i].length).toLocaleString();
+        const formattedPage = await formatWishListPage(wishListChunked[i]);
         const embed = new EmbedBuilder()
           .setTitle(`Wish List`)
-          .setDescription(`Showing wish list of ${user}\n` + `-# Slots available (**${limit - total}**/${limit})\n` + formatWishListPage(wishListChunked[i]))
+          .setDescription(`Showing wish list of ${user}\n` + `-# Slots available (**${limit - total}**/${limit})\n` + formattedPage)
           .setFooter({ text: `Showing wishes ${start}-${end} (${total} total)` });
         pages.push(embed);
       }

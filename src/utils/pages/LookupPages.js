@@ -1,12 +1,4 @@
-const {
-  EmbedBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
-  AttachmentBuilder,
-} = require("discord.js");
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const MapCache = require("@database/redis/cache/map");
 const { chunkArray, formatLookupPage, getWishListEmoji } = require("@utils/string/formatPage");
 const ButtonPages = require("./ButtonPages");
@@ -45,9 +37,10 @@ class LookupPages extends ButtonPages {
     const pages = [];
 
     for (let i = 0; i < pageDataChunks.length; i++) {
+      const formattedPage = await formatLookupPage(pageDataChunks[i]);
       const embed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
-        .setDescription(await formatLookupPage(pageDataChunks[i]))
+        .setDescription(formattedPage)
         .setFooter({
           text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(
             i * 10 +

@@ -13,18 +13,20 @@ async function getDocument(userId) {
   if (value === null) {
     // Document not found in cache, fetch from database
     const wishDocument = await WishModel.findOneAndUpdate({ userId: userId }, { $setOnInsert: { userId: userId } }, { new: true, upsert: true });
-    await redis.set(key, JSON.stringify(wishDocument));
-    return wishDocument;
+    value = wishDocument;
+    await cache(userId, wishDocument);
+  } else {
+    value = JSON.parse(value);
   }
 
-  return JSON.parse(value);
+  return value;
 }
 
 async function cache(userId, object) {
   const key = `character-wish:${userId}`;
   const value = JSON.stringify(object);
   await redis.set(key, value);
-  await redis.expire(key, EXPIRATION);
+  redis.expire(key, EXPIRATION);
 }
 
 module.exports = {
