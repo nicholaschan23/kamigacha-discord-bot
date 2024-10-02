@@ -1,5 +1,4 @@
 const { EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } = require("discord.js");
-const mongoose = require("mongoose");
 const config = require("@config");
 const RedisClient = require("@database/redis/RedisClient");
 const WishCache = require("@database/redis/cache/characterWish");
@@ -71,7 +70,7 @@ class WishListRemoveButtonPages extends LookupPages {
     const formattedCharacter = await redis.hget("characterNameMap", wish.character);
     const formattedSeries = await redis.hget("seriesNameMap", wish.series);
 
-    const session = await mongoose.startSession();
+    const session = await WishModel.startSession();
     session.startTransaction();
 
     let messaged = false;

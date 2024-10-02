@@ -1,5 +1,4 @@
 const config = require("@config");
-const mongoose = require("mongoose");
 
 const CharacterModel = require("@database/mongodb/models/global/character");
 const WishModel = require("@database/mongodb/models/user/wish");
@@ -27,7 +26,7 @@ class WishListAddButtonPages extends LookupPages {
     const formattedSeries = await MapCache.getFormattedSeries(wish.series);
 
     // Start a MongoDB session for transaction
-    const session = await mongoose.startSession();
+    const session = await WishModel.startSession();
     session.startTransaction();
 
     let messaged = false;

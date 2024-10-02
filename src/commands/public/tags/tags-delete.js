@@ -1,5 +1,4 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const mongoose = require("mongoose");
 const TagCache = require("@database/redis/cache/collectionTag");
 const TagModel = require("@database/mongodb/models/user/tag");
 const CardModel = require("@database/mongodb/models/card/card");
@@ -47,7 +46,7 @@ module.exports = {
     }
 
     // Start a session for transaction
-    const session = await mongoose.startSession();
+    const session = await CardModel.startSession();
     session.startTransaction();
 
     let tagDocument;

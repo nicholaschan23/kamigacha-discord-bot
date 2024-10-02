@@ -1,8 +1,9 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
+const FilterModel = require("@database/mongodb/models/user/filter");
 const FilterCache = require("@database/redis/cache/collectionFilter");
-const { isValidFilterLabel } = require("../../../utils/string/validation");
-const { capitalizeFirstLetter } = require("../../../utils/string/format");
-const Logger = require("../../../utils/Logger");
+const Logger = require("@utils/Logger");
+const { isValidFilterLabel } = require("@utils/string/validation");
+const { capitalizeFirstLetter } = require("@utils/string/format");
 
 const logger = new Logger("Filters rename command");
 
@@ -62,7 +63,7 @@ module.exports = {
     }
 
     // Start a session for transaction
-    const session = await mongoose.startSession();
+    const session = await FilterModel.startSession();
     session.startTransaction();
 
     try {

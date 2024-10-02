@@ -1,5 +1,4 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
-const mongoose = require("mongoose");
 const TradeProfile = require("../../models/TradeProfile");
 const CardModel = require("../../database/mongodb/models/card/card");
 const CollectionModel = require("../../database/mongodb/models/card/collection");
@@ -275,7 +274,7 @@ class TradeManager {
     const req = this.requester;
     const rec = this.receiver;
 
-    const session = await mongoose.startSession();
+    const session = await CardModel.startSession();
     session.startTransaction();
 
     try {

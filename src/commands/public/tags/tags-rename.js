@@ -1,5 +1,4 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
-const mongoose = require("mongoose");
 const CardModel = require("@database/mongodb/models/card/card");
 const TagModel = require("@database/mongodb/models/user/tag");
 const TagCache = require("@database/redis/cache/collectionTag");
@@ -64,7 +63,7 @@ module.exports = {
       interaction.editReply({ content: `There was an issue renaming your tag. Please try again.` });
     }
 
-    const session = await mongoose.startSession();
+    const session = await CardModel.startSession();
     session.startTransaction();
 
     let tagDocument;

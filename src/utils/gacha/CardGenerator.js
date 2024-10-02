@@ -175,15 +175,27 @@ class CardGenerator {
 
   // Save changes to the database
   async saveChanges() {
-    await this.savePity();
-    await this.updateStats();
-    const savedCards = await this.saveCards();
-    await this.updateCollection(savedCards);
-    await this.updateCharacterCirculation();
+    const session = await CardModel.startSession();
+    session.startTransaction();
+
+    try {
+      await this.savePity(session);
+      await this.updateStats(session);
+      const savedCards = await this.saveCards(session);
+      await this.updateCollection(savedCards, session);
+      await this.updateCharacterCirculation(session);
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   }
 
   // Save pity values to the database
-  async savePity() {
+  async savePity(session) {
     await PityModel.findOneAndUpdate(
       { userId: this.userId },
       {
@@ -191,12 +203,12 @@ class CardGenerator {
         SR: this.pity.SR,
         SSR: this.pity.SSR,
       },
-      { upsert: true }
+      { upsert: true, session: session }
     );
   }
 
   // Update user stats in the database
-  async updateStats() {
+  async updateStats(session) {
     await StatsModel.findOneAndUpdate(
       { userId: this.userId },
       {
@@ -208,28 +220,33 @@ class CardGenerator {
           "totalCardsPulled.SSR": this.pullRarities["SSR"],
         },
       },
-      { upsert: true }
+      { upsert: true, session: session }
     );
   }
 
   // Save card models to the database
-  async saveCards() {
+  async saveCards(session) {
     const cards = this.cardData.map((data) => new CardModel(data));
-    return await CardModel.insertMany(cards);
+    return await CardModel.insertMany(cards, { session: session });
   }
 
   // Update user's card collection in the database
-  async updateCollection(savedCards) {
+  async updateCollection(savedCards, session) {
     const cardObjectIds = savedCards.map((card) => card._id);
-    await CollectionModel.findOneAndUpdate({ userId: this.userId }, { $addToSet: { cardsOwned: { $each: cardObjectIds } } }, { upsert: true });
+    await CollectionModel.findOneAndUpdate(
+      { userId: this.userId },
+      { $addToSet: { cardsOwned: { $each: cardObjectIds } } },
+      { upsert: true, session: session }
+    );
   }
 
   // Update character card circulation in the database
-  async updateCharacterCirculation() {
+  async updateCharacterCirculation(session) {
     const updateCirculation = this.cardData.map((card) => {
       return CharacterModel.updateOne(
         { character: card.character, series: card.series },
-        { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.generated`]: 1 } }
+        { $inc: { [`circulation.${card.set}.rarities.${card.rarity}.generated`]: 1 } },
+        { session: session }
       );
     });
     await Promise.all(updateCirculation);
