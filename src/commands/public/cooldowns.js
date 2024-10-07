@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
-const SettingsModel = require("../../database/mongodb/models/user/settings");
-const viewCooldownEmbed = require("../../assets/embeds/cooldown/viewCooldown");
+const viewCooldownEmbed = require("@assets/embeds/cooldown/viewCooldown");
+const SettingsModel = require("@database/mongodb/models/user/settings");
 
 module.exports = {
   category: "public",

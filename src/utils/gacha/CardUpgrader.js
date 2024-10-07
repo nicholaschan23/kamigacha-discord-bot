@@ -23,10 +23,7 @@ class CardUpgrader {
    */
   async cardUpgrade(cardCodes = this.queriedCodes) {
     // Re-verify ownership of cards
-    const cards = await CardModel.find({
-      code: { $in: cardCodes },
-      ownerId: this.userId,
-    });
+    const cards = await CardModel.find({ code: { $in: cardCodes }, ownerId: this.userId });
     if (cards.length !== 10) {
       throw new Error("You no longer own all 10 specified cards. Make sure they stay in your collection during the upgrade process.");
     }

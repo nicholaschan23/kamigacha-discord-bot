@@ -48,12 +48,14 @@ class RedisClient {
 
     if (gracefulShutdown) {
       ShutdownManager.register(async () => {
-        this.quit();
+        await this.quit();
       });
     }
 
     // Handlers
-    this._connection.on("error", (err) => logger.info(`Redis connection error`, err));
+    this._connection.on("error", (err) => {
+      throw new Error(err);
+    });
     this._connection.on("connect", () => logger.info(`Redis connection established`));
     this._connection.on("ready", () => logger.info(`Redis connection ready`));
     this._connection.on("close", () => logger.info(`Redis connection closed`));

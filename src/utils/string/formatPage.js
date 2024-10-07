@@ -38,10 +38,10 @@ async function formatCardInfoPage(cardList, showTags = true) {
       const paddedCode = card.code.padEnd(maxCodeLength, " ");
       const paddedRarity = card.rarity.padEnd(maxRarityLength, " ");
       const paddedSet = `${card.set}`.padEnd(maxSetLength, " ");
-  
+
       const formattedCharacter = await MapCache.getFormattedCharacter(card.character);
       const formattedSeries = await MapCache.getFormattedSeries(card.series);
-  
+
       return [
         `${showTags ? `${card.emoji} ` : ""}\`${paddedCode}\``,
         `\`${paddedRarity}\``,
@@ -51,7 +51,7 @@ async function formatCardInfoPage(cardList, showTags = true) {
       ].join(" · ");
     })
   );
-  
+
   return formattedCardList.join("\n");
 }
 
@@ -91,11 +91,11 @@ async function formatLookupPage(resultList) {
     resultList.map(async (result) => {
       const formattedCharacter = await MapCache.getFormattedCharacter(result.character);
       const formattedSeries = await MapCache.getFormattedSeries(result.series);
-  
+
       return [`${getWishListEmoji(result.wishCount)} \`❤${result.wishCount}\``, `${formattedSeries}`, `**${formattedCharacter}**`].join(" · ");
     })
   );
-  
+
   return formattedResults.join("\n");
 }
 
@@ -104,12 +104,17 @@ async function formatLookupPage(resultList) {
  * @param {Item[]} itemList - The array of Item objects.
  * @returns {String} The formatted inventory string output.
  */
-function formatInventoryPage(itemList) {
+function formatInventoryPage(itemList, itemCode = true) {
   return itemList
     .map(({ name, quantity, type }) => {
       const icon = config.itemsMap.get(name).icon;
       const nameFormatted = config.itemsMap.get(name).name;
-      return [`${icon} **${quantity}**`, `\`${name}\``, `${nameFormatted}`].join(" · ");
+
+      const result = [];
+      result.push(`${icon} **${quantity}**`);
+      if (itemCode) result.push(`\`${name}\``);
+      result.push(`${nameFormatted}`);
+      return result.join(" · ");
     })
     .join("\n");
 }
@@ -124,11 +129,11 @@ async function formatWishListPage(wishList) {
     wishList.map(async (wish) => {
       const formattedCharacter = await MapCache.getFormattedCharacter(wish.character);
       const formattedSeries = await MapCache.getFormattedSeries(wish.series);
-  
+
       return [`- ${formattedSeries}`, `**${formattedCharacter}**`].join(" · ");
     })
   );
-  
+
   return formattedWishList.join("\n");
 }
 

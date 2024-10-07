@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
-const CardModel = require("../../database/mongodb/models/card/card");
-const CollectionModel = require("../../database/mongodb/models/card/collection");
-const viewCardEmbed = require("../../assets/embeds/card/viewCard");
+const viewCardEmbed = require("@assets/embeds/card/viewCard");
+const CardModel = require("@database/mongodb/models/card/card");
+const CollectionModel = require("@database/mongodb/models/card/collection");
 
 module.exports = {
   category: "public",
@@ -23,7 +23,7 @@ module.exports = {
     // Retrieve card by code if provided
     const code = interaction.options.getString("code")?.toLowerCase();
     if (code) {
-      const cardDocument = await CardModel.findOne({ code });
+      const cardDocument = await CardModel.findOne({ code: code });
       return sendCardReply(cardDocument);
     }
 

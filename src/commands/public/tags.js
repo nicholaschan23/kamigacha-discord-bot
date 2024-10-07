@@ -4,7 +4,8 @@ const tagsDelete = require("./tags/tags-delete");
 const tagsEmoji = require("./tags/tags-emoji");
 const tagsList = require("./tags/tags-list");
 const tagsRename = require("./tags/tags-rename");
-const Logger = require("../../utils/Logger");
+const Logger = require("@utils/Logger");
+
 const logger = new Logger("Tags command");
 
 module.exports = {

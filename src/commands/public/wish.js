@@ -2,7 +2,8 @@ const { SlashCommandBuilder } = require("discord.js");
 const wishAdd = require("./wish/wish-add");
 const wishRemove = require("./wish/wish-remove");
 const wishList = require("./wish/wish-list");
-const Logger = require("../../utils/Logger");
+const Logger = require("@utils/Logger");
+
 const logger = new Logger("Wish command");
 
 module.exports = {

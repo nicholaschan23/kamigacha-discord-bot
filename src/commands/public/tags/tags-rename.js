@@ -98,7 +98,7 @@ module.exports = {
       }
 
       // Update cards with the associated old tag with the new tag
-      await CardModel.updateMany({ userId: interaction.user.id, tag: oldTag }, { $set: { tag: newTag } }, { session: session });
+      await CardModel.updateMany({ ownerId: interaction.user.id, tag: oldTag }, { $set: { tag: newTag } }, { session: session });
 
       await session.commitTransaction();
       session.endSession();

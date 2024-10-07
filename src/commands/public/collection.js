@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
-const CollectionModel = require("../../database/mongodb/models/card/collection");
-const CollectionPages = require("../../utils/pages/CollectionPages");
-const FilterModel = require("../../database/mongodb/models/user/filter");
+const CollectionModel = require("@database/mongodb/models/card/collection");
+const FilterModel = require("@database/mongodb/models/user/filter");
+const CollectionPages = require("@utils/pages/CollectionPages");
 
 module.exports = {
   category: "public",

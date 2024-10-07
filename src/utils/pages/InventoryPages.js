@@ -2,35 +2,51 @@ const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelect
 const { chunkArray, formatInventoryPage } = require("../string/formatPage");
 const { capitalizeFirstLetter } = require("../string/format");
 const ButtonPages = require("./ButtonPages");
-const config = require("../../config");
+const config = require("@config");
+const Item = require("@root/src/models/Item");
 
 class InventoryPages extends ButtonPages {
   constructor(interaction, inventoryDocument) {
     super(interaction, [], inventoryDocument.isPrivate);
     this.inventoryDocument = inventoryDocument;
-    this.inventory = this.convertInventoryMapToArray(inventoryDocument.inventory);
+    this.inventory;
 
     this.init();
     this.pages = this.createPages();
   }
 
   init() {
-    // Initialize an empty set to store parsed item types
-    const parsedTypes = new Set();
+    const inventoryArray = [];
+    const parsedTypes = new Set(); // Empty set to store parsed item types
+    const typeOrder = Object.keys(config.itemTypes);
 
-    for (let i = 0; i < this.inventory.length; i++) {
-      parsedTypes.add(this.inventory[i].type);
+    for (const [name, quantity] of this.inventoryDocument.inventory) {
+      const itemType = config.itemsMap.get(name)?.type;
+      inventoryArray.push(new Item(name, quantity, itemType));
+      parsedTypes.add(itemType);
     }
+    
+    // Sort the inventoryArray
+    inventoryArray.sort((a, b) => {
+      const typeComparison = typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type);
+      if (typeComparison !== 0) return typeComparison;
+
+      const nameComparison = a.name.localeCompare(b.name);
+      if (nameComparison !== 0) return nameComparison;
+
+      return b.quantity - a.quantity; // Sort quantity in descending order
+    });
+    this.inventory = inventoryArray;
 
     // Filter item types to only those present in the inventory
-    this.itemTypes = Object.keys(config.itemTypes).filter((type) => parsedTypes.has(type));
+    this.itemTypes = typeOrder.filter((type) => parsedTypes.has(type));
   }
 
   createPages(itemType = []) {
     // Start on first page
     this.index = 0;
 
-    // Filter sorted inventory
+    // Filter inventory
     let filteredInventory = [...this.inventory];
     if (itemType.length > 0 && itemType.length < this.itemTypes.length) {
       filteredInventory = filteredInventory.filter(({ name, quantity, type }) => {
@@ -172,21 +188,6 @@ class InventoryPages extends ButtonPages {
     } else {
       ends.setDisabled(false);
     }
-  }
-
-  /**
-   * Converts a Map of {item name, {quantity, type}} to an array of objects {item name, quantity, type}.
-   * @param {Map} inventoryMap - The inventory Map.
-   * @returns {Array} - The array of inventory objects.
-   */
-  convertInventoryMapToArray(inventoryMap) {
-    const inventoryArray = [];
-
-    for (const [itemName, { quantity, type }] of inventoryMap) {
-      inventoryArray.push({ itemName, quantity, type });
-    }
-
-    return inventoryArray;
   }
 }
 

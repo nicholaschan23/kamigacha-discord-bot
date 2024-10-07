@@ -1,23 +1,5 @@
 const mongoose = require("mongoose");
 
-// Define a schema for an item
-const itemSchema = new mongoose.Schema(
-  {
-    // Item quantity
-    quantity: {
-      type: Number,
-      required: true,
-    },
-
-    // Item type to lookup icon
-    type: {
-      type: String,
-      require: true,
-    },
-  },
-  { _id: false }
-);
-
 const inventorySchema = new mongoose.Schema({
   userId: {
     type: String,
@@ -31,10 +13,10 @@ const inventorySchema = new mongoose.Schema({
     default: false,
   },
 
-  // Items user holds, with item name as the key
+  // Items user holds {item name, quantity}
   inventory: {
     type: Map,
-    of: itemSchema,
+    of: Number,
     default: new Map(),
   },
 });

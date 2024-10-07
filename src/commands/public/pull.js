@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
-const CardGenerator = require("../../utils/gacha/CardGenerator");
-const getPullMsg = require("../../assets/messages/card/pullMsg");
-const config = require("../../config");
+const getPullMsg = require("@assets/messages/card/pullMsg");
+const config = require("@config");
+const CardGenerator = require("@utils/gacha/CardGenerator");
 
 module.exports = {
   category: "public",

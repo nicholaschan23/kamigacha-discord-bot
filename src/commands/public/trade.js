@@ -1,6 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const TradeManager = require("../../utils/gacha/TradeManager");
-const InventoryModel = require("../../database/mongodb/models/user/inventory");
+const TradeManager = require("@utils/gacha/TradeManager");
 
 module.exports = {
   category: "public",
@@ -21,12 +20,5 @@ module.exports = {
 
     const bp = new TradeManager(interaction, receiver);
     bp.initTrade();
-
-    // const inventoryDocument = await InventoryModel.findOneAndUpdate({ userId: interaction.user.id }, { $setOnInsert: { userId: interaction.user.id } }, { new: true, upsert: true });
-
-    // if (inventoryDocument.inventory.size === 0) {
-    //   return interaction.reply({ content: "Your inventory is empty.", ephemeral: true });
-    // } else {
-    // }
   },
 };

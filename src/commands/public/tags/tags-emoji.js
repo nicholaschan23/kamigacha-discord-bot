@@ -69,7 +69,7 @@ module.exports = {
       }
 
       // Update cards with the associated tag with the new emoji
-      await CardModel.updateMany({ userId: interaction.user.id, tag: tag }, { $set: { emoji: emoji } }, { session: session });
+      await CardModel.updateMany({ ownerId: interaction.user.id, tag: tag }, { $set: { emoji: emoji } }, { session: session });
 
       await session.commitTransaction();
       session.endSession();

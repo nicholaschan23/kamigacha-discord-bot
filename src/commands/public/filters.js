@@ -5,7 +5,8 @@ const filtersEmoji = require("./filters/filters-emoji");
 const filtersList = require("./filters/filters-list");
 const filtersRename = require("./filters/filters-rename");
 const filtersString = require("./filters/filters-string");
-const Logger = require("../../utils/Logger");
+const Logger = require("@utils/Logger");
+
 const logger = new Logger("Filters command");
 
 module.exports = {
