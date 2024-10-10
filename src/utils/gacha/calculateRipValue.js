@@ -47,10 +47,10 @@ function sortItemList(items) {
     const typeComparison = typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type);
     if (typeComparison !== 0) return typeComparison;
 
-    const nameComparison = a.name.localeCompare(b.name);
-    if (nameComparison !== 0) return nameComparison;
+    const quantityComparison = b.quantity - a.quantity; // Sort quantity in descending order
+    if (quantityComparison !== 0) return quantityComparison;
 
-    return b.quantity - a.quantity; // Sort quantity in descending order
+    return a.name.localeCompare(b.name); // Sort name in alphabetical order
   });
 }
 

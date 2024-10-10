@@ -58,7 +58,7 @@ class WishListAddButtonPages extends LookupPages {
       characterDocument = await CharacterModel.findOneAndUpdate(
         { character: wish.character, series: wish.series },
         { $inc: { wishCount: 1 } },
-        { new: true, session: session, select: 'wishCount' }
+        { new: true, session: session, select: "wishCount" }
       );
 
       // Character not found in database
@@ -84,10 +84,7 @@ class WishListAddButtonPages extends LookupPages {
     }
 
     // Update cache with new wish and wish count
-    await Promise.all([
-      WishCache.cache(interaction.user.id, wishDocument),
-      WishCountCache.cache(wish.character, wish.series, characterDocument.wishCount)
-    ]);
+    await Promise.all([WishCache.cache(interaction.user.id, wishDocument), WishCountCache.cache(wish.character, wish.series, characterDocument.wishCount)]);
 
     // Set embed color to green to indicate success
     embed.setColor(config.embedColor.green);

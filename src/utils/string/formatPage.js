@@ -27,8 +27,12 @@ function chunkArray(array, size) {
  * @param {Boolean} [showTags=true] - Whether to display card tag emoji.
  * @returns {String} The formatted card information string.
  */
-async function formatCardInfoPage(cardList, showTags = true) {
+async function formatCardInfoPage(cardList, displayFeatures = []) {
+  const displayWishCount = displayFeatures.includes("wishCount");
+
   // Calculate max lengths for padding
+  let maxWishCountLength;
+  if (displayWishCount) maxWishCountLength = Math.max(...cardList.map((card) => `${card.wishCount}`.length));
   const maxCodeLength = Math.max(...cardList.map((card) => card.code.length));
   const maxRarityLength = Math.max(...cardList.map((card) => card.rarity.length));
   const maxSetLength = Math.max(...cardList.map((card) => `${card.set}`.length));
@@ -39,11 +43,17 @@ async function formatCardInfoPage(cardList, showTags = true) {
       const paddedRarity = card.rarity.padEnd(maxRarityLength, " ");
       const paddedSet = `${card.set}`.padEnd(maxSetLength, " ");
 
+      let formattedWishCount = "";
+      if (maxWishCountLength) {
+        const paddedWishCount = `${card.wishCount}`.padEnd(maxWishCountLength, " ");
+        formattedWishCount = `\`❤${paddedWishCount}\` · `;
+      }
+
       const formattedCharacter = await MapCache.getFormattedCharacter(card.character);
       const formattedSeries = await MapCache.getFormattedSeries(card.series);
 
       return [
-        `${showTags ? `${card.emoji} ` : ""}\`${paddedCode}\``,
+        `${card.emoji} ${formattedWishCount}\`${paddedCode}\``,
         `\`${paddedRarity}\``,
         `\`◈${paddedSet}\``,
         `${formattedSeries}`,
@@ -104,7 +114,7 @@ async function formatLookupPage(resultList) {
  * @param {Item[]} itemList - The array of Item objects.
  * @returns {String} The formatted inventory string output.
  */
-function formatInventoryPage(itemList, options = { itemCode: true}) {
+function formatInventoryPage(itemList, options = { itemCode: true }) {
   return itemList
     .map(({ name, quantity, type }) => {
       const icon = config.itemsMap.get(name).icon;

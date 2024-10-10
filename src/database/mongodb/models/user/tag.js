@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const CollectionTag = require("../../../../models/CollectionTag")
+const CollectionTag = require("@models/CollectionTag");
 
 const TagSchema = new mongoose.Schema(
   {

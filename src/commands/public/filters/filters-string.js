@@ -21,6 +21,11 @@ module.exports = {
       return;
     }
 
+    if (["Modified", "Most wished", "Show wish count", "Untagged"].includes(label)) {
+      interaction.editReply({ content: "You cannot change the string of a default filter." });
+      return;
+    }
+
     // Get the filter string, convert to lowercase, and normalize whitespace
     const filter = interaction.options.getString("string").toLowerCase().replace(/\s+/g, " ");
     if (!isValidFilter(filter)) {

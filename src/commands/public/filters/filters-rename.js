@@ -25,6 +25,11 @@ module.exports = {
       return;
     }
 
+    if (["Modified", "Most wished", "Show wish count", "Untagged"].includes(oldLabel)) {
+      interaction.editReply({ content: "You cannot rename a default filter." });
+      return;
+    }
+
     // Get and validate new label
     const newLabel = capitalizeFirstLetter(interaction.options.getString("new-label").replace(/\s+/g, " "));
     if (!isValidFilterLabel(newLabel)) {

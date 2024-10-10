@@ -22,7 +22,7 @@ module.exports = {
       return;
     }
 
-    if (label === "Date") {
+    if (["Modified", "Most wished", "Show wish count", "Untagged"].includes(label)) {
       interaction.reply({ content: "You cannot delete the default filter." });
       return;
     }

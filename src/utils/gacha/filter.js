@@ -1,4 +1,6 @@
-const config = require("../../config/gacha");
+const config = require("@config/gacha");
+const { replaceAccents } = require("@utils/string/format");
+
 const validKeys = [
   // Filters
   "c",
@@ -7,11 +9,13 @@ const validKeys = [
   "code",
   "f",
   "frame",
+  "guild",
   "p",
   "pulled",
   "origin",
   "r",
   "rarity",
+  "s",
   "series",
   "server",
   "set",
@@ -19,21 +23,15 @@ const validKeys = [
   "t",
   "tag",
   "w",
-  "wl",
-  "wishlist",
+  "wc",
   "wish",
+  "wishcount",
+  "wishlist",
+  "wl",
 
   // Sorting
   "o",
   "order",
-  "-a",
-  "-asc",
-  "-ascend",
-  "-ascending",
-  "-d",
-  "-desc",
-  "-descend",
-  "-descending",
 ];
 const validSortOrderKeys = ["-a", "-asc", "-ascend", "-ascending", "-d", "-desc", "-descend", "-descending"];
 const validOperators = ["=", "<", ">", "<=", ">=", "!=", "<>"];
@@ -56,7 +54,7 @@ const validOperators = ["=", "<", ">", "<=", ">=", "!=", "<>"];
  * @returns {Array<Object>} An array of filter objects with keys: key, operator, and value.
  */
 function parseFilterString(filterString) {
-  const regex = new RegExp(`\\b(${validKeys.join("|")})\\b\\s*(<>|!=|<=|>=|=|<|>)\\s*(?:"([^"]*)"|([^,\\s]+))`, "g");
+  const regex = new RegExp(`\\b(${[...validKeys, ...validSortOrderKeys].join("|")})\\b\\s*(<>|!=|<=|>=|=|<|>)\\s*(?:"([^"]*)"|([^,\\s]+))`, "g");
 
   let match;
   const filters = [];
@@ -65,7 +63,7 @@ function parseFilterString(filterString) {
     let key, operator, value;
 
     // Get key
-    key = match[1];
+    key = match[1].toLowerCase();
     if (validSortOrderKeys.includes(key)) {
       operator = "";
       value = "";
@@ -82,7 +80,8 @@ function parseFilterString(filterString) {
       } else {
         // Quoted value in match[3], unquoted value in match[4]
         value = match[3] || match[4];
-        value = value.replace(/\s+/g, " ").trim();
+        value = value.replace(/\s+/g, " ").trim().toLowerCase();
+        value = replaceAccents(value);
       }
     }
 
@@ -97,176 +96,226 @@ function parseFilterString(filterString) {
   return filters;
 }
 
-function applyFilters(cardList, filters, userId, guildId) {
-  const filteredCards = [];
-  const display = new Set(); // What stats to display on collection page
-  let sortField;
-  let sortOrder;
+function preprocessFilters(filters, userId, guildId) {
+  const displayFeatures = new Set();
+  let sortField, sortOrder;
 
-  for (const card of cardList) {
-    if (filteredCards.length == 500) {
-      break;
+  const preprocessedFilters = filters.map(({ key, operator, value }) => {
+    let normalizedKey = key;
+    let normalizedValue = value;
+
+    switch (key) {
+      case "c":
+      case "char":
+      case "character":
+        normalizedKey = "character";
+        normalizedValue = value.split(" ");
+        break;
+      case "f":
+      case "frame":
+        normalizedKey = "frame";
+        if (value === "t" || value === "true") {
+          normalizedValue = true;
+        } else if (value === "f" || value === "false" || value === "none") {
+          normalizedValue = false;
+        } else {
+          normalizedValue = value.split(" ");
+        }
+        break;
+      case "o":
+      case "order": {
+        if (operator === "=" && !sortField) {
+          switch (value) {
+            case "w":
+            case "wc":
+            case "wish":
+            case "wishcount":
+            case "wishlist":
+            case "wl":
+              sortField = "wishCount";
+              displayFeatures.add("wishCount");
+              break;
+            case "date":
+              sortField = "date";
+            case "recent":
+            case "modified":
+              sortField = "modified";
+          }
+        }
+        return false; // Skip sorting key
+      }
+      case "origin":
+        normalizedKey = "generationType";
+        if (value === "sp" || value === "single-pull" || value === "pull") {
+          normalizedValue = "Pull";
+        } else if (value === "mp" || value === "multi-pull") {
+          normalizedValue = "Multi-Pull";
+        } else if (value === "u" || value === "upgrade") {
+          normalizedValue = "Upgrade";
+        }
+        break;
+      case "p":
+      case "pulled":
+        normalizedKey = "pulledId";
+        if (value === "me" || value === "t" || value === "f" || value === "true" || value === "false") {
+          normalizedValue = userId;
+        }
+        break;
+      case "r":
+      case "rarity":
+        normalizedKey = "rarity";
+        normalizedValue = isNaN(value) ? config.getRarityRank(value) : value;
+        break;
+      case "s":
+      case "series":
+        normalizedKey = "series";
+        normalizedValue = value.split(" ");
+        break;
+      case "guild":
+      case "server":
+        normalizedKey = "guildId";
+        if (value === "this" || value === "here") {
+          normalizedValue = guildId;
+        }
+        break;
+      case "set":
+        normalizedKey = "set";
+        if (isNaN(value)) {
+          return false;
+        }
+        normalizedValue = parseInt(value);
+        break;
+      case "sleeve":
+        normalizedKey = "sleeve";
+        if (value === "t" || value === "true") {
+          normalizedValue = true;
+        } else if (value === "f" || value === "false" || value === "none") {
+          normalizedValue = false;
+        } else {
+          normalizedValue = value.split(" ");
+        }
+        break;
+      case "t":
+      case "tag":
+        normalizedKey = "tag";
+        break;
+      case "w":
+      case "wc":
+      case "wish":
+      case "wishcount":
+      case "wishlist":
+      case "wl":
+        normalizedKey = "wishCount";
+        displayFeatures.add("wishCount");
+        if (operator === "<>") {
+          return false;
+        }
+        break;
+      default:
+        if (!sortOrder && key.slice(0, 1) === "-") {
+          switch (key) {
+            case "-a":
+            case "-asc":
+            case "-ascend":
+            case "-ascending":
+              sortOrder = "asc";
+              break;
+            case "-d":
+            case "-desc":
+            case "-descend":
+            case "-descending":
+              sortOrder = "desc";
+              break;
+          }
+        }
+        return false; // Skip unrecognized keys
     }
 
-    const passedFilters = filters.every(({ key, operator, value }) => {
-      // Check for display
-      if (operator === "<>") {
-        switch (key) {
-          case "w":
-          case "wl":
-          case "wishlist":
-          case "wish":
-            display.add("wish");
-          default: {
-            return true;
-          }
-        }
-      }
+    return { key: normalizedKey, operator, value: normalizedValue };
+  });
 
-      // Check for sort order
-      if (!sortOrder && key.slice(0, 1) === "-") {
-        sortOrder = key;
-        return true;
-      }
+  // Default sort field
+  if (!sortField) {
+    sortField = "modified";
+  }
 
-      let cardValue = card[key];
+  if (!sortOrder) {
+    sortOrder = "desc";
+  }
 
+  return { preprocessedFilters, displayFeatures, sortField, sortOrder };
+}
+
+function applyFilters(cardList, filters, userId, guildId) {
+  const filteredCards = [];
+
+  const { preprocessedFilters, displayFeatures, sortField, sortOrder } = preprocessFilters(filters, userId, guildId);
+
+  for (const card of cardList) {
+    const passedFilters = preprocessedFilters.every(async ({ key, operator, value }) => {
+      let cardValue = card[key]; // Field that will be compared to the value
       switch (key) {
-        // Set order
-        case "o":
-        case "order": {
-          if (operator === "=" && !sortField) {
-            sortField = value;
-          }
-          return true;
-        }
-
-        // Handle string/number comparison filters
-        case "c":
-        case "char":
-          cardValue = card["character"];
         case "character":
+          cardValue = cardValue.split("-");
           break;
-        case "code":
-          break;
-        case "f":
-          cardValue = card["frame"];
         case "frame":
-        case "sleeve": {
-          if (value === "t" || value === "true") {
-            cardValue = !!cardValue; // Ensure cardValue is a boolean
-            value = true;
-          } else if (value === "f" || value === "false" || value === "none") {
-            cardValue = !!cardValue; // Ensure cardValue is a boolean
-            value = false;
-          }
           break;
-        }
-        case "origin": {
-          cardValue = card["generationType"];
-          if (value === "sp" || value === "single-pull" || value === "pull") {
-            value = "Pull";
-          } else if (value === "mp" || value === "multi-pull") {
-            value = "Multi-Pull";
-          } else if (value === "u" || value === "upgrade") {
-            value = "Upgrade";
-          }
+        case "generationType":
           break;
-        }
-        case "p":
-        case "pulled":
-          cardValue = card["pulledId"];
-          if (value === "me" || value === "t" || value === "f" || value === "true" || value === "false") {
-            value = userId;
-          }
+        case "guildId":
           break;
-        case "r":
+        case "pulledId":
+          break;
         case "rarity": {
-          // Convert rarity strings into numbers
           cardValue = config.getRarityRank(cardValue);
-          value = isNaN(value) ? config.getRarityRank(value) : value;
           break;
         }
         case "series":
-          break;
-        case "server": {
-          cardValue = card["guildId"];
-          if (value === "this" || value === "here") {
-            value = guildId;
-          }
-          break;
-        }
-        // Wish count and sets can only be numbers
-        case "w":
-        case "wl":
-        case "wishlist":
-        case "wish":
-          if (isNaN(value)) {
-            return true;
-          }
-          cardValue = card["wishCount"];
-          display.add("wish");
+          cardValue = card["series"].split("-");
           break;
         case "set": {
-          if (isNaN(value)) {
-            return true;
-          }
           break;
         }
-        case "t":
-          cardValue = card["tag"];
-        case "tag":
+        case "tag": {
+          break;
+        }
+        case "wishCount":
           break;
         default:
           return true; // If the key is not recognized, do not filter it out
       }
-      switch (operator) {
-        case "=":
-          return cardValue == value;
-        case "!=":
-          return cardValue != value;
-        case ">":
-          return cardValue > value;
-        case "<":
-          return cardValue < value;
-        case ">=":
-          return cardValue >= value;
-        case "<=":
-          return cardValue <= value;
-        default:
-          return true;
+
+      if (["character", "series", "frame", "sleeve"].includes(key) && typeof cardValue !== "boolean") {
+        switch (operator) {
+          case "=":
+            return value.some((word) => cardValue.includes(word));
+          case "!=":
+            return value.some((word) => !cardValue.includes(word));
+          default:
+            return true; // Invalid operator for these keys
+        }
+      } else {
+        switch (operator) {
+          case "=":
+            return cardValue == value;
+          case "!=":
+            return cardValue != value;
+          case ">":
+            return cardValue > value;
+          case "<":
+            return cardValue < value;
+          case ">=":
+            return cardValue >= value;
+          case "<=":
+            return cardValue <= value;
+          default:
+            return true;
+        }
       }
     });
 
     if (passedFilters) {
       filteredCards.push(card);
-    }
-  }
-
-  switch (sortField) {
-    case "date":
-      break;
-    case "w":
-    case "wl":
-    case "wishlist":
-      sortField = "wish";
-    case "wish":
-      display.add("wish");
-      break;
-    default: {
-      sortField = "modified";
-    }
-  }
-
-  switch (sortOrder) {
-    case "-a":
-    case "-asc":
-    case "-ascend":
-    case "-ascending":
-      sortOrder = "asc";
-      break;
-    default: {
-      sortOrder = "desc";
     }
   }
 
@@ -285,7 +334,8 @@ function applyFilters(cardList, filters, userId, guildId) {
     }
   });
 
-  return [filteredCards, Array.from(display)];
+  const slicedCards = filteredCards.slice(0, 500); // Adjust the slice range as needed
+  return [slicedCards, Array.from(displayFeatures)];
 }
 
 module.exports = {

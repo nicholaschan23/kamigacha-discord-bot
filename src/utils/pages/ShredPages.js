@@ -114,7 +114,7 @@ class ShredPages {
     // Select menu row
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("collectionFilters")
-      .setPlaceholder("Select collection filters")
+      .setPlaceholder("Select filters")
       .setMinValues(1)
       .setMaxValues(this.filterMenu.length)
       .addOptions(this.filterMenu.map(({ emoji, label, filter }) => new StringSelectMenuOptionBuilder().setEmoji(emoji).setLabel(label).setValue(filter)));

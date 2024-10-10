@@ -1,12 +1,6 @@
-const {
-  EmbedBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
-} = require("discord.js");
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
+const WishCountCache = require("@database/redis/cache/characterWishCount");
 const { parseFilterString, applyFilters } = require("@utils/gacha/filter");
 const { generateGridCardAttachment } = require("@utils/graphics/generateCardAttachment");
 const { chunkArray, formatCardInfoPage } = require("@utils/string/formatPage");
@@ -26,12 +20,19 @@ class CollectionPages extends ButtonPages {
   }
 
   async init() {
+    // Fetch wish count for each card
+    await Promise.all(
+      this.cardList.map(async (card) => {
+        const wishCount = await WishCountCache.getWishCount(card.character, card.series);
+        card.wishCount = wishCount;
+      })
+    );
+
     await this.updatePageContent(parseFilterString(this.filterString));
   }
 
   async updatePageContent(filters) {
-    let display;
-    [this.filteredList, display] = applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
+    [this.filteredList, this.displayFeatures] = await applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
 
     // Split the list of cards into chunks of 10
     this.cardChunks = chunkArray(this.filteredList, 10);
@@ -59,7 +60,7 @@ class CollectionPages extends ButtonPages {
     }
 
     for (let i = 0; i < cardDataChunks.length; i++) {
-      const formattedPages = await formatCardInfoPage(cardDataChunks[i]);
+      const formattedPages = await formatCardInfoPage(cardDataChunks[i], this.displayFeatures);
       const embed = new EmbedBuilder()
         .setTitle(`Card Collection`)
         .setDescription(`Cards owned by <@${this.collectionDocument.userId}>\n\n` + formattedPages)
@@ -93,7 +94,7 @@ class CollectionPages extends ButtonPages {
     // Select menu row
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("collectionFilters")
-      .setPlaceholder("Select collection filters")
+      .setPlaceholder("Select filters")
       .setMinValues(1)
       .setMaxValues(this.filterMenu.length)
       .addOptions(this.filterMenu.map(({ emoji, label, filter }) => new StringSelectMenuOptionBuilder().setEmoji(emoji).setLabel(label).setValue(filter)));

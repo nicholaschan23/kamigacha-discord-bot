@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const CollectionFilter = require("../../../../models/CollectionFilter");
+const CollectionFilter = require("@models/CollectionFilter");
 
 /**
  * Schema for individual filter.
@@ -31,11 +31,10 @@ const collectionFilterSchema = new mongoose.Schema({
   filterList: {
     type: [FilterSchema],
     default: () => [
-      new CollectionFilter("🗓️", "Date", "order=date"),
-      new CollectionFilter("🏷️", "Tagged", "tag!=none"),
+      new CollectionFilter("🗓️", "Modified", "order=modified"),
+      new CollectionFilter("❤️", "Most wished", "order=wish"),
+      new CollectionFilter("❣️", "Show wish count", "w<>"),
       new CollectionFilter("▪️", "Untagged", "tag=none"),
-      // new CollectionFilter(":heart:", "Wish", "order=wish"),
-      // new CollectionFilter(":heart:", "Show Wish", "order=wish<>"),
     ],
   },
 });
