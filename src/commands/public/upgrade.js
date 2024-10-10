@@ -111,7 +111,7 @@ module.exports = {
       try {
         if (i.customId === "rejectUpgrade") {
           embed.setColor(config.embedColor.red);
-          await i.update({ embeds: [embed], components: [] });
+          i.update({ embeds: [embed], components: [] });
         } else if (i.customId === "acceptUpgrade") {
           // Upgrade card
           const cu = new CardUpgrader(interaction.guild.id, queriedCards, seriesSetFreq, rarityFreq);
@@ -119,19 +119,19 @@ module.exports = {
             const createdCard = await cu.cardUpgrade();
             if (createdCard) {
               embed.setColor(config.embedColor.green);
-              await i.update({ embeds: [embed], components: [] });
+              i.update({ embeds: [embed], components: [] });
               const { embed: upgradeEmbed, file: upgradeFile } = await viewUpgradeEmbed(createdCard);
-              await interaction.followUp({ embeds: [upgradeEmbed], files: [upgradeFile] });
+              i.channel.send({ embeds: [upgradeEmbed], files: [upgradeFile] });
             } else {
               embed.setColor(config.embedColor.red);
-              await i.update({ embeds: [embed], components: [] });
-              await interaction.followUp({ content: "Upgrade failed." });
+              i.update({ embeds: [embed], components: [] });
+              i.channel.send({ content: "Upgrade failed." });
             }
           } catch (error) {
             if (config.debug) logger.error(error.stack);
             embed.setColor(config.embedColor.red);
-            await i.update({ embeds: [embed], components: [] });
-            await interaction.followUp({ content: error.message });
+            i.update({ embeds: [embed], components: [] });
+            i.channel.send({ content: error.message });
           }
         }
         collector.stop();

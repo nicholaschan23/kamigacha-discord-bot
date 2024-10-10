@@ -5,14 +5,11 @@ const {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
-  AttachmentBuilder,
 } = require("discord.js");
 const ButtonPages = require("./ButtonPages");
-const { chunkArray, formatCardInfoPage } = require("../string/formatPage");
-const { parseFilterString, applyFilters } = require("../gacha/filter");
-const { getCardBorder } = require("../graphics/getCardBorder");
-const { createCardGrid } = require("../graphics/createCardGrid");
-const { v4: uuidv4 } = require("uuid");
+const { parseFilterString, applyFilters } = require("@utils/gacha/filter");
+const { generateGridCardAttachment } = require("@utils/graphics/generateCardAttachment");
+const { chunkArray, formatCardInfoPage } = require("@utils/string/formatPage");
 
 class CollectionPages extends ButtonPages {
   constructor(interaction, collectionDocument, filterString, filterMenu) {
@@ -29,10 +26,10 @@ class CollectionPages extends ButtonPages {
   }
 
   async init() {
-    await this.updatePages(parseFilterString(this.filterString));
+    await this.updatePageContent(parseFilterString(this.filterString));
   }
 
-  async updatePages(filters) {
+  async updatePageContent(filters) {
     let display;
     [this.filteredList, display] = applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
 
@@ -96,9 +93,9 @@ class CollectionPages extends ButtonPages {
     // Select menu row
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("collectionFilters")
-      .setPlaceholder("Select a filter")
+      .setPlaceholder("Select collection filters")
       .setMinValues(1)
-      .setMaxValues(1)
+      .setMaxValues(this.filterMenu.length)
       .addOptions(this.filterMenu.map(({ emoji, label, filter }) => new StringSelectMenuOptionBuilder().setEmoji(emoji).setLabel(label).setValue(filter)));
     const selectRow = new ActionRowBuilder().addComponents(selectMenu);
     this.components["collectionFilters"] = selectMenu;
@@ -116,21 +113,24 @@ class CollectionPages extends ButtonPages {
         } else {
           this.index = 0;
         }
-        this.updatePageButtons(i);
+        this.updateComponents();
+        this.updatePage(i);
         break;
       }
       case "viewPrev": {
         if (this.index > 0) {
           this.index--;
         }
-        this.updatePageButtons(i);
+        this.updateComponents();
+        this.updatePage(i);
         break;
       }
       case "viewNext": {
         if (this.index < this.pages.length - 1) {
           this.index++;
         }
-        this.updatePageButtons(i);
+        this.updateComponents();
+        this.updatePage(i);
         break;
       }
       case "copyCodes": {
@@ -142,6 +142,8 @@ class CollectionPages extends ButtonPages {
         for (const cardData of this.cardChunks[this.index]) {
           codes.push(cardData.code);
         }
+
+        this.updatePage(i);
         await this.interaction.followUp(codes.join(", "));
         break;
       }
@@ -150,27 +152,18 @@ class CollectionPages extends ButtonPages {
         const view = this.components["viewImages"];
         view.setDisabled(true);
 
-        const imageUrls = this.cardChunks[this.index].map((card) => card.image);
-        const borderPaths = this.cardChunks[this.index].map((card) => getCardBorder(card.rarity));
-        const buffer = await createCardGrid(imageUrls, borderPaths);
+        const { file, url } = await generateGridCardAttachment(this.cardChunks[this.index]);
 
-        // Create a unique attachment name
-        const attachmentName = `${uuidv4()}.png`;
-
-        // Create an attachment from the buffer
-        const imageFile = new AttachmentBuilder(buffer, { name: attachmentName });
-
-        // Create the attachment URL
-        const attachmentUrl = `attachment://${attachmentName}`;
-
-        await this.interaction.followUp({ embeds: [new EmbedBuilder().setImage(attachmentUrl)], files: [imageFile] });
+        this.updatePage(i);
+        await i.followUp({ embeds: [new EmbedBuilder().setImage(url)], files: [file] });
         break;
       }
       case "collectionFilters": {
-        const selectedValue = i.values[0];
+        const selectedValue = i.values.join(" ");
         this.filterString = selectedValue;
-        await this.updatePages(parseFilterString(this.filterString));
-        this.updatePageButtons(i);
+        await this.updatePageContent(parseFilterString(this.filterString));
+        this.updateComponents();
+        this.updatePage(i);
         break;
       }
       default:
@@ -218,9 +211,7 @@ class CollectionPages extends ButtonPages {
     }
   }
 
-  updatePageButtons(i) {
-    this.updateComponents();
-
+  updatePage(i) {
     // Update message
     if (this.ephemeral) {
       this.interaction.editReply({

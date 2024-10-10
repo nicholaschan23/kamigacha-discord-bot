@@ -1,5 +1,6 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const FilterCache = require("@database/redis/cache/collectionFilter");
+const FilterModel = require("@database/mongodb/models/user/filter");
 const Logger = require("@utils/Logger");
 const { capitalizeFirstLetter } = require("@utils/string/format");
 const { isValidFilterLabel } = require("@utils/string/validation");
@@ -21,16 +22,15 @@ module.exports = {
       return;
     }
 
+    if (label === "Date") {
+      interaction.reply({ content: "You cannot delete the default filter." });
+      return;
+    }
+
     await interaction.deferReply();
 
     try {
       const filterDocument = await FilterCache.getDocument(interaction.user.id);
-
-      // Handle case where no filter data exists
-      if (filterDocument.filterList.length === 0) {
-        interaction.editReply({ content: `You do not have any filters.` });
-        return;
-      }
 
       // Check if the filter exists in the user's filter list
       const labelExists = filterDocument.filterList.some((filter) => filter.label === label);

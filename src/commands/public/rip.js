@@ -4,16 +4,16 @@ const CollectionModel = require("@database/mongodb/models/card/collection");
 const InventoryModel = require("@database/mongodb/models/user/inventory");
 const { isValidCode } = require("@utils/string/validation");
 const config = require("@config");
-const { calculateBurn } = require("@utils/gacha/calculateBurn");
+const { calculateRipValue } = require("@utils/gacha/calculateRipValue");
 const { generateCardAttachment } = require("@utils/graphics/generateCardAttachment");
 const { formatInventoryPage } = require("@utils/string/formatPage");
 
 module.exports = {
   category: "public",
   data: new SlashCommandBuilder()
-    .setName("tear")
+    .setName("rip")
     .setDescription("Turn a card into materials for crafting.")
-    .addStringOption((option) => option.setName("code").setDescription("Card code. Omit to tear your latest card.")),
+    .addStringOption((option) => option.setName("code").setDescription("Card code. Omit to rip your latest card.")),
 
   async execute(client, interaction) {
     await interaction.deferReply();
@@ -48,17 +48,17 @@ module.exports = {
 
     // Create message to send
     const { file, url } = await generateCardAttachment(card);
-    const items = await calculateBurn(card); // Array of Item objects
-    const formattedItems = formatInventoryPage(items, false);
+    const items = await calculateRipValue(card); // Array of Item objects
+    const formattedItems = formatInventoryPage(items, { itemCode: false });
 
     const embed = new EmbedBuilder()
-      .setTitle("Tear Card")
+      .setTitle("Rip Card")
       .setDescription(`${interaction.user}, you will receive:\n\n` + formattedItems)
       .setThumbnail(url);
     embed.setColor(config.embedColor.yellow);
     const cancelButton = new ButtonBuilder().setCustomId("cancel").setEmoji("❌").setStyle(ButtonStyle.Secondary);
-    const tearButton = new ButtonBuilder().setCustomId("tear").setEmoji("✂️").setStyle(ButtonStyle.Secondary);
-    const row = new ActionRowBuilder().addComponents(cancelButton, tearButton);
+    const ripButton = new ButtonBuilder().setCustomId("rip").setEmoji("✂️").setStyle(ButtonStyle.Secondary);
+    const row = new ActionRowBuilder().addComponents(cancelButton, ripButton);
 
     // Send message and wait for a response
     const message = await interaction.editReply({ embeds: [embed], files: [file], components: [row], fetchReply: true });
@@ -68,32 +68,27 @@ module.exports = {
     collector.on("collect", async (i) => {
       if (i.customId === "cancel") {
         embed.setColor(config.embedColor.red);
-      } else if (i.customId === "tear") {
+      } else if (i.customId === "rip") {
         const session = await CardModel.startSession();
         session.startTransaction();
 
         try {
-          if (i.customId === "tear") {
-            // Remove card from user's collection
-            await CollectionModel.updateOne({ userId: interaction.user.id }, { $pull: { cardsOwned: card._id } }, { session: session });
+          // Remove card from user's collection
+          await CollectionModel.updateOne({ userId: interaction.user.id }, { $pull: { cardsOwned: card._id } }, { session: session });
 
-            await CardModel.deleteOne({ _id: card._id }, { session: session });
+          await CardModel.deleteOne({ _id: card._id }, { session: session });
 
-            // Add items to user's inventory
-            for (const item of items) {
-              await InventoryModel.updateOne(
-                { userId: interaction.user.id },
-                { $inc: { [`inventory.${item.name}`]: item.quantity } },
-                { new: true, upsert: true, session: session }
-              );
-            }
-
-            // Commit the transaction
-            await session.commitTransaction();
-          } else {
-            // Abort the transaction if cancelled
-            await session.abortTransaction();
+          // Add items to user's inventory
+          for (const item of items) {
+            await InventoryModel.updateOne(
+              { userId: interaction.user.id },
+              { $inc: { [`inventory.${item.name}`]: item.quantity } },
+              { upsert: true, session: session }
+            );
           }
+
+          // Commit the transaction
+          await session.commitTransaction();
           embed.setColor(config.embedColor.green).setFooter({ text: `The card is torn.` });
         } catch (error) {
           embed.setColor(config.embedColor.red).setFooter({ text: `The card was not torn.` });

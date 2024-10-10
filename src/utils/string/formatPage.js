@@ -104,7 +104,7 @@ async function formatLookupPage(resultList) {
  * @param {Item[]} itemList - The array of Item objects.
  * @returns {String} The formatted inventory string output.
  */
-function formatInventoryPage(itemList, itemCode = true) {
+function formatInventoryPage(itemList, options = { itemCode: true}) {
   return itemList
     .map(({ name, quantity, type }) => {
       const icon = config.itemsMap.get(name).icon;
@@ -112,7 +112,7 @@ function formatInventoryPage(itemList, itemCode = true) {
 
       const result = [];
       result.push(`${icon} **${quantity}**`);
-      if (itemCode) result.push(`\`${name}\``);
+      if (options.itemCode) result.push(`\`${name}\``);
       result.push(`${nameFormatted}`);
       return result.join(" · ");
     })

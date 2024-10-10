@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require("discord.js");
 const CollectionModel = require("@database/mongodb/models/card/collection");
 const FilterModel = require("@database/mongodb/models/user/filter");
 const CollectionPages = require("@utils/pages/CollectionPages");
+const CollectionFilter = require("@models/CollectionFilter");
 
 module.exports = {
   category: "public",
@@ -27,16 +28,15 @@ module.exports = {
         return interaction.reply({ content: "That player's collection is private.", ephemeral: true });
       }
 
-      const filterDocument = await FilterModel.findOneAndUpdate(
-        { userId: user.id }, // Filter
-        { userId: user.id }, // Update
-        { new: true, upsert: true }
-      );
+      const filterDocument = await FilterModel.findOneAndUpdate({ userId: user.id }, { $setOnInsert: { userId: user.id } }, { new: true, upsert: true });
       if (!filterDocument.filterList) {
         return interaction.reply({ content: "An error occurred while fetching that player's collection filters.", ephemeral: true });
       }
 
-      const bp = new CollectionPages(interaction, collectionDocument, filters, filterDocument.filterList);
+      // Prepare the filter menu
+      const filterMenu = filters ? [new CollectionFilter("⌛", "Custom", filters), ...filterDocument.filterList] : filterDocument.filterList;
+
+      const bp = new CollectionPages(interaction, collectionDocument, filters, filterMenu);
       await bp.init();
       bp.publishPages();
     } catch (error) {

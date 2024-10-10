@@ -3,7 +3,8 @@ const { chunkArray, formatInventoryPage } = require("../string/formatPage");
 const { capitalizeFirstLetter } = require("../string/format");
 const ButtonPages = require("./ButtonPages");
 const config = require("@config");
-const Item = require("@root/src/models/Item");
+const Item = require("@models/Item");
+const { sortItemList } = require("@utils/gacha/calculateRipValue");
 
 class InventoryPages extends ButtonPages {
   constructor(interaction, inventoryDocument) {
@@ -25,18 +26,8 @@ class InventoryPages extends ButtonPages {
       inventoryArray.push(new Item(name, quantity, itemType));
       parsedTypes.add(itemType);
     }
-    
-    // Sort the inventoryArray
-    inventoryArray.sort((a, b) => {
-      const typeComparison = typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type);
-      if (typeComparison !== 0) return typeComparison;
 
-      const nameComparison = a.name.localeCompare(b.name);
-      if (nameComparison !== 0) return nameComparison;
-
-      return b.quantity - a.quantity; // Sort quantity in descending order
-    });
-    this.inventory = inventoryArray;
+    this.inventory = sortItemList(inventoryArray);
 
     // Filter item types to only those present in the inventory
     this.itemTypes = typeOrder.filter((type) => parsedTypes.has(type));
@@ -82,9 +73,6 @@ class InventoryPages extends ButtonPages {
   }
 
   addComponents() {
-    // Add no components if only 1 page
-    if (this.pages.length === 1) return;
-
     // Button row
     const ends = new ButtonBuilder().setCustomId("toggleEnds").setEmoji("↔️").setStyle(ButtonStyle.Secondary);
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary).setDisabled(true);
