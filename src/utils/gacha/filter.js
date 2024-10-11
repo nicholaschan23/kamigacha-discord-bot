@@ -50,53 +50,47 @@ const validOperators = ["=", "<", ">", "<=", ">=", "!=", "<>"];
  *   { key: "series", operator: "=", value: "noragami" }
  * ]
  *
- * @param {String} filterString - The filter string to parse. Should be in lowercase and have no commas.
+ * @param {String} filterString - The filter string to parse. Should be in lowercase and have no commas or quotes.
  * @returns {Array<Object>} An array of filter objects with keys: key, operator, and value.
  */
 function parseFilterString(filterString) {
-  const regex = new RegExp(`\\b(${[...validKeys, ...validSortOrderKeys].join("|")})\\b\\s*(<>|!=|<=|>=|=|<|>)\\s*(?:"([^"]*)"|([^,\\s]+))`, "g");
-
-  let match;
   const filters = [];
 
+  // Split the filter string into tokens
+  const tokens = filterString.split(/\s+/);
+
+  // Process tokens that start with a dash
+  tokens.forEach((token) => {
+    if (validSortOrderKeys.includes(token)) {
+      filters.push({ key: token, operator: "", value: "" });
+    }
+  });
+
+  const regex = new RegExp(`\\b(${validKeys.join("|")})\\b\\s*(<>|!=|<=|>=|=|<|>)\\s*(?:"([^"]*)"|([^,\\s]+))`, "g");
+
+  let match;
+
   while ((match = regex.exec(filterString)) !== null) {
-    let key, operator, value;
+    const key = match[1];
+    const operator = match[2];
+    let value = match[3] || match[4]; // Depending whether the value is in quotes
 
-    // Get key
-    key = match[1].toLowerCase();
-    if (validSortOrderKeys.includes(key)) {
-      operator = "";
+    // Get value
+    if (operator === "<>") {
+      // Reset value for <>
       value = "";
-      regex.lastIndex = match.index + key.length;
-    } else {
-      // Get operator
-      operator = match[2];
 
-      // Get value
-      if (operator === "<>") {
-        value = ""; // Reset value for <>
-        // Adjust lastIndex to skip to the next valid key
-        regex.lastIndex = match.index + key.length + operator.length;
-      } else {
-        // Quoted value in match[3], unquoted value in match[4]
-        value = match[3] || match[4];
-        value = value.replace(/\s+/g, " ").trim().toLowerCase();
-        value = replaceAccents(value);
-      }
+      // Adjust lastIndex to skip to the next valid key
+      regex.lastIndex = match.index + key.length + operator.length;
     }
 
-    // Validate key and operator
-    if (validKeys.includes(key) && validOperators.includes(operator)) {
-      filters.push({ key, operator, value });
-    } else {
-      console.warn(`Invalid filter encountered and skipped: ${key}${operator}${value}`);
-    }
+    filters.push({ key, operator, value });
   }
 
   return filters;
 }
 
-function preprocessFilters(filters, userId, guildId) {
+function normalizeFilters(filters, userId, guildId) {
   const displayFeatures = new Set();
   let sortField, sortOrder;
 
@@ -137,9 +131,18 @@ function preprocessFilters(filters, userId, guildId) {
               break;
             case "date":
               sortField = "date";
+              break;
             case "recent":
             case "modified":
               sortField = "modified";
+              break;
+            case "r":
+            case "rarity":
+              sortField = "rarity";
+              break;
+            case "set":
+              sortField = "set";
+              break;
           }
         }
         return false; // Skip sorting key
@@ -179,10 +182,10 @@ function preprocessFilters(filters, userId, guildId) {
         }
         break;
       case "set":
-        normalizedKey = "set";
         if (isNaN(value)) {
           return false;
         }
+        normalizedKey = "set";
         normalizedValue = parseInt(value);
         break;
       case "sleeve":
@@ -205,11 +208,17 @@ function preprocessFilters(filters, userId, guildId) {
       case "wishcount":
       case "wishlist":
       case "wl":
-        normalizedKey = "wishCount";
-        displayFeatures.add("wishCount");
         if (operator === "<>") {
+          displayFeatures.add("wishCount");
           return false;
         }
+
+        if (isNaN(value)) {
+          return false;
+        }
+        normalizedKey = "wishCount";
+        normalizedValue = parseInt(value);
+        displayFeatures.add("wishCount");
         break;
       default:
         if (!sortOrder && key.slice(0, 1) === "-") {
@@ -249,10 +258,10 @@ function preprocessFilters(filters, userId, guildId) {
 function applyFilters(cardList, filters, userId, guildId) {
   const filteredCards = [];
 
-  const { preprocessedFilters, displayFeatures, sortField, sortOrder } = preprocessFilters(filters, userId, guildId);
+  const { preprocessedFilters, displayFeatures, sortField, sortOrder } = normalizeFilters(filters, userId, guildId);
 
   for (const card of cardList) {
-    const passedFilters = preprocessedFilters.every(async ({ key, operator, value }) => {
+    const passedFilters = preprocessedFilters.every(({ key, operator, value }) => {
       let cardValue = card[key]; // Field that will be compared to the value
       switch (key) {
         case "character":
@@ -271,7 +280,7 @@ function applyFilters(cardList, filters, userId, guildId) {
           break;
         }
         case "series":
-          cardValue = card["series"].split("-");
+          cardValue = cardValue.split("-");
           break;
         case "set": {
           break;
@@ -281,16 +290,14 @@ function applyFilters(cardList, filters, userId, guildId) {
         }
         case "wishCount":
           break;
-        default:
-          return true; // If the key is not recognized, do not filter it out
       }
 
       if (["character", "series", "frame", "sleeve"].includes(key) && typeof cardValue !== "boolean") {
         switch (operator) {
           case "=":
-            return value.some((word) => cardValue.includes(word));
+            return value.every((word) => cardValue.includes(word));
           case "!=":
-            return value.some((word) => !cardValue.includes(word));
+            return value.every((word) => !cardValue.includes(word));
           default:
             return true; // Invalid operator for these keys
         }
@@ -320,8 +327,22 @@ function applyFilters(cardList, filters, userId, guildId) {
   }
 
   filteredCards.sort((a, b) => {
-    const aValue = a[sortField];
-    const bValue = b[sortField];
+    let aValue, bValue;
+    switch (sortField) {
+      case "set":
+      case "wishCount":
+        aValue = parseInt(a[sortField]);
+        bValue = parseInt(b[sortField]);
+        break;
+      case "rarity":
+        aValue = config.getRarityRank(a[sortField]);
+        bValue = config.getRarityRank(b[sortField]);
+        break;
+      default:
+        aValue = a[sortField];
+        bValue = b[sortField];
+        break;
+    }
 
     if (typeof aValue === "string" && typeof bValue === "string") {
       const aValueLower = aValue.toLowerCase();
@@ -334,8 +355,7 @@ function applyFilters(cardList, filters, userId, guildId) {
     }
   });
 
-  const slicedCards = filteredCards.slice(0, 500); // Adjust the slice range as needed
-  return [slicedCards, Array.from(displayFeatures)];
+  return [filteredCards.slice(0, 500), Array.from(displayFeatures)];
 }
 
 module.exports = {

@@ -5,17 +5,23 @@ const logger = new Logger("Test collection filter");
 
 module.exports = {
   category: "developer/test/collection",
-  data: new SlashCommandSubcommandBuilder().setName("filter").setDescription("Test parsing of the collection filters."),
+  data: new SlashCommandSubcommandBuilder()
+    .setName("filter")
+    .setDescription("Test parsing of the collection filters.")
+    .addStringOption((option) => option.setName("string").setDescription("Filter string to test parser.")),
 
   async execute(client, interaction) {
-    await interaction.deferReply();
-    const testCases = ["t=trade o=w"];
+    const testCases = [
+      "-a -asc character=yato rarity>=r series=noragami",
+      "bad order=date wish<> wish>100 wrong fake  rarity>= false junk",
+      'series="attack on titan" series="character" character=goku score>=90',
+      'series  = "    dragon         ball "     wish   <> character=           "black   goku"',
+    ];
 
-    // const testCases = [
-    //   "bad order=date wish<> wish>100 wrong fake  rarity>= false junk",
-    //   'series="attack on titan" series="character" character=goku score>=90',
-    //   'series  = "    dragon         ball "     wish   <> character=           "black   goku"',
-    // ];
+    const string = interaction.options.getString("string");
+    if (string) testCases.push(string);
+
+    await interaction.deferReply();
 
     const output = [];
     for (const testCase of testCases) {
