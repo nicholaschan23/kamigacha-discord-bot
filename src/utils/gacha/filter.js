@@ -1,5 +1,4 @@
 const config = require("@config/gacha");
-const { replaceAccents } = require("@utils/string/format");
 
 const validKeys = [
   // Filters
@@ -34,7 +33,7 @@ const validKeys = [
   "order",
 ];
 const validSortOrderKeys = ["-a", "-asc", "-ascend", "-ascending", "-d", "-desc", "-descend", "-descending"];
-const validOperators = ["=", "<", ">", "<=", ">=", "!=", "<>"];
+const validOperators = ["!=", ">=", "<=", ">", "<", "="];
 
 /**
  * Parses a filter string into an array of filter objects.
@@ -54,36 +53,36 @@ const validOperators = ["=", "<", ">", "<=", ">=", "!=", "<>"];
  * @returns {Array<Object>} An array of filter objects with keys: key, operator, and value.
  */
 function parseFilterString(filterString) {
+  if (filterString.length === 0) return [];
+
   const filters = [];
 
   // Split the filter string into tokens
   const tokens = filterString.split(/\s+/);
 
-  // Process tokens that start with a dash
-  tokens.forEach((token) => {
-    if (validSortOrderKeys.includes(token)) {
+  // Preprocess tokens to handle <> and tokens that start with a dash
+  tokens.forEach((token, index) => {
+    if (token.includes("<>")) {
+      const [key, operator] = token.split("<>");
+      if (validKeys.includes(key)) {
+        filters.push({ key, operator: "<>", value: "" });
+        tokens[index] = ""; // Remove the processed token
+      }
+    } else if (validSortOrderKeys.includes(token)) {
       filters.push({ key: token, operator: "", value: "" });
+      tokens[index] = ""; // Remove the processed token
     }
   });
 
-  const regex = new RegExp(`\\b(${validKeys.join("|")})\\b\\s*(<>|!=|<=|>=|=|<|>)\\s*(?:"([^"]*)"|([^,\\s]+))`, "g");
+  // Join the remaining tokens back into a string
+  const remainingString = tokens.filter((token) => token).join(" ");
 
   let match;
-
-  while ((match = regex.exec(filterString)) !== null) {
+  const regex = new RegExp(`\\b(${validKeys.join("|")})\\b\\s*(${validOperators.join("|")})\\s*(?:"([^"]*)"|([^,\\s]+))`, "g");
+  while ((match = regex.exec(remainingString)) !== null) {
     const key = match[1];
     const operator = match[2];
     let value = match[3] || match[4]; // Depending whether the value is in quotes
-
-    // Get value
-    if (operator === "<>") {
-      // Reset value for <>
-      value = "";
-
-      // Adjust lastIndex to skip to the next valid key
-      regex.lastIndex = match.index + key.length + operator.length;
-    }
-
     filters.push({ key, operator, value });
   }
 
@@ -94,7 +93,7 @@ function normalizeFilters(filters, userId, guildId) {
   const displayFeatures = new Set();
   let sortField, sortOrder;
 
-  const preprocessedFilters = filters.map(({ key, operator, value }) => {
+  const normalizedFilters = filters.map(({ key, operator, value }) => {
     let normalizedKey = key;
     let normalizedValue = value;
 
@@ -252,16 +251,16 @@ function normalizeFilters(filters, userId, guildId) {
     sortOrder = "desc";
   }
 
-  return { preprocessedFilters, displayFeatures, sortField, sortOrder };
+  return { normalizedFilters, displayFeatures, sortField, sortOrder };
 }
 
 function applyFilters(cardList, filters, userId, guildId) {
   const filteredCards = [];
 
-  const { preprocessedFilters, displayFeatures, sortField, sortOrder } = normalizeFilters(filters, userId, guildId);
+  const { normalizedFilters, displayFeatures, sortField, sortOrder } = normalizeFilters(filters, userId, guildId);
 
   for (const card of cardList) {
-    const passedFilters = preprocessedFilters.every(({ key, operator, value }) => {
+    const passedFilters = normalizedFilters.every(({ key, operator, value }) => {
       let cardValue = card[key]; // Field that will be compared to the value
       switch (key) {
         case "character":

@@ -3,52 +3,14 @@ const CardModel = require("@database/mongodb/models/card/card");
 const CollectionModel = require("@database/mongodb/models/card/collection");
 const InventoryModel = require("@database/mongodb/models/user/inventory");
 const { parseFilterString, applyFilters } = require("@utils/gacha/filter");
-const { generateGridCardAttachment } = require("@utils/graphics/generateCardAttachment");
 const { chunkArray, formatCardInfoPage, formatInventoryPage } = require("@utils/string/formatPage");
 const { calculateRipValues } = require("@utils/gacha/calculateRipValue");
 const config = require("@config");
+const CollectionPages = require("./CollectionPages");
 
-class ShredPages {
+class ShredPages extends CollectionPages {
   constructor(interaction, collectionDocument, filterString, filterMenu) {
-    // Interaction properties
-    this.interaction = interaction;
-
-    // Page properties
-    this.pages;
-    this.index = 0;
-
-    // Message components
-    //  {customId, component}
-    this.components = {};
-    this.messageComponents = [];
-    this.collector;
-
-    this.collectionDocument = collectionDocument;
-    this.filterString = filterString;
-    this.filterMenu = filterMenu;
-
-    this.cardList = [...collectionDocument.cardsOwned].reverse();
-
-    if (!filterString) {
-      this.filterString = "order=date";
-    }
-  }
-
-  async init() {
-    await this.updatePageContent(parseFilterString(this.filterString));
-  }
-
-  async updatePageContent(filters) {
-    let display;
-    [this.filteredList, display] = applyFilters([...this.cardList], filters, this.interaction.user.id, this.interaction.guild.id);
-
-    // Split the list of cards into chunks of 10
-    this.cardChunks = chunkArray(this.filteredList, 10);
-
-    // Create page embeds
-    this.pages = await this.createPages(this.cardChunks);
-
-    this.index = 0;
+    super(interaction, collectionDocument, filterString, filterMenu);
   }
 
   /**
@@ -58,6 +20,7 @@ class ShredPages {
    * @returns {Array<EmbedBuilder>} An array of embed pages.
    */
   async createPages(cardDataChunks) {
+    // Embed to show value of ripping cards
     this.items = await calculateRipValues(this.filteredList);
     const formattedItems = formatInventoryPage(this.items, { itemCode: false });
 
@@ -65,6 +28,7 @@ class ShredPages {
     embed.setColor(config.embedColor.yellow);
     this.valuePage = embed;
 
+    // Collection pages
     const pages = [];
     if (cardDataChunks.length == 0) {
       const embed = new EmbedBuilder()
@@ -76,7 +40,7 @@ class ShredPages {
       const numCards = this.filteredList.length.toLocaleString();
 
       for (let i = 0; i < cardDataChunks.length; i++) {
-        const formattedPages = await formatCardInfoPage(cardDataChunks[i]);
+        const formattedPages = await formatCardInfoPage(cardDataChunks[i], this.displayFeatures);
         const embed = new EmbedBuilder()
           .setDescription(`You are ripping these **${numCards}** cards:\n\n` + formattedPages)
           .setFooter({ text: `Showing cards ${(i * 10 + 1).toLocaleString()}-${(i * 10 + cardDataChunks[i].length).toLocaleString()} (${numCards} total)` })
@@ -102,13 +66,6 @@ class ShredPages {
     this.components["rip"] = rip;
     const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next, cancel, rip);
     this.messageComponents.push(buttonRow);
-
-    // Second button row
-    // const confirm = new ButtonBuilder().setCustomId("confirm").setEmoji("✅").setStyle(ButtonStyle.Secondary);
-    // this.components["confirm"] = confirm;
-    // const ripRow = new ActionRowBuilder().addComponents(cancel, rip);
-    // this.messageComponents.push(ripRow);
-
     this.updateComponents();
 
     // Select menu row

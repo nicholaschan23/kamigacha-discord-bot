@@ -33,7 +33,7 @@ const collectionFilterSchema = new mongoose.Schema({
     default: () => [
       new CollectionFilter("🗓️", "Modified", "order=modified"),
       new CollectionFilter("❤️", "Most wished", "order=wish"),
-      new CollectionFilter("❣️", "Show wish count", "w<>"),
+      new CollectionFilter("❣️", "Show wish count", "wish<>"),
       new CollectionFilter("▪️", "Untagged", "tag=none"),
     ],
   },

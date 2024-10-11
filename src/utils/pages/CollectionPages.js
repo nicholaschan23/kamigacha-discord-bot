@@ -9,14 +9,10 @@ class CollectionPages extends ButtonPages {
   constructor(interaction, collectionDocument, filterString, filterMenu) {
     super(interaction, [], collectionDocument.isPrivate);
     this.collectionDocument = collectionDocument;
-    this.filterString = filterString;
+    this.filterString = filterString || "";
     this.filterMenu = filterMenu;
 
     this.cardList = [...collectionDocument.cardsOwned].reverse();
-
-    if (!filterString) {
-      this.filterString = "order=date";
-    }
   }
 
   async init() {

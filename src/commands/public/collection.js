@@ -34,7 +34,10 @@ module.exports = {
       }
 
       // Prepare the filter menu
-      const filterMenu = filters ? [new CollectionFilter("⌛", "Custom", filters), ...filterDocument.filterList] : filterDocument.filterList;
+      const filterMenu =
+        (filters && filters === "order=modified") || filters === "order=wish" || filters === "wish<>" || filters === "tag=none"
+          ? [new CollectionFilter("⌛", "Custom", filters), ...filterDocument.filterList]
+          : filterDocument.filterList;
 
       const bp = new CollectionPages(interaction, collectionDocument, filters, filterMenu);
       await bp.init();
