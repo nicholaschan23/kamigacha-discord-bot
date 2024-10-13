@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require("discord.js");
 const CollectionModel = require("@database/mongodb/models/card/collection");
 const FilterModel = require("@database/mongodb/models/user/filter");
 const CollectionFilter = require("@models/CollectionFilter");
-const ShredPages = require("@utils/pages/ShredPages");
+const ShredPages = require("@root/src/utils/pages/ShredPages");
 
 module.exports = {
   category: "public",

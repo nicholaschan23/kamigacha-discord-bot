@@ -1,14 +1,7 @@
-const {
-  EmbedBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
-} = require("discord.js");
-const MapCache = require("@database/redis/cache/map");
-const CharacterModel = require("@database/mongodb/models/global/character");
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const config = require("@config");
+const CharacterModel = require("@database/mongodb/models/global/character");
+const MapCache = require("@database/redis/cache/map");
 const ButtonPages = require("@utils/pages/ButtonPages");
 
 class LookupCharacterPages extends ButtonPages {
@@ -78,7 +71,7 @@ class LookupCharacterPages extends ButtonPages {
 
     const formattedCharacter = await MapCache.getFormattedCharacter(this.character);
     const formattedSeries = await MapCache.getFormattedSeries(this.series);
-    
+
     for (let i = 0; i < this.rarityArray.length; i++) {
       const rarity = this.rarityArray[i];
       const stats = this.circulation.get(this.set).rarities.get(rarity);
@@ -108,12 +101,7 @@ class LookupCharacterPages extends ButtonPages {
 
       const zoomEmbed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
-        .setDescription(
-          `Character: **${formattedCharacter}**\n` +
-            `Series: **${formattedSeries}**\n` +
-            `Set: **${this.set}**\n` +
-            `Rarity: **${rarity}**`
-        )
+        .setDescription(`Character: **${formattedCharacter}**\n` + `Series: **${formattedSeries}**\n` + `Set: **${this.set}**\n` + `Rarity: **${rarity}**`)
         .setImage(url)
         .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });
 
@@ -227,12 +215,12 @@ class LookupCharacterPages extends ButtonPages {
 
     switch (i.customId) {
       case "backToLookup": {
-        this.collector.stop();
+        this.collector.stop("skipEditMessage");
 
         const LookupPages = require("./LookupPages"); // Import here to avoid circular dependency issues
-        const bp = new LookupPages(i, []);
+        const bp = new LookupPages(i, [], []);
         bp.loadState(this.prevState);
-        bp.publishPages(true);
+        await bp.publishPages(true);
         return;
       }
       case "toggleEnds": {

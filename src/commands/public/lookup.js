@@ -2,9 +2,9 @@ const { SlashCommandBuilder } = require("discord.js");
 const CardModel = require("@database/mongodb/models/card/card");
 const CollectionModel = require("@database/mongodb/models/card/collection");
 const Logger = require("@utils/Logger");
-const LookupCharacterPages = require("@utils/pages/LookupCharacterPages");
-const LookupPages = require("@utils/pages/LookupPages");
-const { lookup } = require("@utils/gacha/lookupCharacter");
+const LookupCharacterPages = require("@utils/pages/lookup/LookupCharacterPages");
+const LookupPages = require("@utils/pages/lookup/LookupPages");
+const { lookup } = require("@utils/gacha/lookup");
 
 const logger = new Logger("Lookup command");
 
@@ -13,20 +13,18 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("lookup")
     .setDescription("Find info on a character's available cards.")
-    .addStringOption((option) =>
-      option.setName("character").setDescription("Search by card code, character, or series name. Omit to lookup your latest card.")
-    ),
+    .addStringOption((option) => option.setName("search").setDescription("Search by card code, character, or series name. Omit to lookup your latest card.")),
 
   async execute(client, interaction) {
-    const character = interaction.options.getString("character");
+    const search = interaction.options.getString("search");
 
-    if (character) {
-      const results = await lookup(character);
+    if (search) {
+      const [characterResults, seriesResults] = await lookup(search);
 
       // No results
-      if (results.length === 0) {
+      if (characterResults.length === 0) {
         // Check if input was a card code
-        const cardDocument = await CardModel.findOne({ code: character });
+        const cardDocument = await CardModel.findOne({ code: search });
 
         // Card code exists
         if (cardDocument) {
@@ -40,12 +38,12 @@ module.exports = {
       }
 
       // If exactly 1 result, go straight to character stat page
-      if (results.length === 1) {
+      if (characterResults.length === 1) {
         const bp = new LookupCharacterPages(
           interaction,
           JSON.stringify({
-            character: results[0].character,
-            series: results[0].series,
+            character: characterResults[0].character,
+            series: characterResults[0].series,
           })
         );
         await bp.init();
@@ -54,7 +52,7 @@ module.exports = {
         return;
       }
 
-      const bp = new LookupPages(interaction, results);
+      const bp = new LookupPages(interaction, characterResults, seriesResults);
       await bp.createPages();
       bp.publishPages();
     } else {
@@ -69,12 +67,14 @@ module.exports = {
 
         const cardId = collectionDocument?.cardsOwned[0];
         if (!cardId) {
-          return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+          interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+          return;
         }
 
         const cardDocument = await CardModel.findById(cardId);
         if (!cardDocument) {
-          return interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+          interaction.editReply("Something went wrong retrieving your latest card. Please try again.");
+          return;
         }
 
         await LCPCardDocument(interaction, cardDocument, true);
@@ -90,7 +90,7 @@ module.exports = {
 
 /**
  * Helper function to show lookup character page from card document
- * @param {} interaction Discord interaction
+ * @param {interaction} interaction Discord interaction
  * @param {CardModel} cardDocument CardModel document from database
  * @param {Boolean} isDeferred If message was already deferred, edit it
  */

@@ -1,8 +1,8 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const WishCache = require("@database/redis/cache/characterWish");
 const Logger = require("@utils/Logger");
-const { lookup } = require("@utils/gacha/lookupCharacter");
-const WishListAddPages = require("@utils/pages/WishListAddPages");
+const { lookup } = require("@utils/gacha/lookup");
+const WishListAddPages = require("@root/src/utils/pages/wishList/WishListAddPages");
 
 const logger = new Logger("Wish add command");
 
@@ -26,16 +26,16 @@ module.exports = {
 
       // Button pages for lookup search
       const character = interaction.options.getString("character");
-      const results = await lookup(character);
+      const [characterResults, seriesResults] = await lookup(character);
 
       // No results
-      if (results.length == 0) {
+      if (characterResults.length == 0) {
         interaction.reply("That character could not be found. It may not exist, or you may have misspelled their name.");
         return;
       }
 
       // Pages with select menu to choose wish to add
-      const bp = new WishListAddPages(interaction, results);
+      const bp = new WishListAddPages(interaction, characterResults);
       await bp.createPages();
       bp.publishPages();
     } catch (error) {

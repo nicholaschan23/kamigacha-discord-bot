@@ -1,12 +1,10 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const { parseFilterString } = require("@utils/gacha/filter");
-const Logger = require("@utils/Logger");
-const logger = new Logger("Test collection filter");
 
 module.exports = {
-  category: "developer/test/collection",
+  category: "developer/test",
   data: new SlashCommandSubcommandBuilder()
-    .setName("filter")
+    .setName("collection-filter")
     .setDescription("Test parsing of the collection filters.")
     .addStringOption((option) => option.setName("string").setDescription("Filter string to test parser.")),
 
@@ -34,6 +32,7 @@ module.exports = {
       output.push("```");
       output.join("\n");
     }
-    await interaction.editReply(output.join("\n"));
+    
+    interaction.editReply(output.join("\n"));
   },
 };

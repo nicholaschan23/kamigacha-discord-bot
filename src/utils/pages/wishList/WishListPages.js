@@ -1,9 +1,9 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const MapCache = require("@database/redis/cache/map");
 const { chunkArray, formatLookupPage, getWishListEmoji } = require("@utils/string/formatPage");
-const ButtonPages = require("./ButtonPages");
+const ButtonPages = require("@utils/pages/ButtonPages");
 
-class LookupPages extends ButtonPages {
+class WishListPages extends ButtonPages {
   constructor(interaction, pageData) {
     super(interaction);
     this.totalCharacters = pageData.length;
@@ -38,14 +38,15 @@ class LookupPages extends ButtonPages {
 
     for (let i = 0; i < pageDataChunks.length; i++) {
       const formattedPage = await formatLookupPage(pageDataChunks[i]);
+      const first = (i * 10 + 1).toLocaleString();
+      const last = (i * 10 + charChunks[i].length).toLocaleString();
+      const total = this.numCharacterResults.toLocaleString();
+
       const embed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
         .setDescription(formattedPage)
         .setFooter({
-          text: `Showing characters ${(i * 10 + 1).toLocaleString()}-${(
-            i * 10 +
-            pageDataChunks[i].length
-          ).toLocaleString()} (${this.totalCharacters.toLocaleString()} total)`,
+          text: `Showing series ${first}-${last} (${total} total)`,
         });
       pages.push(embed);
     }
@@ -168,21 +169,10 @@ class LookupPages extends ButtonPages {
     });
   }
 
-  // View character lookup
   async handleSelect(i, value) {
-    // Create and show character pages
-    const LookupCharacterPages = require("./LookupCharacterPages");
-    const bp = new LookupCharacterPages(i, value, this.saveState());
-    await bp.init();
-    await bp.createPages();
-
-    // Stop current button pages
-    this.collector.stop();
-
-    // Publish new button pages
-    bp.publishPages(true);
-    return;
+    // Implement in extended class
+    await i.followUp("This feature is not implemented yet.");
   }
 }
 
-module.exports = LookupPages;
+module.exports = WishListPages;

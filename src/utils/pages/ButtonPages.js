@@ -39,7 +39,8 @@ class ButtonPages {
       time: 60_000,
     });
     this.collector.on("collect", this.handleCollect.bind(this));
-    this.collector.on("end", this.handleEnd.bind(this, currentPage));
+    // this.collector.on("end", this.handleEnd.bind(this, currentPage));
+    this.collector.on("end", (collected, reason) => this.handleEnd(currentPage, reason));
 
     return;
   }
@@ -90,7 +91,11 @@ class ButtonPages {
     this.collector.resetTimer();
   }
 
-  async handleEnd(currentPage) {
+  async handleEnd(currentPage, reason) {
+    if (reason === "skipEditMessage") {
+      return;
+    }
+
     if (this.ephemeral) {
       await this.interaction.editReply({
         embeds: [this.pages[this.index]],

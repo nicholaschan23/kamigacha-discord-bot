@@ -6,6 +6,7 @@ const Filter = require("@models/CollectionFilter");
 const Item = require("@models/Item");
 const Tag = require("@models/CollectionTag");
 const Wish = require("@models/Wish");
+const SeriesResult = require("@root/src/models/SeriesResult");
 
 /**
  * Splits an array into smaller chunks, suitable for content within an embed page.
@@ -92,17 +93,39 @@ function formatFilterListPage(filterList) {
 }
 
 /**
- * Formats the lookup results into a string output for an embed page.
- * @param {CharacterResult[]} resultList - The array of lookup result objects.
+ * Formats the character lookup results into a string output for an embed page.
+ * @param {CharacterResult[]} resultList - The array of character results.
  * @returns {String} The formatted character result string.
  */
-async function formatLookupPage(resultList) {
+async function formatLookupCharacterPage(resultList) {
   const formattedResults = await Promise.all(
     resultList.map(async (result) => {
+      const totalWishCountEmoji = getWishListEmoji(result.wishCount);
+      const totalWishCount = `\`❤${result.wishCount}\``;
+      const formattedSeries = await MapCache.getFormattedSeries(result.series);
       const formattedCharacter = await MapCache.getFormattedCharacter(result.character);
+
+      return [`${totalWishCountEmoji} ${totalWishCount}`, `${formattedSeries}`, `**${formattedCharacter}**`].join(" · ");
+    })
+  );
+
+  return formattedResults.join("\n");
+}
+
+/**
+ * Formats the series lookup results into a string output for an embed page.
+ * @param {SeriesResult[]} resultList - The array of series results.
+ * @returns {String} The formatted series result string.
+ */
+async function formatLookupSeriesPage(resultList) {
+  const formattedResults = await Promise.all(
+    resultList.map(async (result) => {
+      const totalWishCountEmoji = getWishListEmoji(result.totalWishCount);
+      const totalWishCount = `\`❤${result.totalWishCount}\``;
+      const totalCharacterCount = `\`📕📗📘📙${result.totalCharacters}\` characters`;
       const formattedSeries = await MapCache.getFormattedSeries(result.series);
 
-      return [`${getWishListEmoji(result.wishCount)} \`❤${result.wishCount}\``, `${formattedSeries}`, `**${formattedCharacter}**`].join(" · ");
+      return [`${totalWishCountEmoji} ${totalWishCount}`, `${totalCharacterCount}`, `**${formattedSeries}**`].join(" · ");
     })
   );
 
@@ -171,7 +194,8 @@ module.exports = {
   formatCardInfoPage,
   formatFilterListPage,
   formatInventoryPage,
-  formatLookupPage,
+  formatLookupCharacterPage,
+  formatLookupSeriesPage,
   formatTagListPage,
   formatWishListPage,
   getWishListEmoji,

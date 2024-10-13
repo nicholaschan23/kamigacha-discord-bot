@@ -1,16 +1,13 @@
 const config = require("@config");
-
 const CharacterModel = require("@database/mongodb/models/global/character");
 const WishModel = require("@database/mongodb/models/user/wish");
-
 const MapCache = require("@database/redis/cache/map");
 const WishCache = require("@database/redis/cache/characterWish");
 const WishCountCache = require("@database/redis/cache/characterWishCount");
-
 const Wish = require("@models/Wish");
-const LookupPages = require("@utils/pages/LookupPages");
+const WishListPages = require("@utils/pages/wishList/WishListPages");
 
-class WishListAddButtonPages extends LookupPages {
+class WishListAddPages extends WishListPages {
   constructor(interaction, pageData) {
     super(interaction, pageData);
   }
@@ -97,4 +94,4 @@ class WishListAddButtonPages extends LookupPages {
   }
 }
 
-module.exports = WishListAddButtonPages;
+module.exports = WishListAddPages;

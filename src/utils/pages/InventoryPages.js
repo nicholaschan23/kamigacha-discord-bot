@@ -1,10 +1,10 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
-const { chunkArray, formatInventoryPage } = require("../string/formatPage");
-const { capitalizeFirstLetter } = require("../string/format");
-const ButtonPages = require("./ButtonPages");
 const config = require("@config");
 const Item = require("@models/Item");
 const { sortItemList } = require("@utils/gacha/calculateRipValue");
+const ButtonPages = require("@utils/pages/ButtonPages");
+const { capitalizeFirstLetter } = require("@utils/string/format");
+const { chunkArray, formatInventoryPage } = require("@utils/string/formatPage");
 
 class InventoryPages extends ButtonPages {
   constructor(interaction, inventoryDocument) {

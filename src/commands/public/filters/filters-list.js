@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
 const FilterCache = require("@database/redis/cache/collectionFilter");
-const ButtonPages = require("@utils/pages/ButtonPages");
+const ButtonPages = require("@root/src/utils/pages/ButtonPages");
 const Logger = require("@utils/Logger");
 const { chunkArray, formatFilterListPage } = require("@utils/string/formatPage");
 
@@ -11,9 +11,7 @@ module.exports = {
   data: new SlashCommandSubcommandBuilder()
     .setName("list")
     .setDescription("View a player's collection filters.")
-    .addUserOption((option) => 
-      option.setName("user").setDescription("Player's collection filters to view. Omit to view yours.")
-    ),
+    .addUserOption((option) => option.setName("user").setDescription("Player's collection filters to view. Omit to view yours.")),
 
   async execute(client, interaction) {
     const user = interaction.options.getUser("user") ?? interaction.user;
