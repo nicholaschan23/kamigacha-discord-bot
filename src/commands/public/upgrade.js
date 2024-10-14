@@ -1,12 +1,13 @@
-const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
-const upgradePreviewEmbed = require("@assets/embeds/upgrade/upgradePreview");
-const viewUpgradeEmbed = require("@assets/embeds/upgrade/viewUpgrade");
+const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } = require("discord.js");
 const config = require("@config");
 const MapCache = require("@database/redis/cache/map");
 const CardModel = require("@database/mongodb/models/card/card");
 const Logger = require("@utils/Logger");
 const CardUpgrader = require("@utils/gacha/CardUpgrader");
 const { isValidCode } = require("@utils/string/validation");
+const { formatCardInfo } = require("@utils/string/format");
+const { formatCardInfoPage } = require("@utils/string/formatPage");
+const { generateCardAttachment } = require("@utils/graphics/generateCardAttachment");
 
 const logger = new Logger("Upgrade command");
 
@@ -94,7 +95,7 @@ module.exports = {
     }
 
     // Create message to send
-    const embed = await upgradePreviewEmbed(queriedCards, seriesSetFreq, rarityFreq);
+    const embed = await getUpgradePreviewEmbed(queriedCards, seriesSetFreq, rarityFreq);
     embed.setColor(config.embedColor.yellow);
     const cancelButton = new ButtonBuilder().setCustomId("rejectUpgrade").setEmoji("❌").setStyle(ButtonStyle.Secondary);
     const acceptButton = new ButtonBuilder().setCustomId("acceptUpgrade").setEmoji("🔨").setStyle(ButtonStyle.Secondary);
@@ -120,7 +121,21 @@ module.exports = {
             if (createdCard) {
               embed.setColor(config.embedColor.green);
               i.update({ embeds: [embed], components: [] });
+
+              const cardInfo = await formatCardInfo(createdCard);
+              const { file, url } = await generateCardAttachment(createdCard);
+              interaction.reply({
+                embeds: [
+                  new EmbedBuilder()
+                    .setTitle("Upgrade")
+                    .setDescription(`Owned by ${interaction.user}\n` + `\n` + `${cardInfo}`)
+                    .setImage(url)
+                    .setColor(config.embedColor.green),
+                ],
+                files: [file],
+              });
               const { embed: upgradeEmbed, file: upgradeFile } = await viewUpgradeEmbed(createdCard);
+
               i.channel.send({ embeds: [upgradeEmbed], files: [upgradeFile] });
             } else {
               embed.setColor(config.embedColor.red);
@@ -148,3 +163,64 @@ module.exports = {
     });
   },
 };
+
+async function getUpgradePreviewEmbed(queriedCards, seriesSetFreq, rarityFreq) {
+  // Format text for series chances
+  const seriesChances = [];
+  for (const series in seriesSetFreq) {
+    for (const set in seriesSetFreq[series]) {
+      const freq = seriesSetFreq[series][set];
+      const formattedSeries = await MapCache.getFormattedSeries(series);
+      seriesChances.push([`${freq * 10}%`, `◈${set}`, `${formattedSeries}`].join(" · "));
+    }
+  }
+
+  // Format text for rarity chances and get total fail chance
+  const rarityChances = [];
+  let failChance = 0;
+  for (const rarity in rarityFreq) {
+    const freq = rarityFreq[rarity];
+    rarityChances.push([`${freq * 10}%`, `${config.getNextRarity(rarity)}`].join(" · "));
+    failChance += freq * config.upgradeFailRate[rarity];
+  }
+  const successRate = 100 - failChance;
+
+  // Colored formatting
+  const getColoredRateText = (rate) => {
+    let color;
+    const divisions = (100 - config.upgradeFailRate["SR"] * 10) / 3;
+    if (rate >= 100 - divisions) {
+      color = 32; // Green
+    } else if (rate >= 100 - divisions * 2) {
+      color = 33; // Yellow
+    } else {
+      color = 31; // Red
+    }
+    return `\`\`\`ansi\n\u001b[0;${color}m${successRate}%\u001b[0;0m\`\`\``;
+  };
+
+  const cardInfo = await formatCardInfoPage(queriedCards);
+  return new EmbedBuilder()
+    .setTitle("Upgrade Preview")
+    .addFields(
+      {
+        name: "Cards Inputted",
+        value: cardInfo,
+      },
+      {
+        name: "Series Chances",
+        value: `\`\`\`prolog\n${seriesChances.join("\n")}\`\`\``,
+      },
+      {
+        name: "Rarity Chances",
+        value: `\`\`\`prolog\n${rarityChances.join("\n")}\`\`\``,
+        inline: true,
+      },
+      {
+        name: "Success Rate",
+        value: getColoredRateText(successRate),
+        inline: true,
+      }
+    )
+    .setFooter({ text: "Use /help upgrade for details" });
+}

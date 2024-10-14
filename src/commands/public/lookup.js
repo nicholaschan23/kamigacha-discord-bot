@@ -2,8 +2,8 @@ const { SlashCommandBuilder } = require("discord.js");
 const CardModel = require("@database/mongodb/models/card/card");
 const CollectionModel = require("@database/mongodb/models/card/collection");
 const Logger = require("@utils/Logger");
-const LookupCharacterPages = require("@utils/pages/lookup/LookupCharacterPages");
-const LookupPages = require("@utils/pages/lookup/LookupPages");
+const LookupCharacterPages = require("@pagination/lookup/LookupCharacterPages");
+const LookupPages = require("@pagination/lookup/LookupPages");
 const { lookup } = require("@utils/gacha/lookup");
 
 const logger = new Logger("Lookup command");

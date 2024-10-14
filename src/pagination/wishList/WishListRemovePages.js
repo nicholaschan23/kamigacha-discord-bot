@@ -6,7 +6,7 @@ const WishCountCache = require("@database/redis/cache/characterWishCount");
 const WishModel = require("@database/mongodb/models/user/wish");
 const CharacterModel = require("@database/mongodb/models/global/character");
 const Wish = require("@models/Wish");
-const WishListPages = require("@utils/pages/wishList/WishListPages");
+const WishListPages = require("@pagination/wishList/WishListPages");
 const { formatWishListPage } = require("@utils/string/formatPage");
 
 const redis = RedisClient.connection;

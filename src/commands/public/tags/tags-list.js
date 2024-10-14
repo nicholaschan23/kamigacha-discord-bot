@@ -1,7 +1,7 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
 const { chunkArray, formatTagListPage } = require("@utils/string/formatPage");
 const TagCache = require("@database/redis/cache/collectionTag");
-const ButtonPages = require("@root/src/utils/pages/ButtonPages");
+const ButtonPages = require("@root/src/pagination/ButtonPages");
 const Logger = require("@utils/Logger");
 const logger = new Logger("Tags create command");
 

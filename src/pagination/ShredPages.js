@@ -2,8 +2,8 @@ const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelect
 const CardModel = require("@database/mongodb/models/card/card");
 const CollectionModel = require("@database/mongodb/models/card/collection");
 const InventoryModel = require("@database/mongodb/models/user/inventory");
-const { parseFilterString, applyFilters } = require("@utils/gacha/filter");
-const { chunkArray, formatCardInfoPage, formatInventoryPage } = require("@utils/string/formatPage");
+const { parseFilterString } = require("@utils/gacha/filter");
+const { formatCardInfoPage, formatInventoryPage } = require("@utils/string/formatPage");
 const { calculateRipValues } = require("@utils/gacha/calculateRipValue");
 const config = require("@config");
 const CollectionPages = require("./CollectionPages");

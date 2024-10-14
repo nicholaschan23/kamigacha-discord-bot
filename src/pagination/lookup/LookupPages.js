@@ -1,7 +1,7 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const MapCache = require("@database/redis/cache/map");
 const { chunkArray, formatLookupCharacterPage, formatLookupSeriesPage, getWishListEmoji } = require("@utils/string/formatPage");
-const ButtonPages = require("@utils/pages/ButtonPages");
+const ButtonPages = require("@pagination/ButtonPages");
 const LookupCharacterPages = require("./LookupCharacterPages");
 const LookupSeriesPages = require("./LookupSeriesPages");
 
@@ -168,10 +168,13 @@ class LookupPages extends ButtonPages {
       case "SERIES": {
         // Create options for series select menu
         const options = await Promise.all(
-          this.seriesResultChunks[this.index].map(async ({ series, wishCount }) => {
+          this.seriesResultChunks[this.index].map(async ({ series, totalWishCount }) => {
             const formattedSeries = await MapCache.getFormattedSeries(series);
 
-            return new StringSelectMenuOptionBuilder().setEmoji(getWishListEmoji(wishCount)).setLabel(formattedSeries).setValue(series);
+            return new StringSelectMenuOptionBuilder()
+              .setEmoji(getWishListEmoji(totalWishCount))
+              .setLabel(formattedSeries)
+              .setValue(JSON.stringify({ series, totalWishCount }));
           })
         );
 

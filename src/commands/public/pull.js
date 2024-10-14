@@ -1,7 +1,8 @@
-const { SlashCommandBuilder } = require("discord.js");
-const getPullMsg = require("@assets/messages/card/pullMsg");
+const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
 const config = require("@config");
 const CardGenerator = require("@utils/gacha/CardGenerator");
+const { createCard } = require("@utils/graphics/createCard");
+const { getCardBorder } = require("@utils/graphics/getCardBorder");
 
 module.exports = {
   category: "public",
@@ -14,8 +15,9 @@ module.exports = {
     await cg.cardPull(1);
 
     try {
-      const message = await getPullMsg(cg.cardData[0]);
-      interaction.editReply(message);
+      const card = cg.cardData[0];
+      const buffer = await createCard(card.image, getCardBorder(card.rarity));
+      interaction.editReply({ content: `<@${card.ownerId}> did a 1-card pull!`, files: [new AttachmentBuilder(buffer)] });
     } catch (err) {
       console.error(err.stack);
       interaction.editReply({ content: "There was an error performing the card Pull.", ephemeral: true });

@@ -1,7 +1,8 @@
-const { SlashCommandBuilder } = require("discord.js");
-const getMultiPullMsg = require("@assets/messages/card/multiPullMsg");
+const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
 const config = require("@config");
 const CardGenerator = require("@utils/gacha/CardGenerator");
+const { createCardGrid } = require("@utils/graphics/createCardGrid");
+const { getCardBorder } = require("@utils/graphics/getCardBorder");
 
 module.exports = {
   category: "public",
@@ -14,8 +15,14 @@ module.exports = {
     await cg.cardPull(10);
 
     try {
-      const message = await getMultiPullMsg(cg.cardData);
-      interaction.editReply(message);
+      const cardList = cg.cardData;
+
+      // Generating sleeveUrls and imageUrls arrays
+      const imageUrls = cardList.map((card) => card.image);
+      const borderPaths = cardList.map((card) => getCardBorder(card.rarity));
+      const buffer = await createCardGrid(imageUrls, borderPaths);
+
+      interaction.editReply({ content: `<@${cardList[0].ownerId}> did a 10-card multi-pull!`, files: [new AttachmentBuilder(buffer)] });
     } catch (err) {
       console.error(err.stack);
       interaction.editReply({ content: "There was an error performing the card Multi-Pull.", ephemeral: true });

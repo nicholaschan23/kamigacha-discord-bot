@@ -1,7 +1,7 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const MapCache = require("@database/redis/cache/map");
 const { chunkArray, formatLookupPage, getWishListEmoji } = require("@utils/string/formatPage");
-const ButtonPages = require("@utils/pages/ButtonPages");
+const ButtonPages = require("@pagination/ButtonPages");
 
 class WishListPages extends ButtonPages {
   constructor(interaction, pageData) {

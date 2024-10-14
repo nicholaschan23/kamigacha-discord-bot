@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
 const WishCache = require("@database/redis/cache/characterWish");
-const ButtonPages = require("@root/src/utils/pages/ButtonPages");
+const ButtonPages = require("@root/src/pagination/ButtonPages");
 const { chunkArray, formatWishListPage } = require("@utils/string/formatPage");
 
 module.exports = {

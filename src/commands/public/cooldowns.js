@@ -1,5 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
-const viewCooldownEmbed = require("@assets/embeds/cooldown/viewCooldown");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const SettingsModel = require("@database/mongodb/models/user/settings");
 
 module.exports = {
@@ -13,6 +12,21 @@ module.exports = {
       { $setOnInsert: { userId: interaction.user.id } }, // Update operation
       { new: true, upsert: true }
     );
-    interaction.editReply({ embeds: [viewCooldownEmbed(settingsDocument)] });
+
+    const userId = settingsDocument.userId;
+    const cdPull = settingsDocument.cooldownPull;
+    const cdMultiPull = settingsDocument.cooldownMultiPull;
+    const unixTimeNow = Math.floor(Date.now() / 1000);
+
+    const embed = new EmbedBuilder()
+      .setTitle("Cooldowns")
+      .setDescription(
+        `Showing cooldowns for <@${userId}>\n` +
+          `\n` +
+          `${cdPull <= unixTimeNow ? "**Pull** is currently available" : `**Pull** is available in <t:${cdPull}>`}\n` +
+          `${cdPull <= unixTimeNow ? "**Multi-Pull** is currently available" : `**Multi-Pull** is available in <t:${cdMultiPull}>`}`
+      );
+
+    interaction.editReply({ embeds: [embed] });
   },
 };

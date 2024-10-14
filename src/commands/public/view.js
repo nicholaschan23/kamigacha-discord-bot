@@ -1,7 +1,8 @@
-const { SlashCommandBuilder } = require("discord.js");
-const viewCardEmbed = require("@assets/embeds/card/viewCard");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const CardModel = require("@database/mongodb/models/card/card");
 const CollectionModel = require("@database/mongodb/models/card/collection");
+const { formatCardInfo } = require("@utils/string/format");
+const { generateCardAttachment } = require("@utils/graphics/generateCardAttachment");
 
 module.exports = {
   category: "public",
@@ -14,10 +15,18 @@ module.exports = {
     // Function to retrieve card and send the response
     const sendCardReply = async (cardDocument) => {
       if (cardDocument) {
-        const { embed, file } = await viewCardEmbed(cardDocument);
-        return interaction.reply({ embeds: [embed], files: [file] });
+        const cardInfo = await formatCardInfo(cardDocument);
+        const { file, url } = await generateCardAttachment(cardDocument);
+
+        const embed = new EmbedBuilder()
+          .setTitle("Card Details")
+          .setDescription(`Owned by <@${data.ownerId}>\n` + `\n` + `${cardInfo}`)
+          .setImage(url);
+        interaction.reply({ embeds: [embed], files: [file] });
+        return;
       }
-      return interaction.reply({ content: "That card could not be found.", ephemeral: true });
+      interaction.reply({ content: "That card could not be found.", ephemeral: true });
+      return;
     };
 
     // Retrieve card by code if provided

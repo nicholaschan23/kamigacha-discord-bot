@@ -36,6 +36,8 @@ class CollectionPages extends ButtonPages {
     // Create page embeds
     this.pages = await this.createPages(this.cardChunks);
 
+    this.disabledCopyCodes = new Set();
+    this.disabledViewImage = new Set();
     this.index = 0;
   }
 
@@ -134,6 +136,7 @@ class CollectionPages extends ButtonPages {
         // Allow pressing once
         const copy = this.components["copyCodes"];
         copy.setDisabled(true);
+        this.disabledCopyCodes.add(this.index)
 
         const codes = [];
         for (const cardData of this.cardChunks[this.index]) {
@@ -148,6 +151,7 @@ class CollectionPages extends ButtonPages {
         // Allow pressing once
         const view = this.components["viewImages"];
         view.setDisabled(true);
+        this.disabledViewImage.add(this.index)
 
         const { file, url } = await generateGridCardAttachment(this.cardChunks[this.index]);
 
@@ -193,7 +197,7 @@ class CollectionPages extends ButtonPages {
 
     // Disable if there are no codes to copy
     const copy = this.components["copyCodes"];
-    if (this.cardChunks.length == 0) {
+    if (this.cardChunks.length == 0 || this.disabledCopyCodes.has(this.index)) {
       copy.setDisabled(true);
     } else {
       copy.setDisabled(false);
@@ -201,7 +205,7 @@ class CollectionPages extends ButtonPages {
 
     // Disable if there are no card images to view
     const view = this.components["viewImages"];
-    if (this.cardChunks.length == 0) {
+    if (this.cardChunks.length == 0 || this.disabledViewImage.has(this.index)) {
       view.setDisabled(true);
     } else {
       view.setDisabled(false);

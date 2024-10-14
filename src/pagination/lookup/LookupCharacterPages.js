@@ -2,7 +2,7 @@ const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelect
 const config = require("@config");
 const CharacterModel = require("@database/mongodb/models/global/character");
 const MapCache = require("@database/redis/cache/map");
-const ButtonPages = require("@utils/pages/ButtonPages");
+const ButtonPages = require("@pagination/ButtonPages");
 
 class LookupCharacterPages extends ButtonPages {
   constructor(interaction, value, prevState = null) {

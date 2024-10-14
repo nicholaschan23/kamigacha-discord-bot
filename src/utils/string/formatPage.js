@@ -145,9 +145,10 @@ async function formatLookupSeriesPage(resultList) {
 /**
  * Formats the series lookup results into a string output for an embed page.
  * @param {SeriesResult[]} resultList - The array of series results.
+ * @param {Number[]} rarityFrequency - The array of rarity frequency.
  * @returns {String} The formatted series result string.
  */
-async function formatLookupSetPage(resultList) {
+async function formatLookupSetPage(resultList, rarityFrequency) {
   function booleanToEmoji(value) {
     return value ? "✅" : "❌";
   }
@@ -163,6 +164,9 @@ async function formatLookupSetPage(resultList) {
       formattedValues.push(formattedValue);
     })
   );
+
+  formattedKeys.push("-# Total");
+  formattedValues.push(`-# ${rarityFrequency.join(", ")}`);
 
   return [formattedKeys.join("\n"), formattedValues.join("\n")];
 }

@@ -5,7 +5,7 @@ const MapCache = require("@database/redis/cache/map");
 const WishCache = require("@database/redis/cache/characterWish");
 const WishCountCache = require("@database/redis/cache/characterWishCount");
 const Wish = require("@models/Wish");
-const WishListPages = require("@utils/pages/wishList/WishListPages");
+const WishListPages = require("@pagination/wishList/WishListPages");
 
 class WishListAddPages extends WishListPages {
   constructor(interaction, pageData) {

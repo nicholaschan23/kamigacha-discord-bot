@@ -2,7 +2,7 @@ const { SlashCommandSubcommandBuilder } = require("discord.js");
 const WishCache = require("@database/redis/cache/characterWish");
 const Logger = require("@utils/Logger");
 const { lookup } = require("@utils/gacha/lookup");
-const WishListAddPages = require("@root/src/utils/pages/wishList/WishListAddPages");
+const WishListAddPages = require("@root/src/pagination/wishList/WishListAddPages");
 
 const logger = new Logger("Wish add command");
 

@@ -1,7 +1,7 @@
 const { SlashCommandSubcommandBuilder } = require("discord.js");
 const WishCache = require("@database/redis/cache/characterWish");
 const Logger = require("@utils/Logger");
-const WishListRemovePages = require("@root/src/utils/pages/wishList/WishListRemovePages");
+const WishListRemovePages = require("@root/src/pagination/wishList/WishListRemovePages");
 
 const logger = new Logger("Wish remove command");
 

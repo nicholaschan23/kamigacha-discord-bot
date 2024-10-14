@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const InventoryModel = require("@database/mongodb/models/user/inventory");
-const InventoryPages = require("@root/src/utils/pages/InventoryPages");
+const InventoryPages = require("@root/src/pagination/InventoryPages");
 
 module.exports = {
   category: "public",

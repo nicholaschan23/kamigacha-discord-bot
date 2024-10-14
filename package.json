@@ -43,6 +43,7 @@
     "@database": "src/database",
     "@events": "src/events",
     "@models": "src/models",
+    "@pagination": "src/pagination",
     "@utils": "src/utils"
   }
 }

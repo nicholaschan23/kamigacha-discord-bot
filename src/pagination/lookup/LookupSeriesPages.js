@@ -2,15 +2,17 @@ const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelect
 const config = require("@config");
 const CharacterModel = require("@database/mongodb/models/global/character");
 const MapCache = require("@database/redis/cache/map");
-const ButtonPages = require("@utils/pages/ButtonPages");
+const ButtonPages = require("@pagination/ButtonPages");
 const { chunkArray } = require("@utils/string/formatPage");
 const { formatLookupSetPage } = require("@utils/string/formatPage");
 
 class LookupSeriesPages extends ButtonPages {
-  constructor(interaction, series, prevState = null) {
+  constructor(interaction, value, prevState = null) {
     super(interaction);
 
-    this.series = series;
+    const selection = JSON.parse(value);
+    this.series = selection.series;
+    this.totalWishCount = selection.totalWishCount;
 
     // Boolean to know which set of pages to be viewing
     this.onStats = true;
@@ -23,53 +25,8 @@ class LookupSeriesPages extends ButtonPages {
     this.setPagesMap = new Map(); // { set: [page1, page2, ...] }
     this.seriesModel = await MapCache.getMapEntry("card-model-map", this.series);
 
-    // Object.values(this.seriesModel).forEach((set) => {
-    //   const characterRarityMap = new Map();
-
-    //   Object.entries(set).forEach(([rarity, filenames]) => {
-    //     filenames.forEach((filename) => {
-    //       const characterKey = filename.split(`-${this.series}-`)[0];
-    //       if (!characterRarityMap.has(characterKey)) {
-    //         characterRarityMap.set(characterKey, [false, false, false, false, false]);
-    //       }
-
-    //       const rarityIndex = config.rarities.indexOf(rarity);
-    //       if (rarityIndex !== -1) {
-    //         characterRarityMap.get(characterKey)[rarityIndex] = true;
-    //       }
-    //     });
-    //   });
-
-    //   // Sort entries by most rare
-    //   const sortedEntries = Array.from(characterRarityMap.entries()).sort(([keyA, valueA], [keyB, valueB]) => {
-    //     return (
-    //       valueB[4] - valueA[4] || valueB[3] - valueA[3] || valueB[2] - valueA[2] || valueB[1] - valueA[1] || valueB[0] - valueA[0] || keyA.localeCompare(keyB)
-    //     );
-    //   });
-
-    //   const chunks = chunkArray(sortedEntries, 10);
-    //   const pages = [];
-    //   for (let i = 0; i < chunks.length; i++) {
-    //     // const formattedPage = await formatLookupSeriesPage(chunks[i]);
-    //     const formattedPage = sortedEntries.map(([key, value]) => {
-    //       return `${key}: ${JSON.stringify(value)}`;
-    //     }).join("\n");
-    //     const first = (i * 10 + 1).toLocaleString();
-    //     const last = (i * 10 + chunks[i].length).toLocaleString();
-    //     const total = chunks.length > 0 ? ((chunks.length - 1) * 10 + chunks[chunks.length - 1].length).toLocaleString() : "0";
-
-    //     const embed = new EmbedBuilder()
-    //       .setTitle(`Set Lookup`)
-    //       .setDescription(formattedPage)
-    //       .setFooter({ text: `Set ${set} — Showing characters ${first}-${last} (${total} total)` });
-
-    //     pages.push(embed);
-    //   }
-
-    //   this.setPagesMap.set(set, pages);
-    // });
-
     const setPromises = Object.entries(this.seriesModel).map(async ([setKey, setValue]) => {
+      const rarityFrequency = [0, 0, 0, 0, 0];
       const characterRarityMap = new Map();
 
       const rarityPromises = Object.entries(setValue).map(async ([rarity, filenames]) => {
@@ -81,6 +38,7 @@ class LookupSeriesPages extends ButtonPages {
 
           const rarityIndex = config.rarities.indexOf(rarity);
           if (rarityIndex !== -1) {
+            rarityFrequency[rarityIndex]++;
             characterRarityMap.get(characterKey)[rarityIndex] = true;
           }
         });
@@ -102,18 +60,15 @@ class LookupSeriesPages extends ButtonPages {
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
         const formattedSeries = await MapCache.getFormattedSeries(this.series);
-        const [formattedCharacters, formattedValues] = await formatLookupSetPage(chunk);
+        const [formattedCharacters, formattedValues] = await formatLookupSetPage(chunk, rarityFrequency);
         const first = (i * 10 + 1).toLocaleString();
         const last = (i * 10 + chunk.length).toLocaleString();
         const total = chunks.length > 0 ? ((chunks.length - 1) * 10 + chunks[chunks.length - 1].length).toLocaleString() : "0";
 
         const embed = new EmbedBuilder()
           .setTitle(`Set Lookup`)
-          .setDescription(`**Series**: ${formattedSeries}\n**Set**: ${setKey}\n`)
-          .addFields(
-            { name: "Character", value: formattedCharacters, inline: true },
-            { name: "C, R, UR, SR, SSR", value: `${formattedValues}`, inline: true },
-          )
+          .setDescription(`**Series**: ${formattedSeries}\n` + `**Set**: ${setKey}\n` + `**Wish count**: ${this.totalWishCount}`)
+          .addFields({ name: "Character", value: formattedCharacters, inline: true }, { name: "C, R, UR, SR, SSR", value: `${formattedValues}`, inline: true })
           .setFooter({ text: `Set ${setKey} — Showing characters ${first}-${last} (${total} total)` });
 
         pages.push(embed);

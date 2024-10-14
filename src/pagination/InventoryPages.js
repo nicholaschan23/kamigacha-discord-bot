@@ -2,7 +2,7 @@ const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelect
 const config = require("@config");
 const Item = require("@models/Item");
 const { sortItemList } = require("@utils/gacha/calculateRipValue");
-const ButtonPages = require("@utils/pages/ButtonPages");
+const ButtonPages = require("@pagination/ButtonPages");
 const { capitalizeFirstLetter } = require("@utils/string/format");
 const { chunkArray, formatInventoryPage } = require("@utils/string/formatPage");
 

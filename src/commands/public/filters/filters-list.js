@@ -1,6 +1,6 @@
 const { SlashCommandSubcommandBuilder, EmbedBuilder } = require("discord.js");
 const FilterCache = require("@database/redis/cache/collectionFilter");
-const ButtonPages = require("@root/src/utils/pages/ButtonPages");
+const ButtonPages = require("@root/src/pagination/ButtonPages");
 const Logger = require("@utils/Logger");
 const { chunkArray, formatFilterListPage } = require("@utils/string/formatPage");
 
