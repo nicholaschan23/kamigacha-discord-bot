@@ -1,10 +1,12 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
-const MapCache = require("@database/redis/cache/map");
-const CharacterModel = require("@database/mongodb/models/global/character");
 const config = require("@config");
-const ButtonPages = require("@root/src/utils/pages/ButtonPages");
+const CharacterModel = require("@database/mongodb/models/global/character");
+const MapCache = require("@database/redis/cache/map");
+const ButtonPages = require("@utils/pages/ButtonPages");
+const { chunkArray } = require("@utils/string/formatPage");
+const { formatLookupSetPage } = require("@utils/string/formatPage");
 
-class LookupCharacterPages extends ButtonPages {
+class LookupSeriesPages extends ButtonPages {
   constructor(interaction, series, prevState = null) {
     super(interaction);
 
@@ -17,104 +19,112 @@ class LookupCharacterPages extends ButtonPages {
     this.prevState = prevState;
   }
 
-  async init() {
-    this.characterDocument = await CharacterModel.findOne({ character: this.character, series: this.series });
-    this.wishCount = this.characterDocument.wishCount;
-    this.circulation = this.characterDocument.circulation;
-    this.setArray = this.getSetArray();
-    this.set = this.setArray.slice(-1)[0]; // Latest set
-    this.rarityArray = this.getRarityArray();
-  }
-
-  // Helper function to get a sorted array of character sets
-  getSetArray() {
-    // Convert circulation Map to an array of entries
-    const entries = Array.from(this.circulation.entries());
-
-    // Sort the array by timestamp
-    entries.sort(([, a], [, b]) => {
-      const timestampA = a.timestamp;
-      const timestampB = b.timestamp;
-      return timestampA - timestampB;
-    });
-
-    // Extract and return just the keys from the sorted entries
-    return entries.map(([key]) => key);
-  }
-
-  // Helper function to get a sorted array of character rarities
-  getRarityArray() {
-    const keys = Array.from(this.circulation.get(this.set).rarities.keys());
-
-    // Sort the keys based on rarity rank
-    return keys.sort((a, b) => {
-      const indexA = config.rarities.indexOf(a);
-      const indexB = config.rarities.indexOf(b);
-
-      // If one of the keys is not found in the rarity rank, it should appear last
-      if (indexA === -1 && indexB === -1) return 0;
-      if (indexA === -1) return 1;
-      if (indexB === -1) return -1;
-
-      return indexA - indexB;
-    });
-  }
-
-  /**
-   * Helper function to create embeds for each page.
-   */
   async createPages() {
-    const statsPages = [];
-    const zoomPages = [];
+    this.setPagesMap = new Map(); // { set: [page1, page2, ...] }
+    this.seriesModel = await MapCache.getMapEntry("card-model-map", this.series);
 
-    const formattedCharacter = await MapCache.getFormattedCharacter(this.character);
-    const formattedSeries = await MapCache.getFormattedSeries(this.series);
+    // Object.values(this.seriesModel).forEach((set) => {
+    //   const characterRarityMap = new Map();
 
-    for (let i = 0; i < this.rarityArray.length; i++) {
-      const rarity = this.rarityArray[i];
-      const stats = this.circulation.get(this.set).rarities.get(rarity);
-      const circulation = stats.generated - stats.destroyed;
-      const retention = stats.generated === 0 ? 0 : ((circulation / stats.generated) * 100).toFixed(2);
-      const jpg = [this.character, this.series, this.set, `${rarity.toLowerCase()}.jpg`].join("-");
-      const url = [process.env.CLOUDFRONT_URL, "cards", this.series, this.set, rarity, jpg].join("/");
+    //   Object.entries(set).forEach(([rarity, filenames]) => {
+    //     filenames.forEach((filename) => {
+    //       const characterKey = filename.split(`-${this.series}-`)[0];
+    //       if (!characterRarityMap.has(characterKey)) {
+    //         characterRarityMap.set(characterKey, [false, false, false, false, false]);
+    //       }
 
-      // Create character page
-      const statEmbed = new EmbedBuilder()
-        .setTitle(`Character Lookup`)
-        .setDescription(
-          `Character: **${formattedCharacter}**\n` +
-            `Series: **${formattedSeries}**\n` +
-            `Set: **${this.set}**\n` +
-            `Rarity: **${rarity}**\n` +
-            `\n` +
-            `Wish count: **${this.wishCount.toLocaleString()}**\n` +
-            `\n` +
-            `Retention rate: **${retention}%**\n` +
-            `In circulation: **${circulation.toLocaleString()}**\n` +
-            `Total generated: **${stats.generated.toLocaleString()}**`
-          // `Total destroyed: **${stats.destroyed.toLocaleString()}**\n` +
-        )
-        .setThumbnail(url)
-        .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });
+    //       const rarityIndex = config.rarities.indexOf(rarity);
+    //       if (rarityIndex !== -1) {
+    //         characterRarityMap.get(characterKey)[rarityIndex] = true;
+    //       }
+    //     });
+    //   });
 
-      const zoomEmbed = new EmbedBuilder()
-        .setTitle(`Character Lookup`)
-        .setDescription(`Character: **${formattedCharacter}**\n` + `Series: **${formattedSeries}**\n` + `Set: **${this.set}**\n` + `Rarity: **${rarity}**`)
-        .setImage(url)
-        .setFooter({ text: `Set ${this.set} — Showing cards ${i + 1}-${this.rarityArray.length} (${this.rarityArray.length} total)` });
+    //   // Sort entries by most rare
+    //   const sortedEntries = Array.from(characterRarityMap.entries()).sort(([keyA, valueA], [keyB, valueB]) => {
+    //     return (
+    //       valueB[4] - valueA[4] || valueB[3] - valueA[3] || valueB[2] - valueA[2] || valueB[1] - valueA[1] || valueB[0] - valueA[0] || keyA.localeCompare(keyB)
+    //     );
+    //   });
 
-      statsPages.push(statEmbed);
-      zoomPages.push(zoomEmbed);
-    }
+    //   const chunks = chunkArray(sortedEntries, 10);
+    //   const pages = [];
+    //   for (let i = 0; i < chunks.length; i++) {
+    //     // const formattedPage = await formatLookupSeriesPage(chunks[i]);
+    //     const formattedPage = sortedEntries.map(([key, value]) => {
+    //       return `${key}: ${JSON.stringify(value)}`;
+    //     }).join("\n");
+    //     const first = (i * 10 + 1).toLocaleString();
+    //     const last = (i * 10 + chunks[i].length).toLocaleString();
+    //     const total = chunks.length > 0 ? ((chunks.length - 1) * 10 + chunks[chunks.length - 1].length).toLocaleString() : "0";
 
-    this.statsPages = statsPages;
-    this.zoomPages = zoomPages;
+    //     const embed = new EmbedBuilder()
+    //       .setTitle(`Set Lookup`)
+    //       .setDescription(formattedPage)
+    //       .setFooter({ text: `Set ${set} — Showing characters ${first}-${last} (${total} total)` });
 
-    if (this.onStats) {
-      this.pages = statsPages;
-    } else {
-      this.pages = zoomPages;
-    }
+    //     pages.push(embed);
+    //   }
+
+    //   this.setPagesMap.set(set, pages);
+    // });
+
+    const setPromises = Object.entries(this.seriesModel).map(async ([setKey, setValue]) => {
+      const characterRarityMap = new Map();
+
+      const rarityPromises = Object.entries(setValue).map(async ([rarity, filenames]) => {
+        const filenamePromises = filenames.map(async (filename) => {
+          const characterKey = filename.split(`-${this.series}-`)[0];
+          if (!characterRarityMap.has(characterKey)) {
+            characterRarityMap.set(characterKey, [false, false, false, false, false]);
+          }
+
+          const rarityIndex = config.rarities.indexOf(rarity);
+          if (rarityIndex !== -1) {
+            characterRarityMap.get(characterKey)[rarityIndex] = true;
+          }
+        });
+
+        await Promise.all(filenamePromises);
+      });
+
+      await Promise.all(rarityPromises);
+
+      // Sort entries by most rare
+      const sortedEntries = Array.from(characterRarityMap.entries()).sort(([keyA, valueA], [keyB, valueB]) => {
+        return (
+          valueB[4] - valueA[4] || valueB[3] - valueA[3] || valueB[2] - valueA[2] || valueB[1] - valueA[1] || valueB[0] - valueA[0] || keyA.localeCompare(keyB)
+        );
+      });
+
+      const chunks = chunkArray(sortedEntries, 10);
+      const pages = [];
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const formattedSeries = await MapCache.getFormattedSeries(this.series);
+        const [formattedCharacters, formattedValues] = await formatLookupSetPage(chunk);
+        const first = (i * 10 + 1).toLocaleString();
+        const last = (i * 10 + chunk.length).toLocaleString();
+        const total = chunks.length > 0 ? ((chunks.length - 1) * 10 + chunks[chunks.length - 1].length).toLocaleString() : "0";
+
+        const embed = new EmbedBuilder()
+          .setTitle(`Set Lookup`)
+          .setDescription(`**Series**: ${formattedSeries}\n**Set**: ${setKey}\n`)
+          .addFields(
+            { name: "Character", value: formattedCharacters, inline: true },
+            { name: "C, R, UR, SR, SSR", value: `${formattedValues}`, inline: true },
+          )
+          .setFooter({ text: `Set ${setKey} — Showing characters ${first}-${last} (${total} total)` });
+
+        pages.push(embed);
+      }
+
+      this.setPagesMap.set(setKey, pages);
+    });
+
+    await Promise.all(setPromises);
+    this.setArray = Object.keys(this.seriesModel);
+    this.pages = this.setPagesMap.get(this.setArray[this.setArray.length - 1]);
     this.index = 0;
   }
 
@@ -147,15 +157,6 @@ class LookupCharacterPages extends ButtonPages {
     } else {
       next.setDisabled(false);
     }
-
-    const zoomStats = this.components["toggleZoomStats"];
-    if (this.onStats) {
-      this.pages = this.statsPages;
-      zoomStats.setEmoji("🔎"); // Set to zoom emoji
-    } else {
-      this.pages = this.zoomPages;
-      zoomStats.setEmoji("📊"); // Set to stats emoji
-    }
   }
 
   addComponents() {
@@ -173,7 +174,7 @@ class LookupCharacterPages extends ButtonPages {
     this.updateComponents();
 
     // Button row
-    const buttonRow = new ActionRowBuilder().addComponents(back, ends, prev, next, zoomStats);
+    const buttonRow = new ActionRowBuilder().addComponents(back, ends, prev, next);
     this.messageComponents.push(buttonRow);
 
     // Select menu row
@@ -213,7 +214,7 @@ class LookupCharacterPages extends ButtonPages {
 
     switch (i.customId) {
       case "backToLookup": {
-        this.collector.stop();
+        this.collector.stop("skipEditMessage");
 
         const LookupPages = require("./LookupPages"); // Import here to avoid circular dependency issues
         const bp = new LookupPages(i, [], []);
@@ -245,19 +246,11 @@ class LookupCharacterPages extends ButtonPages {
         this.updateComponents();
         break;
       }
-      case "toggleZoomStats": {
-        if (this.onStats) {
-          this.onStats = false;
-        } else {
-          this.onStats = true;
-        }
-        this.updateComponents();
-        break;
-      }
       case "setSelect": {
         const selectedValue = i.values[0];
-        this.set = selectedValue;
-        await this.createPages();
+        this.pages = this.setPagesMap.get(selectedValue);
+        this.index = 0;
+        this.updateComponents();
         break;
       }
       default:
@@ -274,4 +267,4 @@ class LookupCharacterPages extends ButtonPages {
   }
 }
 
-module.exports = LookupCharacterPages;
+module.exports = LookupSeriesPages;

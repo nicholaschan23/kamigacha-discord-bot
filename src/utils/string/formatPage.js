@@ -98,10 +98,14 @@ function formatFilterListPage(filterList) {
  * @returns {String} The formatted character result string.
  */
 async function formatLookupCharacterPage(resultList) {
+  const maxWishCountLength = Math.max(...resultList.map((result) => `${result.wishCount}`.length));
+
   const formattedResults = await Promise.all(
     resultList.map(async (result) => {
+      const paddedWishCount = `${result.wishCount}`.padEnd(maxWishCountLength, " ");
+
       const totalWishCountEmoji = getWishListEmoji(result.wishCount);
-      const totalWishCount = `\`❤${result.wishCount}\``;
+      const totalWishCount = `\`❤${paddedWishCount}\``;
       const formattedSeries = await MapCache.getFormattedSeries(result.series);
       const formattedCharacter = await MapCache.getFormattedCharacter(result.character);
 
@@ -118,11 +122,17 @@ async function formatLookupCharacterPage(resultList) {
  * @returns {String} The formatted series result string.
  */
 async function formatLookupSeriesPage(resultList) {
+  const maxWishCountLength = Math.max(...resultList.map((result) => `${result.totalWishCount}`.length));
+  const maxCharacterCountLength = Math.max(...resultList.map((result) => `${result.totalCharacters}`.length));
+
   const formattedResults = await Promise.all(
     resultList.map(async (result) => {
+      const paddedWishCount = `${result.totalWishCount}`.padEnd(maxWishCountLength, " ");
+      const paddedCharacterCount = `${result.totalCharacters}`.padEnd(maxCharacterCountLength, " ");
+
       const totalWishCountEmoji = getWishListEmoji(result.totalWishCount);
-      const totalWishCount = `\`❤${result.totalWishCount}\``;
-      const totalCharacterCount = `\`📕📗📘📙${result.totalCharacters}\` characters`;
+      const totalWishCount = `\`❤${paddedWishCount}\``;
+      const totalCharacterCount = `\`${paddedCharacterCount}\` characters`;
       const formattedSeries = await MapCache.getFormattedSeries(result.series);
 
       return [`${totalWishCountEmoji} ${totalWishCount}`, `${totalCharacterCount}`, `**${formattedSeries}**`].join(" · ");
@@ -130,6 +140,31 @@ async function formatLookupSeriesPage(resultList) {
   );
 
   return formattedResults.join("\n");
+}
+
+/**
+ * Formats the series lookup results into a string output for an embed page.
+ * @param {SeriesResult[]} resultList - The array of series results.
+ * @returns {String} The formatted series result string.
+ */
+async function formatLookupSetPage(resultList) {
+  function booleanToEmoji(value) {
+    return value ? "✅" : "❌";
+  }
+
+  const formattedKeys = [];
+  const formattedValues = [];
+
+  await Promise.all(
+    resultList.map(async ([characterKey, value]) => {
+      const formattedCharacter = await MapCache.getFormattedCharacter(characterKey);
+      const formattedValue = `${value.map(booleanToEmoji).join(", ")}`;
+      formattedKeys.push(formattedCharacter);
+      formattedValues.push(formattedValue);
+    })
+  );
+
+  return [formattedKeys.join("\n"), formattedValues.join("\n")];
 }
 
 /**
@@ -196,6 +231,7 @@ module.exports = {
   formatInventoryPage,
   formatLookupCharacterPage,
   formatLookupSeriesPage,
+  formatLookupSetPage,
   formatTagListPage,
   formatWishListPage,
   getWishListEmoji,

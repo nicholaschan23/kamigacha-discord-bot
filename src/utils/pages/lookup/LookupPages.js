@@ -237,21 +237,27 @@ class LookupPages extends ButtonPages {
         break;
       }
       case "characterSelect": {
-        const selectedValue = i.values[0];
         // Stop current button pages
         this.collector.stop("skipEditMessage");
 
         // Create and show character pages
-        const bp = new LookupCharacterPages(i, selectedValue, this.saveState());
-        await bp.init();
-        await bp.createPages();
-        await bp.publishPages(true);
+        const selectedValue = i.values[0];
+        const lcp = new LookupCharacterPages(i, selectedValue, this.saveState());
+        await lcp.init();
+        await lcp.createPages();
+        await lcp.publishPages(true);
         return;
       }
       case "seriesSelect": {
+        // Stop current button pages
+        this.collector.stop("skipEditMessage");
+
+        // Create and show series pages
         const selectedValue = i.values[0];
-        await this.handleSeriesSelect(i, selectedValue);
-        break;
+        const lcs = new LookupSeriesPages(i, selectedValue, this.saveState());
+        await lcs.createPages();
+        await lcs.publishPages(true);
+        return;
       }
       default:
         return;
@@ -271,20 +277,6 @@ class LookupPages extends ButtonPages {
       embeds: [this.pages[this.index]],
       components: this.messageComponents,
     });
-  }
-
-  async handleSeriesSelect(i, value) {
-    // Create and show character pages
-    const bp = new LookupSeriesPages(i, value, this.saveState());
-    await bp.init();
-    await bp.createPages();
-
-    // Stop current button pages
-    this.collector.stop();
-
-    // Publish new button pages
-    await bp.publishPages(true);
-    return;
   }
 }
 
