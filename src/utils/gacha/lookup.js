@@ -19,48 +19,53 @@ async function lookup(query) {
     // Retrieve search model from cache
     const searchModel = await MapCache.getMapEntry("search-model-map", word);
 
-    if (searchModel) {
-      // Process each character-series pair in the search model
-      for (const { character, series } of searchModel) {
-        const key = `${character}-${series}`;
-        let charResult = characterResults.get(key);
+    // Process each character-series pair in the search model
+    for (const { character, series } of searchModel) {
+      const key = `${character}-${series}`;
+      let charResult = characterResults.get(key);
 
-        // If result already exists, update its frequency
-        if (charResult) {
-          charResult.frequency++;
+      // If result already exists, update its frequency
+      if (charResult) {
+        charResult.frequency++;
+      } else {
+        // If result is new, add it to the map with initial frequency and wish count
+        const wishCount = await WishCountCache.getWishCount(character, series);
+        charResult = new CharacterResult(character, series, wishCount, 1);
+        characterResults.set(key, charResult);
+
+        // Update the series results
+        let seriesResult = seriesResults.get(series);
+        if (seriesResult) {
+          seriesResult.totalWishCount += wishCount;
+          seriesResult.totalCharacters++;
         } else {
-          // If result is new, add it to the map with initial frequency and wish count
-          const wishCount = await WishCountCache.getWishCount(character, series);
-          charResult = new CharacterResult(character, series, wishCount, 1);
-          characterResults.set(key, charResult);
-
-          // Update the series results
-          let seriesResult = seriesResults.get(series);
-          if (seriesResult) {
-            seriesResult.totalWishCount += wishCount;
-            seriesResult.totalCharacters++;
-          } else {
-            seriesResults.set(series, new SeriesResult(series, wishCount, 1));
-          }
+          seriesResults.set(series, new SeriesResult(series, wishCount, 1));
         }
+      }
 
-        // Update the maximum frequency if necessary
-        if (charResult.frequency > maxFrequency) {
-          maxFrequency = charResult.frequency;
-        }
+      // Update the maximum frequency if necessary
+      if (charResult.frequency > maxFrequency) {
+        maxFrequency = charResult.frequency;
+      }
+    }
+
+    for (const seriesKey of seriesResults.keys()) {
+      if (seriesKey.split("-").includes(word)) {
+        const seriesResult = seriesResults.get(seriesKey);
+        seriesResult.frequency++;
       }
     }
   }
 
   // Filter and sort the top results based on frequency, wish count, series, and character
   const characterResultsArray = [...characterResults.values()]
-    .filter((result) => result.frequency === maxFrequency)
+    // .filter((result) => result.frequency === maxFrequency)
     .sort((a, b) => {
-      return b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
+      return b.frequency - a.frequency || b.wishCount - a.wishCount || a.series.localeCompare(b.series) || a.character.localeCompare(b.character);
     });
 
   const seriesResultsArray = [...seriesResults.values()].sort((a, b) => {
-    return b.totalWishCount - a.totalWishCount || b.totalCharacters - a.totalCharacters || a.series.localeCompare(b.series);
+    return b.frequency - a.frequency || b.totalWishCount - a.totalWishCount || b.totalCharacters - a.totalCharacters || a.series.localeCompare(b.series);
   });
 
   return [characterResultsArray, seriesResultsArray];

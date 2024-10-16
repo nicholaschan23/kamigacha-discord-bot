@@ -2,7 +2,7 @@ const RedisClient = require("@database/redis/RedisClient");
 
 const redis = RedisClient.connection;
 
-async function storeModelAsMap(cacheKey, model, storeKeys = true) {
+async function storeModelAsMap(cacheKey, model) {
   // Convert the model to a format suitable for hmset
   const entries = Object.entries(model).reduce((acc, [key, value]) => {
     acc[key] = JSON.stringify(value);
@@ -11,14 +11,6 @@ async function storeModelAsMap(cacheKey, model, storeKeys = true) {
 
   // Store the map in Redis
   await redis.hmset(`${cacheKey}-map`, entries);
-
-  if (storeKeys) {
-    // Extract the keys from the model
-    const keys = Object.keys(model);
-
-    // Store the keys array in a Redis list
-    await redis.rpush(`${cacheKey}-keys`, keys);
-  }
 }
 
 async function getModel(cacheKey) {

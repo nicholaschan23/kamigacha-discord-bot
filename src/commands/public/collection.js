@@ -9,7 +9,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("collection")
     .setDescription("View a card collection.")
-    .addUserOption((option) => option.setName("user").setDescription("Player's collection to view. Omit to view yours."))
+    .addUserOption((option) => option.setName("user").setDescription("Player's collection to view. (Default: view yours)"))
     .addStringOption((option) => option.setName("filters").setDescription("Search filters to apply to collection.")),
 
   async execute(client, interaction) {

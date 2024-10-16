@@ -32,7 +32,7 @@ module.exports = {
       output.push("```");
       output.join("\n");
     }
-    
+
     interaction.editReply(output.join("\n"));
   },
 };

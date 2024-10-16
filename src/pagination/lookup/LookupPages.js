@@ -5,6 +5,7 @@ const ButtonPages = require("@pagination/ButtonPages");
 const LookupCharacterPages = require("./LookupCharacterPages");
 const LookupSeriesPages = require("./LookupSeriesPages");
 
+const MAX_PAGES = 50;
 const CHUNK_SIZE = 10;
 
 class LookupPages extends ButtonPages {
@@ -24,7 +25,9 @@ class LookupPages extends ButtonPages {
       pages: this.pages,
       index: this.index,
       characterResultChunks: this.characterResultChunks,
+      characterResultPages: this.characterResultPages,
       seriesResultChunks: this.seriesResultChunks,
+      seriesResultPages: this.seriesResultPages,
     };
   }
 
@@ -33,7 +36,9 @@ class LookupPages extends ButtonPages {
     this.pages = prevState.pages;
     this.index = prevState.index;
     this.characterResultChunks = prevState.characterResultChunks;
+    this.characterResultPages = prevState.characterResultPages;
     this.seriesResultChunks = prevState.seriesResultChunks;
+    this.seriesResultPages = prevState.seriesResultPages;
   }
 
   /**
@@ -49,7 +54,7 @@ class LookupPages extends ButtonPages {
   ) {
     charPages = [];
 
-    for (let i = 0; i < charChunks.length; i++) {
+    for (let i = 0; i < Math.min(charChunks.length, MAX_PAGES); i++) {
       const formattedPage = await formatLookupCharacterPage(charChunks[i]);
       const first = (i * CHUNK_SIZE + 1).toLocaleString();
       const last = (i * CHUNK_SIZE + charChunks[i].length).toLocaleString();
@@ -57,7 +62,7 @@ class LookupPages extends ButtonPages {
 
       const embed = new EmbedBuilder()
         .setTitle(`Character Lookup`)
-        .setDescription(formattedPage)
+        .setDescription(formattedPage + `${charChunks.length >= MAX_PAGES ? "\n-# If the character is not listed, please refine your search." : ""}`)
         .setFooter({
           text: `Showing characters ${first}-${last} (${total} total)`,
         });
@@ -65,7 +70,7 @@ class LookupPages extends ButtonPages {
     }
 
     seriesPages = [];
-    for (let i = 0; i < seriesChunks.length; i++) {
+    for (let i = 0; i < Math.min(seriesChunks.length, MAX_PAGES); i++) {
       const formattedPage = await formatLookupSeriesPage(seriesChunks[i]);
       const first = (i * CHUNK_SIZE + 1).toLocaleString();
       const last = (i * CHUNK_SIZE + seriesChunks[i].length).toLocaleString();
@@ -73,7 +78,7 @@ class LookupPages extends ButtonPages {
 
       const embed = new EmbedBuilder()
         .setTitle(`Series Lookup`)
-        .setDescription(formattedPage)
+        .setDescription(formattedPage + `${seriesChunks.length >= MAX_PAGES ? "\n-# If the series is not listed, please refine your search." : ""}`)
         .setFooter({
           text: `Showing series ${first}-${last} (${total} total)`,
         });

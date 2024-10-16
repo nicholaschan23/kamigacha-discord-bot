@@ -9,7 +9,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("view")
     .setDescription("View a card.")
-    .addStringOption((option) => option.setName("code").setDescription("Card code. Omit to view your latest card.")),
+    .addStringOption((option) => option.setName("code").setDescription("Card code. (Default: latest card)")),
 
   async execute(client, interaction) {
     // Function to retrieve card and send the response

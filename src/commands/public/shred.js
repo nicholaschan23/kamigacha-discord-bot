@@ -9,7 +9,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("shred")
     .setDescription("Rip multiple cards into materials for crafting.")
-    .addStringOption((option) => option.setName("filters").setDescription("Filters to apply to collection. Omit to select from drop down.")),
+    .addStringOption((option) => option.setName("filters").setDescription("Filters to apply to collection. (Default: select from dropdown menu)")),
 
   async execute(client, interaction) {
     await interaction.deferReply();

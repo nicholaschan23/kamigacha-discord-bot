@@ -8,7 +8,7 @@ module.exports = {
   data: new SlashCommandSubcommandBuilder()
     .setName("view")
     .setDescription("View a binder.")
-    .addStringOption((option) => option.setName("name").setDescription("Name of the binder. Omit to view most recent edited binder.").setRequired(false)),
+    .addStringOption((option) => option.setName("name").setDescription("Name of the binder to view. (Default: last edited binder)").setRequired(false)),
 
   async execute(client, interaction) {
     try {

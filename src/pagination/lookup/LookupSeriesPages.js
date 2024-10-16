@@ -1,13 +1,12 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const config = require("@config");
-const CharacterModel = require("@database/mongodb/models/global/character");
 const MapCache = require("@database/redis/cache/map");
 const ButtonPages = require("@pagination/ButtonPages");
 const { chunkArray } = require("@utils/string/formatPage");
 const { formatLookupSetPage } = require("@utils/string/formatPage");
 
 class LookupSeriesPages extends ButtonPages {
-  constructor(interaction, value, prevState = null) {
+  constructor(interaction, value, prevState = null, options = { backButton: true }) {
     super(interaction);
 
     const selection = JSON.parse(value);
@@ -19,6 +18,7 @@ class LookupSeriesPages extends ButtonPages {
 
     // Save last lookup instance for "back" button
     this.prevState = prevState;
+    this.options = options;
   }
 
   async createPages() {
@@ -85,12 +85,12 @@ class LookupSeriesPages extends ButtonPages {
 
   // Update disabled states of page buttons
   updateComponents() {
-    const back = this.components["backToLookup"];
-    if (this.prevState === null) {
-      back.setDisabled(true);
-    } else {
-      back.setDisabled(false);
-    }
+    // const back = this.components["backToLookup"];
+    // if (this.prevState === null) {
+    //   back.setDisabled(true);
+    // } else {
+    //   back.setDisabled(false);
+    // }
 
     const ends = this.components["toggleEnds"];
     if (this.index === 0 && this.index === this.pages.length - 1) {
@@ -116,21 +116,26 @@ class LookupSeriesPages extends ButtonPages {
 
   addComponents() {
     // Initialize components
-    const back = new ButtonBuilder().setCustomId("backToLookup").setLabel("Back").setStyle(ButtonStyle.Danger);
     const ends = new ButtonBuilder().setCustomId("toggleEnds").setEmoji("↔️").setStyle(ButtonStyle.Secondary);
     const prev = new ButtonBuilder().setCustomId("viewPrev").setEmoji("⬅️").setStyle(ButtonStyle.Primary);
     const next = new ButtonBuilder().setCustomId("viewNext").setEmoji("➡️").setStyle(ButtonStyle.Primary);
     const zoomStats = new ButtonBuilder().setCustomId("toggleZoomStats").setEmoji("🔎").setStyle(ButtonStyle.Secondary);
-    this.components["backToLookup"] = back;
     this.components["toggleEnds"] = ends;
     this.components["viewPrev"] = prev;
     this.components["viewNext"] = next;
     this.components["toggleZoomStats"] = zoomStats;
     this.updateComponents();
-
+    
     // Button row
-    const buttonRow = new ActionRowBuilder().addComponents(back, ends, prev, next);
-    this.messageComponents.push(buttonRow);
+    if (this.options.backButton) {
+      const back = new ButtonBuilder().setCustomId("backToLookup").setLabel("Back").setStyle(ButtonStyle.Danger);
+      this.components["backToLookup"] = back;
+      const buttonRow = new ActionRowBuilder().addComponents(back, ends, prev, next);
+      this.messageComponents.push(buttonRow);
+    } else {
+      const buttonRow = new ActionRowBuilder().addComponents(ends, prev, next);
+      this.messageComponents.push(buttonRow);
+    }
 
     // Select menu row
     this.addSelectMenu();

@@ -9,7 +9,7 @@ module.exports = {
     .setName("cards")
     .setDescription("Add cards to a binder.")
     .addStringOption((option) => option.setName("codes").setDescription("List of card codes separated by commas.").setRequired(true))
-    .addStringOption((option) => option.setName("name").setDescription("Name of the binder. Omit to add to your most recent edited binder.").setRequired(false)),
+    .addStringOption((option) => option.setName("name").setDescription("Name of the binder to add cards to. (Default: last edited binder)").setRequired(false)),
 
   async execute(client, interaction) {
     try {

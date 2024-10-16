@@ -4,13 +4,17 @@ const tagsDelete = require("./tags/tags-delete");
 const tagsEmoji = require("./tags/tags-emoji");
 const tagsList = require("./tags/tags-list");
 const tagsRename = require("./tags/tags-rename");
-const Logger = require("@utils/Logger");
-
-const logger = new Logger("Tags command");
 
 module.exports = {
   category: "public",
-  data: new SlashCommandBuilder().setName("tags").setDescription("Tags main command.").addSubcommand(tagsCreate.data).addSubcommand(tagsDelete.data).addSubcommand(tagsEmoji.data).addSubcommand(tagsList.data).addSubcommand(tagsRename.data),
+  data: new SlashCommandBuilder()
+    .setName("tags")
+    .setDescription("Tags main command.")
+    .addSubcommand(tagsCreate.data)
+    .addSubcommand(tagsDelete.data)
+    .addSubcommand(tagsEmoji.data)
+    .addSubcommand(tagsList.data)
+    .addSubcommand(tagsRename.data),
 
   async execute(client, interaction) {
     const subcommand = interaction.options.getSubcommand();
@@ -36,7 +40,6 @@ module.exports = {
         break;
       }
       default: {
-        logger.error(`There was no execute case for the '${subcommand}' subcommand`);
         interaction.reply({ content: `There was no execute case for the \`${subcommand}\` subcommand.`, ephemeral: true });
       }
     }

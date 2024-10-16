@@ -10,7 +10,7 @@ module.exports = {
   data: new SlashCommandSubcommandBuilder()
     .setName("list")
     .setDescription("View a player's collection tags.")
-    .addUserOption((option) => option.setName("user").setDescription("Player's collection tags to view. Omit to view yours.")),
+    .addUserOption((option) => option.setName("user").setDescription("Player's collection tags to view. (Default: view yours)")),
 
   async execute(client, interaction) {
     const user = interaction.options.getUser("user") || interaction.user;

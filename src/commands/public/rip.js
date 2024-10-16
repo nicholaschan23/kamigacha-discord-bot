@@ -1,19 +1,19 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
+const config = require("@config");
 const CardModel = require("@database/mongodb/models/card/card");
 const CollectionModel = require("@database/mongodb/models/card/collection");
 const InventoryModel = require("@database/mongodb/models/user/inventory");
-const { isValidCode } = require("@utils/string/validation");
-const config = require("@config");
 const { calculateRipValue } = require("@utils/gacha/calculateRipValue");
 const { generateCardAttachment } = require("@utils/graphics/generateCardAttachment");
 const { formatInventoryPage } = require("@utils/string/formatPage");
+const { isValidCode } = require("@utils/string/validation");
 
 module.exports = {
   category: "public",
   data: new SlashCommandBuilder()
     .setName("rip")
     .setDescription("Turn a card into materials for crafting.")
-    .addStringOption((option) => option.setName("code").setDescription("Card code. Omit to rip your latest card.")),
+    .addStringOption((option) => option.setName("code").setDescription("Card code to rip. (Default: latest card)")),
 
   async execute(client, interaction) {
     await interaction.deferReply();

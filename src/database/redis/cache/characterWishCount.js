@@ -25,6 +25,25 @@ async function getWishCount(character, series) {
   return value;
 }
 
+async function getWishCountsForSeries(series) {
+  const pattern = `*:${series}`;
+  let totalWishCount = 0;
+
+  let cursor = "0";
+  do {
+    const [newCursor, results] = await redis.hscan(KEY, cursor, "MATCH", pattern);
+    cursor = newCursor;
+
+    for (let i = 0; i < results.length; i += 2) {
+      const field = results[i];
+      const value = parseInt(results[i + 1], 10);
+      totalWishCount += value;
+    }
+  } while (cursor !== "0");
+
+  return totalWishCount;
+}
+
 function cache(character, series, value) {
   const field = `${character}:${series}`;
   redis.hset(KEY, field, value.toString());
@@ -32,5 +51,6 @@ function cache(character, series, value) {
 
 module.exports = {
   getWishCount,
+  getWishCountsForSeries,
   cache,
 };

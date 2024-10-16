@@ -13,7 +13,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("lookup")
     .setDescription("Find info on a character's available cards.")
-    .addStringOption((option) => option.setName("search").setDescription("Search by card code, character, or series name. Omit to lookup your latest card.")),
+    .addStringOption((option) => option.setName("search").setDescription("Search by card code, character, or series name. (Default: latest card)")),
 
   async execute(client, interaction) {
     const search = interaction.options.getString("search");

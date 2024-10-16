@@ -8,7 +8,7 @@ module.exports = {
   data: new SlashCommandSubcommandBuilder()
     .setName("list")
     .setDescription("View a player's wish list.")
-    .addUserOption((option) => option.setName("user").setDescription("Player's wish list to view. Omit to view yours.")),
+    .addUserOption((option) => option.setName("user").setDescription("Player's wish list to view. (Default: view yours)")),
 
   async execute(client, interaction) {
     const user = interaction.options.getUser("user") ?? interaction.user;

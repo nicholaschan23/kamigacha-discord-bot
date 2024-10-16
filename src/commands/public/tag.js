@@ -13,7 +13,7 @@ module.exports = {
     .setName("tag")
     .setDescription("Tag cards in your collection.")
     .addStringOption((option) => option.setName("tag").setDescription('Name of tag. Use "none" to untag.').setRequired(true))
-    .addStringOption((option) => option.setName("cards").setDescription("Card codes to associate with this tag. Omit to tag your latest card.")),
+    .addStringOption((option) => option.setName("cards").setDescription("Card codes to associate with this tag. (Default: latest card)")),
 
   async execute(client, interaction) {
     await interaction.deferReply();

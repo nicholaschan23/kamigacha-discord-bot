@@ -153,20 +153,17 @@ async function formatLookupSetPage(resultList, rarityFrequency) {
     return value ? "✅" : "❌";
   }
 
-  const formattedKeys = [];
-  const formattedValues = [];
+  const formattedKeys = ["-# Total"];
+  const formattedValues = [`-# ${rarityFrequency.join(", ")}`];
 
   await Promise.all(
-    resultList.map(async ([characterKey, value]) => {
-      const formattedCharacter = await MapCache.getFormattedCharacter(characterKey);
-      const formattedValue = `${value.map(booleanToEmoji).join(", ")}`;
+    resultList.map(async ([characterKey, value], index) => {
+      const formattedCharacter = `${index}. ${await MapCache.getFormattedCharacter(characterKey)}`;
+      const formattedValue = `${index}. ${value.map(booleanToEmoji).join(", ")}`;
       formattedKeys.push(formattedCharacter);
       formattedValues.push(formattedValue);
     })
   );
-
-  formattedKeys.push("-# Total");
-  formattedValues.push(`-# ${rarityFrequency.join(", ")}`);
 
   return [formattedKeys.join("\n"), formattedValues.join("\n")];
 }
