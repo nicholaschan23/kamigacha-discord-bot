@@ -35,7 +35,6 @@ async function getWishCountsForSeries(series) {
     cursor = newCursor;
 
     for (let i = 0; i < results.length; i += 2) {
-      const field = results[i];
       const value = parseInt(results[i + 1], 10);
       totalWishCount += value;
     }
