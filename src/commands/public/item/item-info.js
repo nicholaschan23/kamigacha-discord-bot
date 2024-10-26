@@ -3,6 +3,7 @@ const config = require("@config");
 const MapCache = require("@database/redis/cache/map");
 const RedisClient = require("@database/redis/RedisClient");
 const Logger = require("@utils/Logger");
+const { fetchRarityCounts, calculatePackValue } = require("@utils/gacha/calculatePackValue");
 
 const logger = new Logger("Item info command");
 const redis = RedisClient.connection;
@@ -22,27 +23,30 @@ module.exports = {
 
       const tokens = item.split(" ");
       if (tokens[tokens.length - 1] === "pack") {
-        const series = tokens.slice(0, -2).join(" ");
-        const seriesData = await MapCache.getMapEntry("card-model-map", series);
+        const seriesKey = tokens.slice(0, -2).join("-");
+        const seriesData = await MapCache.getMapEntry("card-model-map", seriesKey);
         if (!seriesData) {
           interaction.editReply({ content: "Invalid series name." });
           return;
         }
 
         const set = tokens[tokens.length - 2];
-        const setData = seriesData[set];
-        if (!setData) {
+        const setCount = Object.keys(seriesData).length;
+        if (parseInt(set) > setCount) {
           interaction.editReply({ content: "Invalid set number." });
           return;
         }
 
-        const formattedSeries = MapCache.getFormattedSeries(series);
-        const embed = new EmbedBuilder()
-          .setTitle(`Item Info`)
-          .addFields({
-            name: `${formattedSeries} ${set} Pack`,
-            value: `Cost: 0\n` + `*A pack containing 1 card from set ${set} of the ${formattedSeries} series.*`,
-          });
+        const materialCode = "tear material"
+        const formattedSeries = await MapCache.getFormattedSeries(seriesKey);
+        const itemCode = tokens.join("-");
+        const icon = config.itemsMap.get(materialCode).icon;
+        const cost = calculatePackValue(fetchRarityCounts(seriesData[set]));
+        const purchasable = set == setCount ? "Purchasable" : "Not available";
+        const embed = new EmbedBuilder().setTitle(`Item Info`).addFields({
+          name: `Set ${set} Pack: ${formattedSeries}`,
+          value: `*A card pack containing 1 card from set ${set} of the ${formattedSeries} series.*\n\n` + `Price: ${icon} **${cost}** \`${materialCode}\``,
+        });
 
         interaction.editReply({ embeds: [embed] });
         return;

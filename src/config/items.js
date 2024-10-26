@@ -30,9 +30,10 @@ const material = [
   ["ur material", new ItemInfo("🔑", "UR Material (★★★☆☆)", "material")],
   ["sr material", new ItemInfo("🔑", "SR Material (★★★★☆)", "material")],
   ["ssr material", new ItemInfo("🔑", "SSR Material (★★★★★)", "material")],
+  ["tear material", new ItemInfo("🔑", "SSR Material (★★★★★)", "material")],
 ];
 
-const itemsMap = new Map([...currency] + [...material]);
+const itemsMap = new Map([...currency, ...material]);
 
 module.exports = {
   itemTypes,

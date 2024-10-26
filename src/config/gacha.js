@@ -37,12 +37,13 @@ function getRarityRank(rarity) {
 }
 
 // Rates in percentages
+const pullRateArr = [70, 15, 7, 5, 3];
 const pullRate = [
-  { rarity: "C", chance: 70 },
-  { rarity: "R", chance: 15 },
-  { rarity: "UR", chance: 7 },
-  { rarity: "SR", chance: 5 },
-  { rarity: "SSR", chance: 3 },
+  { rarity: "C", chance: pullRateArr[0] },
+  { rarity: "R", chance: pullRateArr[1] },
+  { rarity: "UR", chance: pullRateArr[2] },
+  { rarity: "SR", chance: pullRateArr[3] },
+  { rarity: "SSR", chance: pullRateArr[4] },
 ];
 const multiPullRate = [
   { rarity: "C", chance: 80 },
@@ -77,6 +78,7 @@ module.exports = {
   origins,
   getNextRarity,
   getRarityRank,
+  pullRateArr,
   pullRate,
   multiPullRate,
   pity,
