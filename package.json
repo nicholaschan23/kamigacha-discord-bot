@@ -42,6 +42,7 @@
     "@config": "src/config",
     "@database": "src/database",
     "@events": "src/events",
+    "@graphics": "src/graphics",
     "@models": "src/models",
     "@pagination": "src/pagination",
     "@utils": "src/utils"

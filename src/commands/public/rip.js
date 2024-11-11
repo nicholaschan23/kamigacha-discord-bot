@@ -4,7 +4,7 @@ const CardModel = require("@database/mongodb/models/card/card");
 const CollectionModel = require("@database/mongodb/models/card/collection");
 const InventoryModel = require("@database/mongodb/models/user/inventory");
 const { calculateRipValue } = require("@utils/gacha/calculateRipValue");
-const { generateCardAttachment } = require("@utils/graphics/generateCardAttachment");
+const { generateCardAttachment } = require("@graphics/generateCardAttachment");
 const { formatInventoryPage } = require("@utils/string/formatPage");
 const { isValidCode } = require("@utils/string/validation");
 

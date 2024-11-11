@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
 const config = require("@config");
 const CardGenerator = require("@utils/gacha/CardGenerator");
-const { createCard } = require("@utils/graphics/createCard");
-const { getCardBorder } = require("@utils/graphics/getCardBorder");
+const { createCard } = require("@graphics/createCard");
+const { getCardBorder } = require("@graphics/getCardBorder");
 
 module.exports = {
   category: "public",

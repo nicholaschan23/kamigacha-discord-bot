@@ -1,7 +1,7 @@
 const { AttachmentBuilder } = require("discord.js");
-const { getCardBorder } = require("@utils/graphics/getCardBorder");
-const { createCard } = require("@utils/graphics/createCard");
-const { createCardGrid } = require("@utils/graphics/createCardGrid");
+const { getCardBorder } = require("@graphics/getCardBorder");
+const { createCard } = require("@graphics/createCard");
+const { createCardGrid } = require("@graphics/createCardGrid");
 const { v4: uuidv4 } = require("uuid");
 
 async function generateCardAttachment(card) {

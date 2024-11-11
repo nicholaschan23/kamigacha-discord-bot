@@ -1,4 +1,4 @@
-const config = require("../../config");
+const config = require("@config");
 
 function getCardBorder(rarity) {
   const prefix = [config.IMAGES_PATH, "customisations/boarders"];

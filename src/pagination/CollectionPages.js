@@ -2,7 +2,7 @@ const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelect
 const ButtonPages = require("./ButtonPages");
 const WishCountCache = require("@database/redis/cache/characterWishCount");
 const { parseFilterString, applyFilters } = require("@utils/gacha/filter");
-const { generateGridCardAttachment } = require("@utils/graphics/generateCardAttachment");
+const { generateGridCardAttachment } = require("@graphics/generateCardAttachment");
 const { chunkArray, formatCardInfoPage } = require("@utils/string/formatPage");
 
 class CollectionPages extends ButtonPages {
@@ -136,7 +136,7 @@ class CollectionPages extends ButtonPages {
         // Allow pressing once
         const copy = this.components["copyCodes"];
         copy.setDisabled(true);
-        this.disabledCopyCodes.add(this.index)
+        this.disabledCopyCodes.add(this.index);
 
         const codes = [];
         for (const cardData of this.cardChunks[this.index]) {
@@ -151,7 +151,7 @@ class CollectionPages extends ButtonPages {
         // Allow pressing once
         const view = this.components["viewImages"];
         view.setDisabled(true);
-        this.disabledViewImage.add(this.index)
+        this.disabledViewImage.add(this.index);
 
         const { file, url } = await generateGridCardAttachment(this.cardChunks[this.index]);
 

@@ -7,7 +7,7 @@ const CardUpgrader = require("@utils/gacha/CardUpgrader");
 const { isValidCode } = require("@utils/string/validation");
 const { formatCardInfo } = require("@utils/string/format");
 const { formatCardInfoPage } = require("@utils/string/formatPage");
-const { generateCardAttachment } = require("@utils/graphics/generateCardAttachment");
+const { generateCardAttachment } = require("@graphics/generateCardAttachment");
 
 const logger = new Logger("Upgrade command");
 

@@ -1,6 +1,6 @@
 const { createCanvas, loadImage } = require("canvas");
 const { createCard } = require("./createCard");
-const config = require("../../config");
+const config = require("@config");
 
 async function createCardGrid(cardUrls, borderPaths) {
   const cardWidth = config.cardWidth;
