@@ -3,7 +3,6 @@ const axios = require("axios");
 const config = require("@config");
 const { createCanvas, loadImage, registerFont } = require("canvas");
 const path = require("path");
-const fs = require("fs");
 
 async function fetchImage(url) {
   // Fetch the image from the URL
@@ -14,49 +13,57 @@ async function fetchImage(url) {
   return response.data;
 }
 
-async function createCard(cardUrl, borderPath, name = "TEST", rarityIconPath = path.resolve(__dirname, "../../assets/game-badge.png")) {
-  // Add the card name text
-
-  const canvasWidth = config.cardWidth;
-  const canvasHeight = config.cardHeight;
-  const borderSize = config.cardBorder;
+async function createCard(cardUrl, borderPath) {
+  borderPath = path.join(__dirname, "..", "..", "assets", "borders", "placeholder_border.png");
+  const canvasWidth = 285; // 420
+  const canvasHeight = 400; // 590
+  const borderSize = 15;
+  // const borderSize = config.cardBorder;
+  // const canvasWidth = config.cardWidth;
+  // const canvasHeight = config.cardHeight;
 
   // Fetch the card image, border image, and rarity icon in parallel
-  const [cardData, borderData, rarityIconData] = await Promise.all([fetchImage(cardUrl), sharp(borderPath).toBuffer(), sharp(rarityIconPath).toBuffer()]);
+  const [cardData, borderData] = await Promise.all([fetchImage(cardUrl), sharp(borderPath).toBuffer()]);
 
   // Resize the images to fit the card dimensions
   const cardImage = sharp(cardData).resize(canvasWidth, canvasHeight);
   const borderImage = sharp(borderData).resize(canvasWidth, canvasHeight);
-  const rarityIconImage = sharp(rarityIconData).resize(50, 50); // Adjust size as needed
 
   // Convert the resized images to buffers in parallel
-  const [cardBuffer, borderBuffer, rarityIconBuffer] = await Promise.all([cardImage.toBuffer(), borderImage.toBuffer(), rarityIconImage.toBuffer()]);
+  const [cardBuffer, borderBuffer] = await Promise.all([cardImage.toBuffer(), borderImage.toBuffer()]);
 
   // Create a canvas to draw the card
-  const canvas = createCanvas(canvasWidth, canvasHeight);
+  const canvas = createCanvas(canvasWidth + 2 * borderSize, canvasHeight + 2 * borderSize);
   const ctx = canvas.getContext("2d");
 
   // Load the images into the canvas
-  const [cardImg, borderImg, rarityIconImg] = await Promise.all([loadImage(cardBuffer), loadImage(borderBuffer), loadImage(rarityIconBuffer)]);
+  const [cardImg, borderImg] = await Promise.all([loadImage(cardBuffer), loadImage(borderBuffer)]);
+
+  // Create a rounded rectangle clipping path
+  ctx.beginPath();
+  roundedRect(ctx, borderSize, borderSize, canvasWidth, canvasHeight, 20);
+  ctx.clip();
 
   // Draw the card image, border, and rarity icon onto the canvas
-  ctx.drawImage(cardImg, 0, 0);
-  ctx.drawImage(borderImg, 0, 0);
-  ctx.drawImage(rarityIconImg, canvasWidth - 60, 10); // Position the icon
-
-  ctx.font = `40px san-serif`
-  ctx.fillStyle = "white";
-  ctx.fillText(name, 10, canvasHeight - 50);
-
-  // Draw text with each font variant
-  fonts.forEach((font, index) => {
-    ctx.font = `40px '${font.family}'`;
-    ctx.fillStyle = "white";
-    ctx.fillText(`${font.style} Text`, 10, 50 + index * 60);
-  });
+  ctx.drawImage(cardImg, borderSize, borderSize);
+  ctx.drawImage(borderImg, borderSize, borderSize);
 
   // Return the final card image as a buffer
   return canvas.toBuffer("image/png");
+}
+
+// Function to create a rounded rectangle path
+function roundedRect(ctx, x, y, width, height, radius) {
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
 }
 
 module.exports = { createCard };
