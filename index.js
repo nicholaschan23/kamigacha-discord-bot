@@ -36,11 +36,11 @@ async function fetchData() {
 
   // Store models and maps in Redis
   const MapCache = require("@database/redis/cache/map");
-  await MapCache.storeModelAsMap("card-model", cardModel); // card-model-map
-  await MapCache.storeModelAsMap("character-model", characterModel); // character-model-map
-  await MapCache.storeModelAsMap("search-model", searchModel); // search-model-map
-  await MapCache.storeModelAsMap("character-name", characterNameMap); // character-name-map
-  await MapCache.storeModelAsMap("series-name", seriesNameMap); // series-name-map
+  await MapCache.storeModelAsMap("card-model-map", cardModel);
+  await MapCache.storeModelAsMap("character-model-map", characterModel);
+  await MapCache.storeModelAsMap("search-model-map", searchModel);
+  await MapCache.storeModelAsMap("character-name-map", characterNameMap);
+  await MapCache.storeModelAsMap("series-name-map", seriesNameMap);
 
   // Update MongoDB character data
   await initCharacterDB(characterModel, characterKeys);

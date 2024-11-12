@@ -53,7 +53,7 @@ class CardGenerator {
 
   // Select a series and set based on rarity
   async selectSeriesAndSet(rarity) {
-    const seriesKeys = await MapCache.getList("card-model-keys");
+    const seriesKeys = await MapCache.getList("card-model-map");
 
     if (rarity !== "C") {
       const matchingSeriesSets = await this.getMatchingSeriesSets(seriesKeys, rarity);
@@ -63,6 +63,7 @@ class CardGenerator {
       const set = this.getSet(matchingSetsForSeries);
       return { series, set };
     } else {
+      console.log(`${seriesKeys.length}`)
       const series = seriesKeys[crypto.randomInt(0, seriesKeys.length)];
       const seriesModel = await MapCache.getMapEntry("card-model-map", series);
       const set = this.getSet(Object.keys(seriesModel));

@@ -17,7 +17,7 @@ async function storeModelAsMap(cacheKey, model) {
   }, {});
 
   // Store the map in Redis
-  await redis.hmset(`${cacheKey}-map`, entries);
+  await redis.hmset(`${cacheKey}`, entries);
 }
 
 /**
@@ -36,12 +36,10 @@ async function getMapEntry(cacheKey, mapKey) {
  * Retrieves a list of elements from a Redis list stored at the specified cache key.
  *
  * @param {string} cacheKey - The key of the Redis list.
- * @param {number} [start=0] - The starting index of the range to retrieve (inclusive).
- * @param {number} [end=-1] - The ending index of the range to retrieve (inclusive). Defaults to -1, which means the end of the list.
  * @returns {Promise<Array>} A promise that resolves to an array of elements from the specified range in the Redis list.
  */
 async function getList(cacheKey, start = 0, end = -1) {
-  return await redis.lrange(cacheKey, start, end);
+  return await redis.hkeys(cacheKey);
 }
 
 /**
