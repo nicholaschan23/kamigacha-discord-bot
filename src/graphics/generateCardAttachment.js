@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 
 async function generateCardAttachment(card) {
   // Create the card image buffer
-  const buffer = await createCard(card.image, getCardBorder(card.rarity));
+  const buffer = await createCard(card);
 
   // Create a unique attachment name
   const attachmentName = `${uuidv4()}.png`;
@@ -24,10 +24,7 @@ async function generateCardAttachment(card) {
 }
 
 async function generateGridCardAttachment(cards) {
-  const imageUrls = cards.map((card) => card.image);
-  const borderPaths = cards.map((card) => getCardBorder(card.rarity));
-
-  const buffer = await createCardGrid(imageUrls, borderPaths);
+  const buffer = await createCardGrid(cards);
 
   // Create a unique attachment name
   const attachmentName = `${uuidv4()}.png`;

@@ -2,9 +2,10 @@ const { createCanvas, loadImage } = require("canvas");
 const { createCard } = require("./createCard");
 const config = require("@config");
 
-async function createCardGrid(cardUrls, borderPaths) {
-  const cardWidth = 285 +30;
-  const cardHeight = 400+30;
+async function createCardGrid(cardInfos) {
+
+  const cardWidth = 566 +30;
+  const cardHeight = 790+30;
   // const cardWidth = config.cardWidth;
   // const cardHeight = config.cardHeight;
   const numColumns = 5;
@@ -18,12 +19,12 @@ async function createCardGrid(cardUrls, borderPaths) {
   const createPromises = [];
 
   // Generate promises for creating images
-  for (let i = 0; i < cardUrls.length; i++) {
+  for (let i = 0; i < cardInfos.length; i++) {
     const row = Math.floor(i / numColumns);
     const col = i % numColumns;
 
     // Create card and sleeve image in parallel and draw onto canvas
-    const createCardPromise = createCard(cardUrls[i], borderPaths[i])
+    const createCardPromise = createCard(cardInfos[i])
       .then(async (imageBuffer) => {
         const img = await loadImage(imageBuffer);
         ctx.drawImage(img, col * cardWidth, row * cardHeight);

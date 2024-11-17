@@ -16,7 +16,7 @@ module.exports = {
 
     try {
       const card = cg.cardData[0];
-      const buffer = await createCard(card.image, getCardBorder(card.rarity));
+      const buffer = await createCard(card);
       interaction.editReply({ content: `<@${card.ownerId}> did a 1-card pull!`, files: [new AttachmentBuilder(buffer)] });
     } catch (err) {
       console.error(err.stack);

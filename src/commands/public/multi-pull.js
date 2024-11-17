@@ -17,10 +17,7 @@ module.exports = {
     try {
       const cardList = cg.cardData;
 
-      // Generating sleeveUrls and imageUrls arrays
-      const imageUrls = cardList.map((card) => card.image);
-      const borderPaths = cardList.map((card) => getCardBorder(card.rarity));
-      const buffer = await createCardGrid(imageUrls, borderPaths);
+      const buffer = await createCardGrid(cardList);
 
       interaction.editReply({ content: `<@${cardList[0].ownerId}> did a 10-card multi-pull!`, files: [new AttachmentBuilder(buffer)] });
     } catch (err) {
