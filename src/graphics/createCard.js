@@ -131,24 +131,18 @@ function renderText(ctx, config) {
   ctx.textAlign = "center";
 
   let lines = wrapText(ctx, text, maxWidth);
-  let lineHeight = fontSize;
-  let totalHeight = lines.length * lineHeight;
+  let totalHeight = fontSize + (lines.length - 1) * fontSize * 1.2;
 
   // Adjust font size if text exceeds maxHeight
   while (totalHeight > maxHeight && fontSize > 10) {
     fontSize -= 1;
     ctx.font = `${fontWeight} ${fontSize}px "${fontFamily}"`;
-    if (lines.length > 1) {
-      lineHeight = fontSize * 1.2;
-    } else {
-      lineHeight = fontSize;
-    }
     lines = wrapText(ctx, text, maxWidth);
-    totalHeight = lines.length * lineHeight;
+    totalHeight = fontSize + (lines.length - 1) * fontSize * 1.2;
   }
 
   // Adjust the starting y position so that the text ends at the specified y coordinate
-  let startY = y - (maxHeight - totalHeight) / 2;
+  let startY = y - (maxHeight - totalHeight) / 2 - (lines.length - 1) * fontSize * 1.2;
 
   // Set text styles
   ctx.fillStyle = "#000000"; // Text color
@@ -170,7 +164,7 @@ function renderText(ctx, config) {
   lines.forEach((line) => {
     ctx.strokeText(line, x, startY); // Draw outline
     ctx.fillText(line, x, startY);
-    startY += lineHeight;
+    startY += fontSize * 1.2;
   });
 }
 
@@ -178,19 +172,20 @@ function renderText(ctx, config) {
 function wrapText(ctx, text, maxWidth) {
   const words = text.split(" ");
   let lines = [];
-  let line = "";
+  let line = words[0]; // Initialize the line with the first word
 
-  words.forEach((word) => {
-    const testLine = `${line}${word} `;
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const testLine = line + " " + word;
     const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && line !== "") {
-      lines.push(line.trim());
-      line = `${word} `;
+    if (metrics.width > maxWidth) {
+      lines.push(line);
+      line = word; // Start a new line with the current word
     } else {
       line = testLine;
     }
-  });
-  lines.push(line.trim());
+  }
+  lines.push(line); // Push the last line
   return lines;
 }
 
