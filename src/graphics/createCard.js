@@ -83,7 +83,7 @@ async function addTextElements(ctx, cardInfo) {
       y: transparentSize + borderSize + 115 - borderSize,
       maxWidth: maxWidth,
       maxHeight: maxHeight,
-      fontSize: maxHeight,
+      fontSize: 40,
       fontFamily: "Futura",
       fontWeight: "bold",
     },
@@ -93,7 +93,7 @@ async function addTextElements(ctx, cardInfo) {
       y: cardHeight - transparentSize - 2.5 * borderSize,
       maxWidth: maxWidth,
       maxHeight: maxHeight,
-      fontSize: maxHeight,
+      fontSize: 40,
       fontFamily: "Futura",
       fontWeight: "bold",
     },
@@ -147,8 +147,20 @@ function renderText(ctx, config) {
   // Adjust the starting y position so that the text ends at the specified y coordinate
   let startY = y - totalHeight + lineHeight;
 
+  // Set text styles
+  ctx.fillStyle = "#000000"; // Text color
+  ctx.strokeStyle = "#FFFFFF"; // Outline color
+  ctx.lineWidth = 2; // Outline width
+
+  // Add shadow if needed
+  ctx.shadowColor = "rgba(0, 0, 0, 0.5)"; // Shadow color
+  ctx.shadowBlur = 4; // Shadow blur
+  ctx.shadowOffsetX = 2; // Shadow X offset
+  ctx.shadowOffsetY = 2; // Shadow Y offset
+
   // Draw text lines
   lines.forEach((line) => {
+    ctx.strokeText(line, x, startY); // Draw outline
     ctx.fillText(line, x, startY);
     startY += lineHeight;
   });
