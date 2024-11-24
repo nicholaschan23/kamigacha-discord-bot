@@ -5,7 +5,6 @@ const { createCanvas, loadImage, registerFont } = require("canvas");
 const path = require("path");
 const MapCache = require("@database/redis/cache/map");
 
-
 const cardWidth = 565; // 420
 const cardHeight = 789; // 590
 const borderSize = 22.76;
@@ -28,7 +27,7 @@ registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "GillSansBold.o
 // registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "GillSansCondensedBold.otf"), { family: "GillSansCondensedBold" });
 
 async function createCard(cardInfo) {
-  const cardUrl = cardInfo.image
+  const cardUrl = cardInfo.image;
 
   // const borderPath = getCardBorder(cardInfo.rarity)
 
@@ -73,8 +72,8 @@ async function createCard(cardInfo) {
 
 // Function to add text elements to the card
 async function addTextElements(ctx, cardInfo) {
-  const maxWidth = cardWidth - transparentSize * 2 - 4 * borderSize
-  const maxHeight = 115 - 2 * borderSize
+  const maxWidth = cardWidth - transparentSize * 2 - 4 * borderSize;
+  const maxHeight = 115 - 2 * borderSize;
 
   const textConfig = [
     {
@@ -126,26 +125,30 @@ async function addTextElements(ctx, cardInfo) {
 function renderText(ctx, config) {
   const { text, x, y, maxWidth, maxHeight, fontFamily, fontWeight = "normal" } = config;
 
-  let fontSize = config.fontSize; // Declare fontSize as let
+  let fontSize = config.fontSize;
   ctx.font = `${fontWeight} ${fontSize}px "${fontFamily}"`;
   ctx.fillStyle = "#000000";
   ctx.textAlign = "center";
 
   let lines = wrapText(ctx, text, maxWidth);
-  let lineHeight = fontSize * 1.2;
+  let lineHeight = fontSize;
   let totalHeight = lines.length * lineHeight;
 
   // Adjust font size if text exceeds maxHeight
   while (totalHeight > maxHeight && fontSize > 10) {
     fontSize -= 1;
     ctx.font = `${fontWeight} ${fontSize}px "${fontFamily}"`;
-    lineHeight = fontSize * 1.2;
+    if (lines.length > 1) {
+      lineHeight = fontSize * 1.2;
+    } else {
+      lineHeight = fontSize;
+    }
     lines = wrapText(ctx, text, maxWidth);
     totalHeight = lines.length * lineHeight;
   }
 
   // Adjust the starting y position so that the text ends at the specified y coordinate
-  let startY = y - totalHeight + lineHeight;
+  let startY = y - (maxHeight - totalHeight) / 2;
 
   // Set text styles
   ctx.fillStyle = "#000000"; // Text color
@@ -157,6 +160,11 @@ function renderText(ctx, config) {
   ctx.shadowBlur = 4; // Shadow blur
   ctx.shadowOffsetX = 2; // Shadow X offset
   ctx.shadowOffsetY = 2; // Shadow Y offset
+
+  // Draw the region for debugging
+  // ctx.strokeStyle = "red";
+  // ctx.lineWidth = 1;
+  // ctx.strokeRect(x - maxWidth / 2, y, maxWidth, -maxHeight);
 
   // Draw text lines
   lines.forEach((line) => {
