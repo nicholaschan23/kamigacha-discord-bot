@@ -1,42 +1,20 @@
 const sharp = require("sharp");
 const axios = require("axios");
 const config = require("@config");
-const { createCanvas, loadImage, registerFont } = require("canvas");
-const path = require("path");
+const { createCanvas, loadImage } = require("canvas");
 const MapCache = require("@database/redis/cache/map");
+const { getCardBorder } = require("@graphics/getCardBorder");
 
-const cardWidth = 565; // 420
-const cardHeight = 789; // 590
-const borderSize = 22.76;
+const cardWidth = config.cardWidth;
+const cardHeight = config.cardHeight;
+const borderSize = config.cardBorder;
 const transparentSize = 15;
 const canvasWidth = cardWidth + 2 * transparentSize;
 const canvasHeight = cardHeight + 2 * transparentSize;
 
-process.env.FONTCONFIG_PATH = path.join(__dirname, "..", "..", "assets", "fonts");
-
-// Register the gg sans fonts
-// registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "gg_sans_Bold.ttf"), { family: "ggSans", weight: "bold" });
-// registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "gg_sans_Regular.ttf"), { family: "ggSans", weight: "normal" });
-// registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "gg_sans_Medium.ttf"), { family: "ggSans", weight: "medium" });
-// registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "gg_sans_Semibold.ttf"), { family: "ggSans", weight: "semibold" });
-
-// Register the Nu Century Gothic font
-registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "nu_century_gothic.otf"), { family: "NuCenturyGothic", weight: "bold" });
-
-registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "GillSansBold.otf"), { family: "GillSansBold" });
-// registerFont(path.join(__dirname, "..", "..", "assets", "fonts", "GillSansCondensedBold.otf"), { family: "GillSansCondensedBold" });
-
 async function createCard(cardInfo) {
   const cardUrl = cardInfo.image;
-
-  // const borderPath = getCardBorder(cardInfo.rarity)
-
-  let borderPath = path.join(__dirname, "..", "..", "assets", "borders", "test.png");
-  // borderPath = path.join(__dirname, "..", "..", "assets", "borders", "card_border_ssr.png");
-
-  // const cardWidth = config.cardWidth;
-  // const cardHeight = config.cardHeight;
-  // const borderSize = config.cardBorder;
+  const borderPath = getCardBorder(cardInfo.rarity)
 
   // Fetch the card image, border image, and rarity icon in parallel
   const [cardData, borderData] = await Promise.all([fetchImage(cardUrl), sharp(borderPath).toBuffer()]);
@@ -145,7 +123,8 @@ function renderText(ctx, config) {
   let startY = y - (maxHeight - totalHeight) / 2 - (lines.length - 1) * fontSize * 1.2;
 
   // Set text styles
-  ctx.fillStyle = "#000000"; // Text color
+  ctx.fillStyle = "#FFFFFF"; // Text color
+  // ctx.fillStyle = "#000000"; // Text color
   ctx.strokeStyle = "#FFFFFF"; // Outline color
   ctx.lineWidth = 2; // Outline width
 

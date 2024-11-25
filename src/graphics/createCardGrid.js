@@ -3,11 +3,10 @@ const { createCard } = require("./createCard");
 const config = require("@config");
 
 async function createCardGrid(cardInfos) {
+  const borderSize = config.cardBorder;
+  const cardWidth = config.cardWidth + 2 * borderSize;
+  const cardHeight = config.cardHeight + 2 * borderSize;
 
-  const cardWidth = 566 +30;
-  const cardHeight = 790+30;
-  // const cardWidth = config.cardWidth;
-  // const cardHeight = config.cardHeight;
   const numColumns = 5;
   const numRows = 2;
 

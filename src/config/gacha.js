@@ -69,9 +69,9 @@ const upgradeFailRate = {
 };
 
 // Card dimensions
-const cardWidth = 288;
-const cardHeight = 400;
-const cardBorder = 20;
+const cardWidth = 565;
+const cardHeight = 789;
+const cardBorder = 22.76;
 
 module.exports = {
   rarities,

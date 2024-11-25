@@ -1,8 +1,7 @@
 const path = require("path");
 
 // Images
-const IMAGES_PATH = path.join(__dirname + "../../../images");
-const CARD_BORDERS_PATH = path.join(__dirname + "../../../images/borders");
+const ASSETS_PATH = path.join(__dirname + "../../../assets");
 
 // Maps
 const CHARACTER_NAME_MAP_PATH = path.join(__dirname, "../database/aws/maps/formatted-character-names.json");
@@ -16,9 +15,7 @@ const SLEEVE_MODEL_PATH = path.join(__dirname, "../database/aws/models/sleeves.j
 const FRAME_MODEL_PATH = path.join(__dirname, "../database/aws/models/frames.json");
 
 module.exports = {
-  // Images
-  IMAGES_PATH,
-  CARD_BORDERS_PATH,
+  ASSETS_PATH,
 
   // Maps
   CHARACTER_NAME_MAP_PATH,

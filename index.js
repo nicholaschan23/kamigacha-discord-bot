@@ -25,7 +25,7 @@ async function fetchData() {
   await RedisClient.connect(false);
 
   // Download images from AWS S3 Bucket
-  await downloadFiles("customisations/boarders", config.IMAGES_PATH);
+  // await downloadFiles("customisations/boarders", config.IMAGES_PATH);
 
   // Preprocess card data from AWS S3 Bucket
   const { object: cardModel, keys: seriesKeys } = await initCardModel();

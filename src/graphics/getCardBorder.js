@@ -1,22 +1,22 @@
 const config = require("@config");
 
 function getCardBorder(rarity) {
-  const prefix = [config.IMAGES_PATH, "customisations/boarders"];
+  const prefix = [config.ASSETS_PATH, "borders"];
   switch (rarity.toLowerCase()) {
     case "r":
-      prefix.push("default/default-r.png");
+      prefix.push("r_border.png");
       break;
     case "ur":
-      prefix.push("default/default-ur.png");
+      prefix.push("ur_border.png");
       break;
     case "sr":
-      prefix.push("default/default-sr.png");
+      prefix.push("sr_border.png");
       break;
     case "ssr":
-      prefix.push("default/default-ssr.png");
+      prefix.push("ssr_border.png");
       break;
     default:
-      prefix.push("default/default-c.png");
+      prefix.push("c_border.png");
       break;
   }
   return prefix.join("/");
