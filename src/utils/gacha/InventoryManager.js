@@ -20,7 +20,7 @@ class InventoryManager {
         this.inventory = this.inventory.filter(i => i.name !== item);
       }
     } else {
-      console.log(`Item ${item} not found in inventory.`);
+      // console.log(`Item ${item} not found in inventory.`);
     }
   }
 

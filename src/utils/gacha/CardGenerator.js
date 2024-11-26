@@ -63,7 +63,6 @@ class CardGenerator {
       const set = this.getSet(matchingSetsForSeries);
       return { series, set };
     } else {
-      console.log(`${seriesKeys.length}`)
       const series = seriesKeys[crypto.randomInt(0, seriesKeys.length)];
       const seriesModel = await MapCache.getMapEntry("card-model-map", series);
       const set = this.getSet(Object.keys(seriesModel));
