@@ -120,11 +120,11 @@ module.exports = {
             const createdCard = await cu.cardUpgrade();
             if (createdCard) {
               embed.setColor(config.embedColor.green);
-              i.update({ embeds: [embed], components: [] });
+              await i.update({ embeds: [embed], components: [] });
 
               const cardInfo = await formatCardInfo(createdCard);
               const { file, url } = await generateCardAttachment(createdCard);
-              interaction.reply({
+              await i.channel.send({
                 embeds: [
                   new EmbedBuilder()
                     .setTitle("Upgrade")
@@ -134,13 +134,10 @@ module.exports = {
                 ],
                 files: [file],
               });
-              const { embed: upgradeEmbed, file: upgradeFile } = await viewUpgradeEmbed(createdCard);
-
-              i.channel.send({ embeds: [upgradeEmbed], files: [upgradeFile] });
             } else {
               embed.setColor(config.embedColor.red);
-              i.update({ embeds: [embed], components: [] });
-              i.channel.send({ content: "Upgrade failed." });
+              await i.update({ embeds: [embed], components: [] });
+              await i.channel.send({ content: "Upgrade failed." });
             }
           } catch (error) {
             if (config.debug) logger.error(error.stack);

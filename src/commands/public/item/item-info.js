@@ -23,17 +23,28 @@ module.exports = {
 
       const tokens = item.split(" ");
       if (tokens[tokens.length - 1] === "pack") {
-        const seriesKey = tokens.slice(0, -2).join("-");
-        const seriesData = await MapCache.getMapEntry("card-model-map", seriesKey);
-        if (!seriesData) {
-          interaction.editReply({ content: "Invalid series name." });
+        if (tokens.length < 3) {
+          interaction.editReply({ content: "Invalid pack name. Format is: `<series> <set> pack`." });
           return;
         }
 
         const set = tokens[tokens.length - 2];
+        if (isNaN(set)) {
+          interaction.editReply({ content: "Invalid set number. Format is: `<series> <set> pack`." });
+          return;
+        }
+
+
+        const seriesKey = tokens.slice(0, -2).join("-");
+        const seriesData = await MapCache.getMapEntry("card-model-map", seriesKey);
+        if (!seriesData) {
+          interaction.editReply({ content: "Invalid series name. Format is: `<series> <set> pack`." });
+          return;
+        }
+
         const setCount = Object.keys(seriesData).length;
-        if (parseInt(set) > setCount) {
-          interaction.editReply({ content: "Invalid set number." });
+        if (parseInt(set) > setCount || parseInt(set) <= 0) {
+          interaction.editReply({ content: "Invalid set number. That set does not exist for this series." });
           return;
         }
 
@@ -44,7 +55,7 @@ module.exports = {
         const cost = calculatePackValue(fetchRarityCounts(seriesData[set]));
         const purchasable = set == setCount ? "Purchasable" : "Not available";
         const embed = new EmbedBuilder().setTitle(`Item Info`).addFields({
-          name: `Set ${set} Pack: ${formattedSeries}`,
+          name: `${formattedSeries} ${set} Pack`,
           value: `*A card pack containing 1 card from set ${set} of the ${formattedSeries} series.*\n\n` + `Price: ${icon} **${cost}** \`${materialCode}\``,
         });
 
